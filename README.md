@@ -4,6 +4,49 @@
 
 Interactive treadmill challenge installation for a retail store. Local-first: React + Vite frontend, Node + Fastify backend, SQLite database. TouchDesigner integration is abstracted behind an adapter (mock implementation included).
 
+---
+
+## Quick start (simple guide)
+
+### 1. Set up your environment
+
+- Install **Node.js 20** or newer on your computer. Check: open a terminal and type `node -v`. You should see a number like 20.x.x.
+- Open a terminal and go to the project folder: `cd treadmill-challenge`.
+- Install dependencies: run `npm install`.
+- Build the shared package (you need to do this once): run `npm run build:shared`.
+
+### 2. Run the app
+
+You need the backend and the frontend running.
+
+**Easy way – one command:**  
+Run `npm run dev`. This starts both. Wait a few seconds.
+
+**Or use two terminals:**
+
+- **Terminal 1:** run `npm run dev:backend`. Leave it open. Backend will run on port 3001.
+- **Terminal 2:** run `npm run dev:frontend`. Leave it open. Frontend will run on port 5173.
+
+When you see “ready” or “listening” in the terminal, the app is running.
+
+### 3. Open the app and see all pages
+
+Open your browser and go to: **http://localhost:5173**
+
+You can visit these pages:
+
+| Page            | URL                         | What you see                          |
+|-----------------|-----------------------------|----------------------------------------|
+| Welcome         | http://localhost:5173/      | Home page with “Register now” link    |
+| Registration    | http://localhost:5173/register | Form to add your name and phone     |
+| Leaderboard     | http://localhost:5173/leaderboard | List of best runs and participants |
+| Result          | http://localhost:5173/result | Run result page                      |
+
+Click the links in the app or type the URLs in the browser to open each page.  
+If the page does not load, check that the frontend is running (Terminal 2 or `npm run dev`).
+
+---
+
 ## Tech stack
 
 - **Frontend:** React 18, TypeScript, Vite
@@ -74,6 +117,29 @@ npm run dev
 ```
 
 This runs `dev` in all workspaces that define it (frontend and backend).
+
+### Run automatically after reboot (Windows)
+
+To start the app when you log in to Windows:
+
+**Option A – Startup folder (easiest)**
+
+1. Create a **shortcut** to the script `start-app.bat` in the project root:
+   - Right‑click `start-app.bat` → **Create shortcut**.
+2. Press **Win + R**, type `shell:startup`, press Enter. A folder opens.
+3. Move or copy the shortcut into that folder.
+4. After the next reboot (or logoff/logon), the app will start when you log in. A console window will open and run backend + frontend. Close the window to stop the app.
+
+**Option B – Task Scheduler**
+
+1. Open **Task Scheduler** (search in Start menu).
+2. Click **Create Basic Task**. Name it e.g. “Treadmill Challenge”, click Next.
+3. Trigger: **When I log on**, Next.
+4. Action: **Start a program**, Next.
+5. Program: click **Browse** and choose `start-app.bat` in your project folder (e.g. `C:\Repos\treadmill-challenge\start-app.bat`). Leave arguments empty. Next → Finish.
+6. Optional: right‑click the task → Properties → **Run whether user is logged on or not** if you want it to run before you log in (you may need to enter your password).
+
+The script `start-app.bat` runs `npm run dev` from the project folder. Make sure Node.js 20 is installed and you have run `npm install` and `npm run build:shared` at least once before using autorun.
 
 ## API endpoints
 
