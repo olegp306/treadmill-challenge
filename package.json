@@ -1,0 +1,24 @@
+{
+  "name": "treadmill-challenge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive treadmill challenge installation - monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:frontend": "npm run dev -w apps/frontend",
+    "dev:backend": "npm run dev -w apps/backend",
+    "build": "npm run build --workspaces --if-present",
+    "build:shared": "npm run build -w packages/shared",
+    "build:backend": "npm run build -w apps/backend",
+    "build:frontend": "npm run build -w apps/frontend",
+    "start:backend": "npm run start -w apps/backend",
+    "preview:frontend": "npm run preview -w apps/frontend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
