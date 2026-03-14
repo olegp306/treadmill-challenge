@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "concurrently -n be,fe -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev -w apps/frontend",
     "dev:backend": "npm run dev -w apps/backend",
     "build": "npm run build --workspaces --if-present",
@@ -17,6 +17,9 @@
     "build:frontend": "npm run build -w apps/frontend",
     "start:backend": "npm run start -w apps/backend",
     "preview:frontend": "npm run preview -w apps/frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
   },
   "engines": {
     "node": ">=20"

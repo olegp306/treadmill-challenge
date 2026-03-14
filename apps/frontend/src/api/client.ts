@@ -20,7 +20,7 @@ async function request<T>(
 }
 
 export const api = {
-  register(body: { name: string; phone: string }) {
+  register(body: { name: string; phone: string; sex?: string; runName?: string }) {
     return request<{ id: string; name: string; phone: string; status: string; createdAt: string }>(
       '/register',
       { method: 'POST', body: JSON.stringify(body) }

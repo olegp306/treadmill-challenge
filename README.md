@@ -41,6 +41,7 @@ You can visit these pages:
 | Registration    | http://localhost:5173/register | Form to add your name and phone     |
 | Leaderboard     | http://localhost:5173/leaderboard | List of best runs and participants |
 | Result          | http://localhost:5173/result | Run result page                      |
+| Start running   | http://localhost:5173/start | Name, phone, sex → TouchDesigner     |
 
 Click the links in the app or type the URLs in the browser to open each page.  
 If the page does not load, check that the frontend is running (Terminal 2 or `npm run dev`).
@@ -116,7 +117,7 @@ npm run dev:frontend
 npm run dev
 ```
 
-This runs `dev` in all workspaces that define it (frontend and backend).
+This runs the backend and frontend together in parallel (backend on port 3001, frontend on 5173).
 
 ### Run automatically after reboot (Windows)
 
@@ -149,6 +150,7 @@ The script `start-app.bat` runs `npm run dev` from the project folder. Make sure
 | GET    | `/api/leaderboard` | Top runs with participant names |
 | GET    | `/api/participants/:id` | Participant details and runs |
 | POST   | `/api/run-result` | Submit run result (body: `{ participantId, resultTime, distance, speed }`) |
+| GET    | `/api/touchdesigner/run-result` | Get run result data from TouchDesigner (204 if none) |
 
 ## End-to-end flow
 
@@ -170,12 +172,14 @@ curl -X POST http://localhost:3001/api/run-result \
 
 Replace `<PARTICIPANT_ID>` with a real UUID from a registered participant.
 
-## TouchDesigner integration
+## TouchDesigner integration (e.g. connection by OCR)
 
 - **Boundary:** Backend only. No TouchDesigner or OSC code in this repo.
 - **Adapter:** `apps/backend/src/integrations/touchdesigner/`
-  - **Interface:** `TouchDesignerIntegration` – `sendParticipantRegistered(payload)`.
-  - **Mock:** `mockTouchDesignerAdapter` – logs the payload to stdout. Easy to replace with a real OSC/WebSocket/TCP client later.
+  - **Interface:** `TouchDesignerIntegration`:
+    1. **`sendParticipantRegistered(payload)`** — send to TouchDesigner: `login` (participant id), `name`, `phone`, `sex`, `runName` (name of running). Called after registration (e.g. so TD can display runner via OCR).
+    2. **`getRunResultFromTouchDesigner()`** — get run result data from TouchDesigner (returns `RunResultDto | null`). Use **GET /api/touchdesigner/run-result** to poll, or have TouchDesigner push via **POST /api/run-result**.
+  - **Mock:** `mockTouchDesignerAdapter` – logs the outgoing payload and returns `null` for run result. Replace with a real OSC/WebSocket/TCP/OCR client when integrating.
 
 ## NPM scripts (from root)
 

@@ -20,8 +20,11 @@ export function registerParticipant(
   const participant = participants.createParticipant(db, id, dto.name.trim(), dto.phone.trim());
 
   touchDesigner.sendParticipantRegistered({
-    participantId: participant.id,
+    login: participant.id,
     name: participant.name,
+    phone: participant.phone,
+    sex: dto.sex,
+    runName: dto.runName ?? 'Run',
   });
 
   return participant;

@@ -4,14 +4,25 @@
 export interface RegisterParticipantDto {
   name: string;
   phone: string;
+  /** Optional: e.g. "male" | "female" | "other" — sent to TouchDesigner. */
+  sex?: string;
+  /** Optional: name of the running (session/run label) — sent to TouchDesigner. */
+  runName?: string;
 }
 
 /**
- * Payload sent to TouchDesigner integration when a participant registers.
+ * Payload sent to TouchDesigner when a participant registers (e.g. via OCR connection).
+ * Contains everything TouchDesigner needs to display/identify the runner.
  */
 export interface TouchDesignerParticipantPayload {
-  participantId: string;
+  /** Login / participant identifier (use participantId). */
+  login: string;
   name: string;
+  phone: string;
+  /** Optional sex — e.g. "male" | "female" | "other". */
+  sex?: string;
+  /** Name of the running (session/run label). */
+  runName: string;
 }
 
 /**

@@ -6,7 +6,10 @@ export default function WelcomePage() {
       <h1 style={styles.title}>Treadmill Challenge</h1>
       <p style={styles.subtitle}>Ready to run? Register and see your name on the leaderboard.</p>
       <nav style={styles.nav}>
-        <Link to="/register" style={styles.primaryButton}>
+        <Link to="/start" style={styles.primaryButton}>
+          Start running!
+        </Link>
+        <Link to="/register" style={styles.secondaryButton}>
           Register now
         </Link>
         <Link to="/leaderboard" style={styles.secondaryButton}>

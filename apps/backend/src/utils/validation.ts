@@ -25,9 +25,16 @@ export function validateRegisterBody(body: unknown): Validation<RegisterParticip
   if (typeof phone !== 'string' || !phone.trim()) {
     return { success: false, message: 'phone is required and must be a non-empty string' };
   }
+  const sex = o.sex;
+  const runName = o.runName;
   return {
     success: true,
-    data: { name: name.trim(), phone: phone.trim() },
+    data: {
+      name: name.trim(),
+      phone: phone.trim(),
+      ...(typeof sex === 'string' && sex.trim() && { sex: sex.trim() }),
+      ...(typeof runName === 'string' && runName.trim() && { runName: runName.trim() }),
+    },
   };
 }
 

@@ -6,4 +6,5 @@ export const API_ROUTES = {
   LEADERBOARD: '/api/leaderboard',
   PARTICIPANT: (id: string) => `/api/participants/${id}`,
   RUN_RESULT: '/api/run-result',
+  TOUCHDESIGNER_RUN_RESULT: '/api/touchdesigner/run-result',
 } as const;

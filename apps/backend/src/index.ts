@@ -5,6 +5,7 @@ import registerRoutes from './routes/register.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import participantRoutes from './routes/participants.js';
 import runResultRoutes from './routes/runResult.js';
+import touchdesignerRoutes from './routes/touchdesigner.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -24,6 +25,7 @@ async function main() {
   await app.register(leaderboardRoutes);
   await app.register(participantRoutes);
   await app.register(runResultRoutes);
+  await app.register(touchdesignerRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
 
