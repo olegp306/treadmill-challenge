@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { registerParticipant } from '../services/registrationService.js';
 import { validateRegisterBody } from '../utils/validation.js';
-import { mockTouchDesignerAdapter } from '../integrations/touchdesigner/index.js';
+import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 
 export default async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/register', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -10,7 +10,7 @@ export default async function registerRoutes(app: FastifyInstance): Promise<void
       return reply.status(400).send({ error: validation.message });
     }
     try {
-      const participant = registerParticipant(validation.data, mockTouchDesignerAdapter);
+      const participant = registerParticipant(validation.data, touchDesignerAdapter);
       return reply.status(201).send(participant);
     } catch (err) {
       request.log.error(err);

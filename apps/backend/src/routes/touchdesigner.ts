@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { mockTouchDesignerAdapter } from '../integrations/touchdesigner/index.js';
+import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 
 /**
  * Routes for TouchDesigner integration (e.g. connection by OCR).
@@ -8,7 +8,7 @@ import { mockTouchDesignerAdapter } from '../integrations/touchdesigner/index.js
 export default async function touchdesignerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/touchdesigner/run-result', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const result = await mockTouchDesignerAdapter.getRunResultFromTouchDesigner();
+      const result = await touchDesignerAdapter.getRunResultFromTouchDesigner();
       if (result === null) {
         return reply.status(204).send();
       }

@@ -146,7 +146,7 @@ The script `start-app.bat` runs `npm run dev` from the project folder. Make sure
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST   | `/api/register` | Register participant (body: `{ name, phone }`) |
+| POST   | `/api/register` | Register participant (body: `{ name, phone, sex?, runMode?, runName? }`) |
 | GET    | `/api/leaderboard` | Top runs with participant names |
 | GET    | `/api/participants/:id` | Participant details and runs |
 | POST   | `/api/run-result` | Submit run result (body: `{ participantId, resultTime, distance, speed }`) |
@@ -177,9 +177,53 @@ Replace `<PARTICIPANT_ID>` with a real UUID from a registered participant.
 - **Boundary:** Backend only. No TouchDesigner or OSC code in this repo.
 - **Adapter:** `apps/backend/src/integrations/touchdesigner/`
   - **Interface:** `TouchDesignerIntegration`:
-    1. **`sendParticipantRegistered(payload)`** — send to TouchDesigner: `login` (participant id), `name`, `phone`, `sex`, `runName` (name of running). Called after registration (e.g. so TD can display runner via OCR).
+    1. **`sendParticipantRegistered(payload)`** — send to TouchDesigner: `login` (participant id), `name`, `phone`, `sex`, `runMode` (`time` \| `1km` \| `5km`), `runName`. Called after registration.
     2. **`getRunResultFromTouchDesigner()`** — get run result data from TouchDesigner (returns `RunResultDto | null`). Use **GET /api/touchdesigner/run-result** to poll, or have TouchDesigner push via **POST /api/run-result**.
-  - **Mock:** `mockTouchDesignerAdapter` – logs the outgoing payload and returns `null` for run result. Replace with a real OSC/WebSocket/TCP/OCR client when integrating.
+  - **Mock:** `mockTouchDesignerAdapter` – logs outgoing payload.
+  - **OSC:** `oscTouchDesignerAdapter` – sends OSC message via UDP.
+
+### TouchDesigner quick setup (comfortable mode)
+
+Use env vars in backend terminal before `npm run dev:backend` (PowerShell):
+
+```bash
+$env:TD_ADAPTER="osc"
+$env:TD_OSC_HOST="127.0.0.1"
+$env:TD_OSC_PORT="7000"
+$env:TD_OSC_START_ADDRESS="/treadmill/start"
+```
+
+Then open `http://localhost:5173/start`, fill form, choose mode (**time / 1km / 5km**), click **Start**.
+
+Backend sends one OSC message:
+
+- **Address:** `/treadmill/start` (or `TD_OSC_START_ADDRESS`)
+- **Args order (all strings):**
+  1. `login`
+  2. `name`
+  3. `phone`
+  4. `sex`
+  5. `runMode` (`time` \| `1km` \| `5km`)
+  6. `runName`
+
+For local verification without TouchDesigner, set `TD_ADAPTER=mock` and check backend log line:
+`[TouchDesigner Mock] sendParticipantRegistered: ...`
+
+### Quick check with TouchDesigner developer
+
+1. Run backend + frontend: `npm run dev`
+2. Open: `http://localhost:5173/start`
+3. Fill Name + Phone, pick Sex, pick mode (**Time / 1 km / 5 km**), click **Start**
+4. In backend terminal, check log line: `[TouchDesigner Mock] sendParticipantRegistered: ...`
+5. Verify payload contains:
+   - `login`
+   - `name`
+   - `phone`
+   - `sex`
+   - `runMode` (`time` / `1km` / `5km`)
+   - `runName`
+
+If you replace mock adapter with OSC sender, keep the same payload fields to validate protocol mapping on TouchDesigner side.
 
 ## NPM scripts (from root)
 

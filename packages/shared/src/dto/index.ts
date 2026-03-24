@@ -6,6 +6,8 @@ export interface RegisterParticipantDto {
   phone: string;
   /** Optional: e.g. "male" | "female" | "other" — sent to TouchDesigner. */
   sex?: string;
+  /** Challenge mode for the run start. */
+  runMode?: 'time' | '1km' | '5km';
   /** Optional: name of the running (session/run label) — sent to TouchDesigner. */
   runName?: string;
 }
@@ -21,6 +23,8 @@ export interface TouchDesignerParticipantPayload {
   phone: string;
   /** Optional sex — e.g. "male" | "female" | "other". */
   sex?: string;
+  /** Challenge mode selected by the participant. */
+  runMode: 'time' | '1km' | '5km';
   /** Name of the running (session/run label). */
   runName: string;
 }

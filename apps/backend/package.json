@@ -13,6 +13,7 @@
     "@treadmill-challenge/shared": "*",
     "fastify": "^4.24.3",
     "@fastify/cors": "^8.5.0",
+    "osc": "^2.4.5",
     "sql.js": "^1.10.2"
   },
   "devDependencies": {

@@ -26,13 +26,23 @@ export function validateRegisterBody(body: unknown): Validation<RegisterParticip
     return { success: false, message: 'phone is required and must be a non-empty string' };
   }
   const sex = o.sex;
+  const runMode = o.runMode;
   const runName = o.runName;
+  if (
+    typeof runMode !== 'undefined' &&
+    runMode !== 'time' &&
+    runMode !== '1km' &&
+    runMode !== '5km'
+  ) {
+    return { success: false, message: 'runMode must be one of: time, 1km, 5km' };
+  }
   return {
     success: true,
     data: {
       name: name.trim(),
       phone: phone.trim(),
       ...(typeof sex === 'string' && sex.trim() && { sex: sex.trim() }),
+      ...(typeof runMode === 'string' && { runMode }),
       ...(typeof runName === 'string' && runName.trim() && { runName: runName.trim() }),
     },
   };

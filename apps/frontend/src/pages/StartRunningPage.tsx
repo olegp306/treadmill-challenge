@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 
 type Sex = 'male' | 'female';
+type RunMode = 'time' | '1km' | '5km';
 
 export default function StartRunningPage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [sex, setSex] = useState<Sex>('male');
+  const [runMode, setRunMode] = useState<RunMode>('time');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +23,8 @@ export default function StartRunningPage() {
         name: name.trim(),
         phone: phone.trim(),
         sex,
-        runName: 'Run',
+        runMode,
+        runName: runMode === 'time' ? 'Time Challenge' : runMode === '1km' ? '1km Challenge' : '5km Challenge',
       });
       navigate('/result', {
         state: {
@@ -71,6 +74,41 @@ export default function StartRunningPage() {
             placeholder="Your phone number"
             style={styles.input}
           />
+        </label>
+        <label style={styles.label}>
+          Challenge mode
+          <div style={styles.modeGrid}>
+            <button
+              type="button"
+              onClick={() => setRunMode('time')}
+              style={{
+                ...styles.switchOption,
+                ...(runMode === 'time' ? styles.switchOptionActive : {}),
+              }}
+            >
+              Time
+            </button>
+            <button
+              type="button"
+              onClick={() => setRunMode('1km')}
+              style={{
+                ...styles.switchOption,
+                ...(runMode === '1km' ? styles.switchOptionActive : {}),
+              }}
+            >
+              1 km
+            </button>
+            <button
+              type="button"
+              onClick={() => setRunMode('5km')}
+              style={{
+                ...styles.switchOption,
+                ...(runMode === '5km' ? styles.switchOptionActive : {}),
+              }}
+            >
+              5 km
+            </button>
+          </div>
         </label>
         <label style={styles.label}>
           Sex
@@ -148,6 +186,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   switchRow: {
     display: 'flex',
+    gap: 8,
+  },
+  modeGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
     gap: 8,
   },
   switchOption: {

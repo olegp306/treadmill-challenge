@@ -24,6 +24,7 @@ export function registerParticipant(
     name: participant.name,
     phone: participant.phone,
     sex: dto.sex,
+    runMode: dto.runMode ?? 'time',
     runName: dto.runName ?? 'Run',
   });
 
