@@ -33,6 +33,20 @@
   height: 0;
 }
 
+.ar-ozio-lb-list {
+  scrollbar-width: thin;
+  scrollbar-color: #30363d transparent;
+}
+
+.ar-ozio-lb-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ar-ozio-lb-list::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+}
+
 /*
  * Figma canvas 2360×1640 px — `cqw` / `cqh` in `.ar-ozio-ipad` trees use this aspect ratio.
  */
