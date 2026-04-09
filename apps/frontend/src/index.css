@@ -1,3 +1,95 @@
+/*
+ * Figma uses Druk Wide Cyr (Medium). For production, prefer a licensed woff2
+ * under /public/fonts and point src= there; Oswald remains the fallback.
+ */
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://db.onlinewebfonts.com/t/e7fa3e0f70e1466b2f73ee1ac39c8c30.woff2')
+    format('woff2');
+}
+
+.ar-ozio-ipad {
+  font-family: 'Druk Wide Cyr', 'Oswald', system-ui, sans-serif;
+  font-weight: 400;
+  font-synthesis: none;
+}
+
+.ar-ozio-ipad a:hover {
+  text-decoration: none;
+}
+
+.ar-ozio-ipad button:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+/* Horizontal card strip: scroll without visible scrollbar */
+.ar-ozio-cards-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ar-ozio-cards-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/*
+ * Figma canvas 2360×1640 px — `cqw` / `cqh` in `.ar-ozio-ipad` trees use this aspect ratio.
+ */
+.ar-ozio-ipad-viewport {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.ar-ozio-ipad-canvas {
+  container-type: size;
+  container-name: ar-ozio;
+  display: flex;
+  flex-direction: column;
+  width: min(100vw, 100vh * 2360 / 1640);
+  height: min(100vh, 100vw * 1640 / 2360);
+  max-width: 100vw;
+  max-height: 100vh;
+  aspect-ratio: 2360 / 1640;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+@keyframes ar-ozio-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ar-ozio-step-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: ar-ozio-step-in 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 * {
   box-sizing: border-box;
 }
