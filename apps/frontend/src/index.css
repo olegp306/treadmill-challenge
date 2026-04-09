@@ -21,10 +21,6 @@
   text-decoration: none;
 }
 
-.ar-ozio-ipad button:not(:disabled):active {
-  transform: scale(0.985);
-}
-
 /* Horizontal card strip: scroll without visible scrollbar */
 .ar-ozio-cards-scroll {
   scrollbar-width: none;
@@ -69,25 +65,6 @@
   padding-right: env(safe-area-inset-right, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px);
-}
-
-@keyframes ar-ozio-step-in {
-  from {
-    opacity: 0;
-    transform: translateX(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.ar-ozio-step-panel {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  animation: ar-ozio-step-in 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {

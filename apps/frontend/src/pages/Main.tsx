@@ -21,7 +21,7 @@ const queueCards: {
   { active: false, order: '03', tag: 'СТАЙЕР-СПРИНТ НА 5 КМ', nameLine1: 'Анастасия иванова' },
 ];
 
-export default function ArOzioIpadPage() {
+export default function Main() {
   return (
     <ArOzioViewport>
       <div style={styles.page}>
@@ -92,7 +92,7 @@ export default function ArOzioIpadPage() {
             <Link to="/leaderboard" style={styles.btnLeaderboard}>
               Лидерборд
             </Link>
-            <Link to="/participate" style={styles.btnParticipate}>
+            <Link to="/start" style={styles.btnParticipate}>
               Принять участие
             </Link>
           </nav>
