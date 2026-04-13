@@ -7,7 +7,7 @@ export const RUN_TYPES = [
     id: 0 as const,
     key: 'max_5_min' as const,
     name: 'Максимум за 5 минут',
-    shortName: '5 минут',
+    shortName: 'Максимум за 5 минут',
     description: 'Покажи максимум дистанции за отведённые пять минут.',
   },
   {
