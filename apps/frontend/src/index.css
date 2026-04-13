@@ -113,3 +113,146 @@ input, button {
 button {
   cursor: pointer;
 }
+
+/* Registration wizard — Figma-aligned choice buttons (age / gender).
+ * Hover matches desktop Figma highlight; :active is the primary feedback on iPad touch. */
+.ar-reg-wizard-choice-btn {
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease,
+    filter 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ar-reg-wizard-choice-btn:hover {
+    background-color: rgba(255, 255, 255, 0.14) !important;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 14px 48px rgba(230, 35, 58, 0.22);
+    filter: brightness(1.05);
+  }
+}
+
+.ar-reg-wizard-choice-btn:active {
+  transform: scale(0.985);
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow:
+    0 0 0 1px rgba(230, 35, 58, 0.35),
+    inset 0 2px 12px rgba(0, 0, 0, 0.25);
+  filter: brightness(1.08);
+}
+
+.ar-reg-wizard-back-arrow {
+  display: block;
+  flex-shrink: 0;
+  /* Figma asset is oriented “down”; rotate clockwise to point left (←) */
+  transform: rotate(90deg);
+  transform-origin: center center;
+}
+
+/* Wizard header pills — Назад / Выйти */
+.ar-reg-wizard-pill-btn,
+a.ar-reg-wizard-pill-link {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease,
+    filter 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ar-reg-wizard-pill-btn:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.42) !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  a.ar-reg-wizard-pill-link:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.42) !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+}
+
+.ar-reg-wizard-pill-btn:active {
+  transform: scale(0.98);
+  filter: brightness(1.06);
+}
+
+a.ar-reg-wizard-pill-link:active {
+  transform: scale(0.98);
+  filter: brightness(1.06);
+}
+
+/* Name step — Далее */
+.ar-reg-wizard-name-next {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease,
+    opacity 0.2s ease,
+    filter 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ar-reg-wizard-name-next:not(:disabled):hover {
+    filter: brightness(1.08);
+    box-shadow: 0 10px 36px rgba(230, 35, 58, 0.25);
+  }
+}
+
+.ar-reg-wizard-name-next:not(:disabled):active {
+  transform: scale(0.985);
+  filter: brightness(1.05);
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ar-reg-wizard-name-next:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Consent step */
+.ar-reg-wizard-consent-submit {
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.1s ease,
+    box-shadow 0.2s ease,
+    filter 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ar-reg-wizard-consent-submit:not(:disabled):hover {
+    filter: brightness(1.06);
+  }
+}
+
+.ar-reg-wizard-consent-submit:not(:disabled):active {
+  transform: scale(0.985);
+  filter: brightness(0.98);
+  box-shadow: inset 0 3px 14px rgba(0, 0, 0, 0.35);
+}
+
+.ar-reg-wizard-consent-read {
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.1s ease,
+    filter 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ar-reg-wizard-consent-read:hover {
+    border-color: rgba(255, 255, 255, 0.75) !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
+  }
+}
+
+.ar-reg-wizard-consent-read:active {
+  transform: scale(0.98);
+  filter: brightness(1.05);
+}

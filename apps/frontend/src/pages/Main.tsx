@@ -92,7 +92,7 @@ export default function Main() {
             <Link to="/leaderboard" style={styles.btnLeaderboard}>
               Лидерборд
             </Link>
-            <Link to="/start" style={styles.btnParticipate}>
+            <Link to="/register" style={styles.btnParticipate}>
               Принять участие
             </Link>
           </nav>
