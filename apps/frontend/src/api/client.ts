@@ -29,7 +29,7 @@ export const api = {
     runMode?: 'time' | '1km' | '5km';
     runName?: string;
   }) {
-    return request<{ id: string; name: string; phone: string; status: string; createdAt: string }>(
+    return request<{ id: string; firstName: string; lastName: string; phone: string; createdAt: string }>(
       '/register',
       { method: 'POST', body: JSON.stringify(body) }
     );
@@ -49,12 +49,27 @@ export const api = {
     }>('/leaderboard');
   },
 
+  getRunQueue(runType?: RunType) {
+    const q = runType ? `?runType=${encodeURIComponent(runType)}` : '';
+    return request<{
+      entries: Array<{
+        runSessionId: string;
+        queueNumber: number;
+        participantId: string;
+        participantName: string;
+        runType: RunType;
+        runName: string;
+        status: string;
+      }>;
+    }>(`/run/queue${q}`);
+  },
+
   getParticipant(id: string) {
     return request<{
       id: string;
-      name: string;
+      firstName: string;
+      lastName: string;
       phone: string;
-      status: string;
       createdAt: string;
       runs: Array<{
         id: string;
@@ -67,8 +82,8 @@ export const api = {
     }>(`/participants/${id}`);
   },
 
-  submitRunResult(body: { participantId: string; resultTime: number; distance: number; speed: number }) {
-    return request<{ runId: string; participantId: string }>('/run-result', {
+  submitRunResult(body: { runSessionId: string; resultTime: number; distance: number }) {
+    return request<{ runId: string; runSessionId: string; participantId: string }>('/run-result', {
       method: 'POST',
       body: JSON.stringify(body),
     });
@@ -80,6 +95,8 @@ export const api = {
       participantId: string;
       runType: RunType;
       status: string;
+      queueNumber: number;
+      position: number;
       createdAt: string;
     }>('/run/start', {
       method: 'POST',

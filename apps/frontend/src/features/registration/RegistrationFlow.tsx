@@ -140,7 +140,7 @@ export function RegistrationFlow() {
       });
       navigate('/run-select', {
         replace: true,
-        state: { participantId: created.id, participantName: created.name },
+        state: { participantId: created.id, participantFirstName: created.firstName },
       });
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Ошибка регистрации');

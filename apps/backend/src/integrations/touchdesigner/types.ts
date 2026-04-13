@@ -1,22 +1,21 @@
 import type {
   TouchDesignerParticipantPayload,
-  RunResultDto,
+  TouchDesignerRunSessionPayload,
+  RunSessionResultDto,
 } from '@treadmill-challenge/shared';
 
 /**
- * Contract for the TouchDesigner integration (e.g. connection by OCR).
- * Implementations can use OSC, WebSocket, TCP, or a mock that logs.
+ * Contract for the TouchDesigner integration (e.g. OSC).
  */
 export interface TouchDesignerIntegration {
-  /**
-   * Send registration data to TouchDesigner: login, phone, sex, name, name of running.
-   * Called after participant is stored in the database.
-   */
   sendParticipantRegistered(payload: TouchDesignerParticipantPayload): void | Promise<void>;
 
+  /** Primary path: run session created — use runSessionId as main identifier. */
+  sendRunSessionStarted(payload: TouchDesignerRunSessionPayload): void | Promise<void>;
+
   /**
-   * Get run result data from TouchDesigner (e.g. when TouchDesigner pushes via OCR or poll).
-   * Returns the latest run result if available; null if none.
+   * Poll for run result from TouchDesigner (optional).
+   * Prefer POST /api/run-result with runSessionId for pushes.
    */
-  getRunResultFromTouchDesigner(): Promise<RunResultDto | null>;
+  getRunResultFromTouchDesigner(): Promise<RunSessionResultDto | null>;
 }

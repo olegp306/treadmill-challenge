@@ -1,4 +1,9 @@
-import type { RegisterParticipantDto, RunResultDto, RunStartDto } from '@treadmill-challenge/shared';
+import type {
+  RegisterParticipantDto,
+  RunSessionResultDto,
+  RunStartDto,
+  RunType,
+} from '@treadmill-challenge/shared';
 
 export interface ValidationResult<T> {
   success: true;
@@ -28,6 +33,8 @@ export function validateRegisterBody(body: unknown): Validation<RegisterParticip
   const sex = o.sex;
   const runMode = o.runMode;
   const runName = o.runName;
+  const firstName = o.firstName;
+  const lastName = o.lastName;
   if (
     typeof runMode !== 'undefined' &&
     runMode !== 'time' &&
@@ -44,21 +51,22 @@ export function validateRegisterBody(body: unknown): Validation<RegisterParticip
       ...(typeof sex === 'string' && sex.trim() && { sex: sex.trim() }),
       ...(typeof runMode === 'string' && { runMode }),
       ...(typeof runName === 'string' && runName.trim() && { runName: runName.trim() }),
+      ...(typeof firstName === 'string' && firstName.trim() && { firstName: firstName.trim() }),
+      ...(typeof lastName === 'string' && lastName.trim() && { lastName: lastName.trim() }),
     },
   };
 }
 
-export function validateRunResultBody(body: unknown): Validation<RunResultDto> {
+export function validateRunSessionResultBody(body: unknown): Validation<RunSessionResultDto> {
   if (!body || typeof body !== 'object') {
     return { success: false, message: 'Request body must be an object' };
   }
   const o = body as Record<string, unknown>;
-  const participantId = o.participantId;
+  const runSessionId = o.runSessionId;
   const resultTime = o.resultTime;
   const distance = o.distance;
-  const speed = o.speed;
-  if (typeof participantId !== 'string' || !participantId.trim()) {
-    return { success: false, message: 'participantId is required and must be a non-empty string' };
+  if (typeof runSessionId !== 'string' || !runSessionId.trim()) {
+    return { success: false, message: 'runSessionId is required and must be a non-empty string' };
   }
   if (typeof resultTime !== 'number' || resultTime < 0 || !Number.isFinite(resultTime)) {
     return { success: false, message: 'resultTime is required and must be a non-negative number' };
@@ -66,21 +74,17 @@ export function validateRunResultBody(body: unknown): Validation<RunResultDto> {
   if (typeof distance !== 'number' || distance < 0 || !Number.isFinite(distance)) {
     return { success: false, message: 'distance is required and must be a non-negative number' };
   }
-  if (typeof speed !== 'number' || speed < 0 || !Number.isFinite(speed)) {
-    return { success: false, message: 'speed is required and must be a non-negative number' };
-  }
   return {
     success: true,
     data: {
-      participantId: participantId.trim(),
+      runSessionId: runSessionId.trim(),
       resultTime,
       distance,
-      speed,
     },
   };
 }
 
-const RUN_TYPE_VALUES = ['5min', 'golden_km', 'sprint_5km'] as const;
+const RUN_TYPE_VALUES = ['max_5_min', 'golden_km', 'stayer_sprint_5km'] as const;
 
 export function validateRunStartBody(body: unknown): Validation<RunStartDto> {
   if (!body || typeof body !== 'object') {
@@ -95,7 +99,7 @@ export function validateRunStartBody(body: unknown): Validation<RunStartDto> {
   if (typeof runType !== 'string' || !RUN_TYPE_VALUES.includes(runType as (typeof RUN_TYPE_VALUES)[number])) {
     return {
       success: false,
-      message: 'runType must be one of: 5min, golden_km, sprint_5km',
+      message: 'runType must be one of: max_5_min, golden_km, stayer_sprint_5km',
     };
   }
   return {
@@ -105,4 +109,11 @@ export function validateRunStartBody(body: unknown): Validation<RunStartDto> {
       runType: runType as RunStartDto['runType'],
     },
   };
+}
+
+export function validateRunTypeQuery(q: unknown): RunType | null {
+  if (typeof q !== 'string' || !RUN_TYPE_VALUES.includes(q as (typeof RUN_TYPE_VALUES)[number])) {
+    return null;
+  }
+  return q as RunType;
 }

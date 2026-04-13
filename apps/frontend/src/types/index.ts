@@ -1,2 +1,1 @@
-export type { Participant, Run, ParticipantStatus } from '@treadmill-challenge/shared';
-export type { RegisterParticipantDto, RunResultDto } from '@treadmill-challenge/shared';
+export type { Participant, Run } from '@treadmill-challenge/shared';

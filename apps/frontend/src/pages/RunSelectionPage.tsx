@@ -14,11 +14,11 @@ import { api } from '../api/client';
 
 export type RunSelectLocationState = {
   participantId: string;
-  participantName: string;
+  participantFirstName: string;
 };
 
-function displayGreetingName(raw: string): string {
-  const part = raw.trim().split(/\s+/)[0] ?? raw;
+function displayGreetingFirstName(raw: string): string {
+  const part = raw.trim();
   if (!part) return 'участник';
   return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
 }
@@ -30,11 +30,11 @@ export default function RunSelectionPage() {
 
   const participantId = state?.participantId ?? '';
   const greetingName = useMemo(
-    () => displayGreetingName(state?.participantName ?? ''),
-    [state?.participantName]
+    () => displayGreetingFirstName(state?.participantFirstName ?? ''),
+    [state?.participantFirstName]
   );
 
-  const [selected, setSelected] = useState<RunType>('sprint_5km');
+  const [selected, setSelected] = useState<RunType>('stayer_sprint_5km');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,12 +52,13 @@ export default function RunSelectionPage() {
     setLoading(true);
     try {
       const res = await api.startRun({ participantId, runType: selected });
-      navigate('/run/waiting', {
+      navigate('/run/queue', {
         replace: true,
         state: {
           participantId: res.participantId,
           runSessionId: res.runSessionId,
           runType: res.runType,
+          position: res.position,
         },
       });
     } catch (e) {

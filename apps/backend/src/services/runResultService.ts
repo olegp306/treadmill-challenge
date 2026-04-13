@@ -1,17 +1,31 @@
 import { randomUUID } from 'node:crypto';
-import { getDb, participants, runs } from '../db/index.js';
-import type { RunResultDto } from '@treadmill-challenge/shared';
+import { getDb, participants, runs, runSessions } from '../db/index.js';
+import type { RunSessionResultDto } from '@treadmill-challenge/shared';
 
-export function submitRunResult(dto: RunResultDto): { runId: string; participantId: string } {
+function speedFromTimeDistance(resultTime: number, distance: number): number {
+  if (resultTime <= 0) return 0;
+  return (distance / 1000 / resultTime) * 3600;
+}
+
+export function submitRunSessionResult(dto: RunSessionResultDto): {
+  runId: string;
+  runSessionId: string;
+  participantId: string;
+} {
   const db = getDb();
-  const participant = participants.getParticipantById(db, dto.participantId);
+  const session = runSessions.getRunSessionById(db, dto.runSessionId.trim());
+  if (!session) {
+    throw new Error('Run session not found');
+  }
+  const participant = participants.getParticipantById(db, session.participantId);
   if (!participant) {
     throw new Error('Participant not found');
   }
 
+  const speed = speedFromTimeDistance(dto.resultTime, dto.distance);
   const runId = randomUUID();
-  runs.createRun(db, runId, dto.participantId, dto.resultTime, dto.distance, dto.speed);
-  participants.updateParticipantStatus(db, dto.participantId, 'finished');
+  runs.createRun(db, runId, session.participantId, dto.resultTime, dto.distance, speed);
+  runSessions.updateSessionResults(db, session.id, dto.resultTime, dto.distance);
 
-  return { runId, participantId: dto.participantId };
+  return { runId, runSessionId: session.id, participantId: session.participantId };
 }

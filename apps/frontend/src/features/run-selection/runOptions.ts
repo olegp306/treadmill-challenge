@@ -10,7 +10,7 @@ export interface RunOptionDefinition {
 
 export const RUN_OPTIONS: RunOptionDefinition[] = [
   {
-    runType: '5min',
+    runType: 'max_5_min',
     title: 'Максимум за 5 минут',
     description: 'Покажи максимум дистанции за отведённые пять минут.',
   },
@@ -20,12 +20,12 @@ export const RUN_OPTIONS: RunOptionDefinition[] = [
     description: 'Пройди километр и сравни свой результат с другими участниками.',
   },
   {
-    runType: 'sprint_5km',
-    title: 'Стайер-спринт на 5 км',
+    runType: 'stayer_sprint_5km',
+    title: 'Стайер-спринт на 5 километров',
     description: 'Продемонстрируй скоростную выносливость на длинной дистанции.',
   },
 ];
 
 export function getRunOption(runType: RunType): RunOptionDefinition {
-  return RUN_OPTIONS.find((o) => o.runType === runType) ?? RUN_OPTIONS[0];
+  return RUN_OPTIONS.find((o) => o.runType === runType) ?? RUN_OPTIONS[2];
 }

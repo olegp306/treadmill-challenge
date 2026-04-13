@@ -1,27 +1,77 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import type { RunType } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
 import { h, w } from '../arOzio/dimensions';
+import { api } from '../api/client';
 
 /** Figma: AR x OZIO — iPad, «Заставка фоновая» (426:474), canvas 2360×1640 */
 const ASSET_HERO_BG =
   'https://www.figma.com/api/mcp/asset/88913198-2966-446c-af0a-00cfe2c16047';
 
-const queuePeopleCount = 10;
+type QueueCardItem = {
+  runSessionId: string;
+  queueNumber: number;
+  participantName: string;
+  runType: RunType;
+  runName: string;
+  status: string;
+};
 
-const queueCards: {
-  active: boolean;
-  order: string;
-  tag: string;
-  nameLine1: string;
-  nameLine2?: string;
-}[] = [
-  { active: true, order: '01', tag: 'МАКСИМУМ ЗА 5 МИНУТ', nameLine1: 'Алексей', nameLine2: 'Ивановский' },
-  { active: false, order: '02', tag: 'Золотой километр', nameLine1: 'Николай', nameLine2: 'петров' },
-  { active: false, order: '02', tag: 'СТАЙЕР-СПРИНТ НА 5 КМ', nameLine1: 'Николай', nameLine2: 'петров' },
-  { active: false, order: '03', tag: 'СТАЙЕР-СПРИНТ НА 5 КМ', nameLine1: 'Анастасия иванова' },
-];
+function splitNameLines(fullName: string): { nameLine1: string; nameLine2?: string } {
+  const text = fullName.trim();
+  if (!text) return { nameLine1: 'Участник' };
+  const parts = text.split(/\s+/);
+  if (parts.length <= 1) return { nameLine1: parts[0] };
+  return { nameLine1: parts[0], nameLine2: parts.slice(1).join(' ') };
+}
 
 export default function Main() {
+  const [queueCards, setQueueCards] = useState<QueueCardItem[]>([]);
+  const [loadingQueue, setLoadingQueue] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const POLL_MS = 5000;
+
+    async function loadQueue(showLoading: boolean): Promise<void> {
+      if (showLoading) {
+        setLoadingQueue(true);
+      }
+      try {
+        const data = await api.getRunQueue();
+        if (!cancelled) {
+          const sorted = [...data.entries].sort((a, b) => a.queueNumber - b.queueNumber);
+          setQueueCards(sorted);
+        }
+      } catch {
+        if (!cancelled) {
+          setQueueCards([]);
+        }
+      } finally {
+        if (!cancelled && showLoading) {
+          setLoadingQueue(false);
+        }
+      }
+    }
+
+    void loadQueue(true);
+    const timer = window.setInterval(() => {
+      void loadQueue(false);
+    }, POLL_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const queuePeopleCount = queueCards.length;
+  const activeRunningId = useMemo(
+    () => queueCards.find((card) => card.status === 'running')?.runSessionId ?? null,
+    [queueCards]
+  );
+
   return (
     <ArOzioViewport>
       <div style={styles.page}>
@@ -53,36 +103,52 @@ export default function Main() {
                 </p>
 
                 <div className="ar-ozio-cards-scroll" style={styles.cardsRow}>
-                  {queueCards.map((card, i) => (
-                    <article
-                      key={`${card.order}-${i}`}
-                      style={{
-                        ...styles.card,
-                        ...(card.active ? styles.cardActive : styles.cardInactive),
-                      }}
-                    >
+                  {!loadingQueue && queueCards.length === 0 ? (
+                    <article style={{ ...styles.card, ...styles.cardInactive }}>
                       <div style={styles.cardTop}>
-                        <span style={styles.cardOrder}>{card.order}</span>
-                        <span
+                        <span style={styles.cardOrder}>--</span>
+                        <span style={{ ...styles.tagPill, ...styles.tagPillInactive }}>Очередь</span>
+                      </div>
+                      <div style={styles.cardName}>Пока нет участников</div>
+                    </article>
+                  ) : (
+                    queueCards.map((card, i) => {
+                      const isActive = activeRunningId
+                        ? card.runSessionId === activeRunningId
+                        : i === 0;
+                      const { nameLine1, nameLine2 } = splitNameLines(card.participantName);
+                      return (
+                        <article
+                          key={card.runSessionId}
                           style={{
-                            ...styles.tagPill,
-                            ...(card.active ? styles.tagPillActive : styles.tagPillInactive),
+                            ...styles.card,
+                            ...(isActive ? styles.cardActive : styles.cardInactive),
                           }}
                         >
-                          {card.tag}
-                        </span>
-                      </div>
-                      <div style={styles.cardName}>
-                        <span>{card.nameLine1}</span>
-                        {card.nameLine2 != null && (
-                          <>
-                            <br />
-                            <span>{card.nameLine2}</span>
-                          </>
-                        )}
-                      </div>
-                    </article>
-                  ))}
+                          <div style={styles.cardTop}>
+                            <span style={styles.cardOrder}>{String(card.queueNumber).padStart(2, '0')}</span>
+                            <span
+                              style={{
+                                ...styles.tagPill,
+                                ...(isActive ? styles.tagPillActive : styles.tagPillInactive),
+                              }}
+                            >
+                              {card.runName}
+                            </span>
+                          </div>
+                          <div style={styles.cardName}>
+                            <span>{nameLine1}</span>
+                            {nameLine2 != null && (
+                              <>
+                                <br />
+                                <span>{nameLine2}</span>
+                              </>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>

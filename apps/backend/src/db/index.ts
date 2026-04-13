@@ -1,5 +1,6 @@
 import { initDb, type Db } from './sqlite.js';
 import { initSchema } from './schema.js';
+import { runMigrations } from './migrations.js';
 import * as participants from './participants.js';
 import * as runs from './runs.js';
 import * as runSessions from './runSessions.js';
@@ -10,6 +11,7 @@ export async function ensureDb(): Promise<Db> {
   if (!db) {
     db = await initDb();
     initSchema(db);
+    runMigrations(db);
   }
   return db;
 }

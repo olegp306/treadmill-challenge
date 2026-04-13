@@ -40,7 +40,8 @@ export interface LeaderboardEntry {
 
 export function getLeaderboardRuns(db: Db, limit = 50): LeaderboardEntry[] {
   const rows = db.prepare(`
-    SELECT r.id, r.participantId, r.resultTime, r.distance, r.speed, r.createdAt, p.name as participantName
+    SELECT r.id, r.participantId, r.resultTime, r.distance, r.speed, r.createdAt,
+      TRIM(COALESCE(p.firstName, '') || ' ' || COALESCE(p.lastName, '')) as participantName
     FROM runs r
     JOIN participants p ON p.id = r.participantId
     ORDER BY r.resultTime DESC, r.distance DESC
