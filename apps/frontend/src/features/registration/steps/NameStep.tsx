@@ -1,6 +1,6 @@
 import { useId, useLayoutEffect, useRef } from 'react';
-import { h } from '../../../arOzio/dimensions';
 import type { RegistrationFormData } from '../types';
+import { PrimaryButton, StepBody, UnderlineField } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 
@@ -42,131 +42,70 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
 
   return (
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод имени">
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            minHeight: 0,
-            overflow: 'hidden',
+      <StepBody variant="short">
+        <h2 style={{ ...reg.ageFigmaQuestion, ...reg.stepTitle }}>Как тебя зовут?</h2>
+        {stepError ? (
+          <p style={{ ...reg.error, ...reg.stepErrorCentered }}>{stepError}</p>
+        ) : null}
+        <form
+          style={reg.nameFormRow}
+          onSubmit={(e) => {
+            e.preventDefault();
+            tryAdvance();
           }}
         >
-          <h2 style={{ ...reg.ageFigmaQuestion, marginTop: 0, marginBottom: h(12) }}>
-            Как тебя зовут?
-          </h2>
-          {stepError ? (
-            <p style={{ ...reg.error, marginTop: 0, marginBottom: h(12) }}>{stepError}</p>
-          ) : null}
-          <form
-            style={{ ...reg.nameFormRow, marginTop: h(12) }}
-            onSubmit={(e) => {
-              e.preventDefault();
-              tryAdvance();
-            }}
-          >
-            <div style={reg.nameFieldsCluster}>
-              <div style={reg.nameFieldCol}>
-                <label
-                  htmlFor={idFirst}
-                  style={{
-                    ...reg.nameFieldLabel,
-                    cursor: 'pointer',
-                    ...(firstErr ? { color: '#f85149' } : {}),
-                  }}
-                >
-                  Имя
-                </label>
-                <input
-                  ref={firstRef}
-                  id={idFirst}
-                  type="text"
-                  name="givenName"
-                  autoComplete="given-name"
-                  autoCapitalize="words"
-                  autoCorrect="on"
-                  spellCheck={false}
-                  inputMode="text"
-                  enterKeyHint="next"
-                  autoFocus
-                  value={form.firstName}
-                  aria-label="Имя"
-                  onChange={(e) => onChange({ firstName: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      lastRef.current?.focus();
-                    }
-                  }}
-                  style={{
-                    ...reg.wizardFieldUnderline,
-                    ...reg.nameFieldInput,
-                    ...(firstErr ? reg.wizardFieldUnderlineError : {}),
-                  }}
-                />
-              </div>
-              <div style={reg.nameFieldCol}>
-                <label
-                  htmlFor={idLast}
-                  style={{
-                    ...reg.nameFieldLabel,
-                    cursor: 'pointer',
-                    ...(lastErr ? { color: '#f85149' } : {}),
-                  }}
-                >
-                  Фамилия
-                </label>
-                <input
-                  ref={lastRef}
-                  id={idLast}
-                  type="text"
-                  name="familyName"
-                  autoComplete="family-name"
-                  autoCapitalize="words"
-                  autoCorrect="on"
-                  spellCheck={false}
-                  inputMode="text"
-                  enterKeyHint="done"
-                  value={form.lastName}
-                  aria-label="Фамилия"
-                  onChange={(e) => onChange({ lastName: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && filled) {
-                      e.preventDefault();
-                      tryAdvance();
-                    }
-                  }}
-                  style={{
-                    ...reg.wizardFieldUnderline,
-                    ...reg.nameFieldInput,
-                    ...(lastErr ? reg.wizardFieldUnderlineError : {}),
-                  }}
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              className="ar-reg-wizard-name-next"
-              style={{
-                ...reg.nameNextBtn,
-                ...(filled ? reg.nameNextBtnActive : {}),
+          <div style={reg.nameFieldsCluster}>
+            <UnderlineField
+              ref={firstRef}
+              id={idFirst}
+              label="Имя"
+              hasError={firstErr}
+              name="givenName"
+              autoComplete="given-name"
+              autoCapitalize="words"
+              autoCorrect="on"
+              spellCheck={false}
+              inputMode="text"
+              enterKeyHint="next"
+              autoFocus
+              value={form.firstName}
+              aria-label="Имя"
+              onChange={(e) => onChange({ firstName: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  lastRef.current?.focus();
+                }
               }}
-              disabled={!filled}
-            >
-              Далее
-            </button>
-          </form>
-        </div>
-      </div>
+            />
+            <UnderlineField
+              ref={lastRef}
+              id={idLast}
+              label="Фамилия"
+              hasError={lastErr}
+              name="familyName"
+              autoComplete="family-name"
+              autoCapitalize="words"
+              autoCorrect="on"
+              spellCheck={false}
+              inputMode="text"
+              enterKeyHint="done"
+              value={form.lastName}
+              aria-label="Фамилия"
+              onChange={(e) => onChange({ lastName: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && filled) {
+                  e.preventDefault();
+                  tryAdvance();
+                }
+              }}
+            />
+          </div>
+          <PrimaryButton variant="next" type="submit" active={filled} disabled={!filled}>
+            Далее
+          </PrimaryButton>
+        </form>
+      </StepBody>
     </WizardStepShell>
   );
 }

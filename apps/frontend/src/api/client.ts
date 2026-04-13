@@ -1,3 +1,5 @@
+import type { RunType } from '@treadmill-challenge/shared';
+
 const API_BASE = '/api';
 
 async function request<T>(
@@ -69,6 +71,25 @@ export const api = {
     return request<{ runId: string; participantId: string }>('/run-result', {
       method: 'POST',
       body: JSON.stringify(body),
+    });
+  },
+
+  startRun(body: { participantId: string; runType: RunType }) {
+    return request<{
+      runSessionId: string;
+      participantId: string;
+      runType: RunType;
+      status: string;
+      createdAt: string;
+    }>('/run/start', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+
+  devFinishRun() {
+    return request<{ runSessionId: string; runId: string; participantId: string }>('/run/dev-finish', {
+      method: 'POST',
     });
   },
 };

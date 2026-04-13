@@ -1,3 +1,4 @@
+import { OptionButton, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 
@@ -15,37 +16,14 @@ export function GenderStep({ onSelectGender, onBack }: Props) {
       aria-label="Выбор пола"
       footer={
         <div style={reg.ageFigmaButtonRow}>
-          <button
-            type="button"
-            className="ar-reg-wizard-choice-btn"
-            style={reg.ageFigmaChoiceBtn}
-            onClick={() => onSelectGender('male')}
-          >
-            Мужской
-          </button>
-          <button
-            type="button"
-            className="ar-reg-wizard-choice-btn"
-            style={reg.ageFigmaChoiceBtn}
-            onClick={() => onSelectGender('female')}
-          >
-            Женский
-          </button>
+          <OptionButton onClick={() => onSelectGender('male')}>Мужской</OptionButton>
+          <OptionButton onClick={() => onSelectGender('female')}>Женский</OptionButton>
         </div>
       }
     >
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2cqh 0',
-        }}
-      >
+      <StepBody variant="tall">
         <h2 style={reg.ageFigmaQuestion}>Выбери свой пол</h2>
-      </div>
+      </StepBody>
     </WizardStepShell>
   );
 }

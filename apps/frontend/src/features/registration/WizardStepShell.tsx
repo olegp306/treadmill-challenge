@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { h, w } from '../../arOzio/dimensions';
 import { WIZARD_ASSETS } from './registrationWizardAssets';
 import { reg } from './registrationStyles';
+import { WizardCardBackdrop } from './WizardCardBackdrop';
 
 type Props = {
   onBack: () => void;
@@ -24,7 +25,7 @@ export function WizardStepShell({ onBack, variant, children, footer, ...rest }: 
   return (
     <div style={reg.ageFigmaRoot} {...rest}>
       <div style={mainStyle}>
-        <WizardBackground />
+        <WizardCardBackdrop />
         <div style={reg.ageFigmaStack}>
           <header style={reg.ageFigmaHeader}>
             <button
@@ -60,23 +61,6 @@ export function WizardStepShell({ onBack, variant, children, footer, ...rest }: 
         </div>
       </div>
       {footer}
-    </div>
-  );
-}
-
-function WizardBackground() {
-  return (
-    <div style={reg.ageFigmaBgHost} aria-hidden>
-      <div style={reg.ageFigmaBgWash} />
-      <div
-        style={{
-          ...reg.ageFigmaBgRectLayer,
-          backgroundImage: `url('${WIZARD_ASSETS.rectangle}')`,
-        }}
-      />
-      <div style={reg.ageFigmaBgSmoothSheen} />
-      <img src={WIZARD_ASSETS.ellipse27} alt="" style={reg.ageFigmaBlobA} />
-      <img src={WIZARD_ASSETS.ellipse28} alt="" style={reg.ageFigmaBlobB} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useId, useMemo } from 'react';
 import type { RegistrationFormData } from '../types';
 import { digitsOnly } from '../phoneValidation';
+import { PrimaryButton, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 
@@ -29,70 +30,64 @@ export function PhoneStep({ form, onChange, onNext, onBack, stepError, fieldErro
 
   return (
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод номера телефона">
-      <div style={reg.phoneFormInner}>
-        <div style={reg.phoneFormContent}>
-          <h2 style={{ ...reg.ageFigmaQuestion, marginTop: 0, marginBottom: 0, textAlign: 'center' }}>
-            Введите свой номер телефона
-          </h2>
-          {stepError ? (
-            <p style={{ ...reg.error, marginTop: 0, marginBottom: 0, textAlign: 'center' }}>{stepError}</p>
-          ) : null}
+      <StepBody variant="short">
+        <h2 style={{ ...reg.ageFigmaQuestion, ...reg.stepTitle }}>
+          Введите свой номер телефона
+        </h2>
+        {stepError ? (
+          <p style={{ ...reg.error, ...reg.stepErrorCentered }}>{stepError}</p>
+        ) : null}
 
-          <div style={reg.phoneFieldButtonRow}>
-            <div
-              style={{
-                ...reg.phoneInputUnderlineWrap,
-                ...(fieldError ? reg.wizardFieldUnderlineError : {}),
+        <div style={reg.phoneFieldButtonRow}>
+          <div
+            style={{
+              ...reg.phoneInputUnderlineWrap,
+              ...(fieldError ? reg.wizardFieldUnderlineError : {}),
+            }}
+          >
+            <span style={reg.phoneCountryPrefix} aria-hidden>
+              +7
+            </span>
+            <input
+              id={idPhone}
+              type="tel"
+              name="participantPhone"
+              inputMode="tel"
+              autoComplete="tel"
+              enterKeyHint="done"
+              placeholder="9991234567"
+              aria-label="Номер телефона"
+              value={digits}
+              onChange={(e) => {
+                const next = toNationalMobileDigits(e.target.value);
+                onChange({ phone: next });
               }}
-            >
-              <span style={reg.phoneCountryPrefix} aria-hidden>
-                +7
-              </span>
-              <input
-                id={idPhone}
-                type="tel"
-                name="participantPhone"
-                inputMode="tel"
-                autoComplete="tel"
-                enterKeyHint="done"
-                placeholder="9991234567"
-                aria-label="Номер телефона"
-                value={digits}
-                onChange={(e) => {
-                  const next = toNationalMobileDigits(e.target.value);
-                  onChange({ phone: next });
-                }}
-                style={{
-                  border: 'none',
-                  borderRadius: 0,
-                  backgroundColor: 'transparent',
-                  outline: 'none',
-                  boxShadow: 'none',
-                  WebkitAppearance: 'none' as const,
-                  appearance: 'none' as const,
-                  margin: 0,
-                  padding: 0,
-                  ...reg.phoneDigitsInput,
-                }}
-              />
-            </div>
-
-            <button
-              type="button"
-              className="ar-reg-wizard-name-next"
               style={{
-                ...reg.nameNextBtn,
-                ...reg.phoneNextBtn,
-                ...(filled ? reg.nameNextBtnActive : {}),
+                border: 'none',
+                borderRadius: 0,
+                backgroundColor: 'transparent',
+                outline: 'none',
+                boxShadow: 'none',
+                WebkitAppearance: 'none' as const,
+                appearance: 'none' as const,
+                margin: 0,
+                padding: 0,
+                ...reg.phoneDigitsInput,
               }}
-              disabled={!filled}
-              onClick={onNext}
-            >
-              Далее
-            </button>
+            />
           </div>
+
+          <PrimaryButton
+            variant="next"
+            active={filled}
+            disabled={!filled}
+            style={reg.phoneNextBtn}
+            onClick={onNext}
+          >
+            Далее
+          </PrimaryButton>
         </div>
-      </div>
+      </StepBody>
     </WizardStepShell>
   );
 }

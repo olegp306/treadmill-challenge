@@ -450,17 +450,6 @@ export const reg: Record<string, CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'stretch',
   },
-  ageFigmaContentArea: {
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingLeft: w(8),
-    paddingRight: w(8),
-    boxSizing: 'border-box',
-  },
   ageFigmaHeader: {
     display: 'grid',
     gridTemplateColumns: '1fr auto 1fr',
@@ -611,6 +600,49 @@ export const reg: Record<string, CSSProperties> = {
   wizardBodyShort: {
     overflow: 'hidden',
   },
+  /** Short steps: outer + inner centering (name, phone). */
+  stepBodyOuter: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    overflow: 'hidden',
+    boxSizing: 'border-box',
+  },
+  stepBodyInner: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    minHeight: 0,
+    overflow: 'hidden',
+    boxSizing: 'border-box',
+    gap: h(24),
+    alignItems: 'stretch',
+    width: '100%',
+    maxWidth: w(1760),
+    alignSelf: 'center',
+  },
+  /** Tall steps: single centered column (age unanswered, gender). */
+  stepBodyTall: {
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '2cqh 0',
+    boxSizing: 'border-box',
+    width: '100%',
+  },
+  stepTitle: {
+    margin: 0,
+    textAlign: 'center' as const,
+  },
+  stepErrorCentered: {
+    margin: 0,
+    textAlign: 'center' as const,
+  },
   /** Underline-only inputs (Figma) — no fill, no side borders. */
   wizardFieldUnderline: {
     border: 'none',
@@ -639,7 +671,7 @@ export const reg: Record<string, CSSProperties> = {
     justifyContent: 'space-between',
     gap: w(32),
     width: '100%',
-    marginTop: h(24),
+    marginTop: 0,
     flexShrink: 0,
   },
   nameFieldsCluster: {
@@ -746,31 +778,6 @@ export const reg: Record<string, CSSProperties> = {
     maxWidth: w(470),
     width: 'auto',
   },
-  /** Figma 691:2534 — title + field row vertically centered in short wizard body. */
-  phoneFormInner: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    gap: h(24),
-    width: '100%',
-    flex: 1,
-    minHeight: 0,
-    paddingTop: h(16),
-    paddingBottom: h(16),
-    overflow: 'hidden',
-    boxSizing: 'border-box',
-  },
-  phoneFormContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: h(24),
-    width: '100%',
-    maxWidth: w(1760),
-    alignSelf: 'center',
-    flexShrink: 0,
-  },
   /** Phone underline + «Далее» on one row, baseline-aligned (Figma). */
   phoneFieldButtonRow: {
     display: 'flex',
@@ -836,8 +843,8 @@ export const reg: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: h(97),
-    paddingTop: h(16),
-    paddingBottom: h(16),
+    paddingTop: h(24),
+    paddingBottom: h(24),
     paddingLeft: w(16),
     paddingRight: w(16),
     boxSizing: 'border-box',
@@ -845,6 +852,13 @@ export const reg: Record<string, CSSProperties> = {
     maxWidth: w(1760),
     alignSelf: 'center',
     minHeight: 0,
+  },
+  consentErrorStack: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: h(8),
+    width: '100%',
   },
   /** Figma 691:2854 — two lines; slightly smaller than 82px frame text for clean wrap on iPad. */
   consentHeading: {
@@ -867,24 +881,44 @@ export const reg: Record<string, CSSProperties> = {
   consentCardsRow: {
     display: 'flex',
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    // flexWrap: 'wrap',
     gap: w(40),
     justifyContent: 'center',
+    alignItems: 'stretch',
     width: '100%',
   },
-  consentCard: {
-    flex: '1 1 380px',
+  consentCardRules: {
+    flex: '0 1 auto',
+    width: 'auto',
     maxWidth: w(820),
+    minHeight: h(200),
     backgroundColor: 'rgba(217,217,217,0.1)',
     borderRadius: w(40),
-    padding: `${h(20)} ${w(50)} ${h(20)} ${w(30)}`,
+    padding: `${h(32)} ${w(50)} ${h(32)} ${w(30)}`,
     boxSizing: 'border-box',
+    overflow: 'visible',
+    alignSelf: 'stretch',
+  },
+  /** Wider card so «Обработка персональных данных» stays on one line; may differ from rules card width. */
+  consentCardPrivacy: {
+    flex: '0 1 auto',
+    width: 'auto',
+    minWidth: w(1180),
+    maxWidth: w(1500),
+    minHeight: h(200),
+    backgroundColor: 'rgba(217,217,217,0.1)',
+    borderRadius: w(40),
+    padding: `${h(32)} ${w(50)} ${h(32)} ${w(30)}`,
+    boxSizing: 'border-box',
+    overflow: 'visible',
+    alignSelf: 'stretch',
   },
   consentCardInner: {
     display: 'flex',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: w(34),
+    minHeight: 0,
   },
   /** Figma 717:550 / 744:270 — 120×120, r36; unchecked = empty well; checked = red tile + check (718:570). */
   consentCheckLabel: {
@@ -935,7 +969,7 @@ export const reg: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: h(20),
     alignItems: 'flex-start',
-    minWidth: 0,
+    minWidth: 'min-content',
     flex: '1 1 auto',
   },
   consentCardTitle: {

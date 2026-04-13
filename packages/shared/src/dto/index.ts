@@ -1,3 +1,5 @@
+import type { RunType } from '../types/run.js';
+
 /**
  * Request body for participant registration.
  */
@@ -37,4 +39,10 @@ export interface RunResultDto {
   resultTime: number; // seconds
   distance: number;   // meters
   speed: number;      // e.g. km/h
+}
+
+/** Start a queued run session after hero selection. */
+export interface RunStartDto {
+  participantId: string;
+  runType: RunType;
 }

@@ -1,4 +1,4 @@
-import type { RegisterParticipantDto, RunResultDto } from '@treadmill-challenge/shared';
+import type { RegisterParticipantDto, RunResultDto, RunStartDto } from '@treadmill-challenge/shared';
 
 export interface ValidationResult<T> {
   success: true;
@@ -76,6 +76,33 @@ export function validateRunResultBody(body: unknown): Validation<RunResultDto> {
       resultTime,
       distance,
       speed,
+    },
+  };
+}
+
+const RUN_TYPE_VALUES = ['5min', 'golden_km', 'sprint_5km'] as const;
+
+export function validateRunStartBody(body: unknown): Validation<RunStartDto> {
+  if (!body || typeof body !== 'object') {
+    return { success: false, message: 'Request body must be an object' };
+  }
+  const o = body as Record<string, unknown>;
+  const participantId = o.participantId;
+  const runType = o.runType;
+  if (typeof participantId !== 'string' || !participantId.trim()) {
+    return { success: false, message: 'participantId is required and must be a non-empty string' };
+  }
+  if (typeof runType !== 'string' || !RUN_TYPE_VALUES.includes(runType as (typeof RUN_TYPE_VALUES)[number])) {
+    return {
+      success: false,
+      message: 'runType must be one of: 5min, golden_km, sprint_5km',
+    };
+  }
+  return {
+    success: true,
+    data: {
+      participantId: participantId.trim(),
+      runType: runType as RunStartDto['runType'],
     },
   };
 }

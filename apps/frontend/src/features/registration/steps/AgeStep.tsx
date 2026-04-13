@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom';
-import { h } from '../../../arOzio/dimensions';
+import { OptionButton, OptionChoiceLink, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import type { AgeChoice } from '../types';
 import { reg } from '../registrationStyles';
@@ -16,40 +15,18 @@ export function AgeStep({ ageChoice, onAgeChoice, onBack }: Props) {
 
   const footer = !blocked ? (
     <div style={reg.ageFigmaButtonRow}>
-      <button
-        type="button"
-        className="ar-reg-wizard-choice-btn"
-        style={reg.ageFigmaChoiceBtn}
-        onClick={() => onAgeChoice('yes')}
-      >
-        Да
-      </button>
-      <button
-        type="button"
-        className="ar-reg-wizard-choice-btn"
-        style={reg.ageFigmaChoiceBtn}
-        onClick={() => onAgeChoice('no')}
-      >
-        Нет
-      </button>
+      <OptionButton onClick={() => onAgeChoice('yes')}>Да</OptionButton>
+      <OptionButton onClick={() => onAgeChoice('no')}>Нет</OptionButton>
     </div>
   ) : (
     <div style={reg.ageFigmaButtonRow}>
-      <Link to="/" className="ar-reg-wizard-choice-btn ar-reg-wizard-choice-link" style={reg.ageFigmaChoiceBtnLink}>
-        На главную
-      </Link>
+      <OptionChoiceLink to="/">На главную</OptionChoiceLink>
     </div>
   );
 
   return (
     <WizardStepShell variant="tall" onBack={onBack} footer={footer} aria-label="Подтверждение возраста">
-      <div
-        style={{
-          ...reg.ageFigmaContentArea,
-          marginTop: blocked ? h(48) : h(314),
-          flex: 1,
-        }}
-      >
+      <StepBody variant="tall">
         {blocked ? (
           <p style={reg.ageFigmaBlockedText}>
             Участие в забеге доступно только совершеннолетним. Вы можете вернуться на главную.
@@ -60,7 +37,7 @@ export function AgeStep({ ageChoice, onAgeChoice, onBack }: Props) {
             <span style={{ display: 'block' }}>18 лет?</span>
           </h2>
         )}
-      </div>
+      </StepBody>
     </WizardStepShell>
   );
 }

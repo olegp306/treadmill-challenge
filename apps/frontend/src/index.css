@@ -143,6 +143,25 @@ button {
   filter: brightness(1.08);
 }
 
+/* Run selection — format tabs */
+.ar-reg-run-tab {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.1s ease,
+    filter 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ar-reg-run-tab:hover:not([aria-selected='true']) {
+    filter: brightness(1.08);
+  }
+}
+
+.ar-reg-run-tab:active {
+  transform: scale(0.985);
+}
+
 .ar-reg-wizard-back-arrow {
   display: block;
   flex-shrink: 0;
@@ -186,6 +205,12 @@ a.ar-reg-wizard-pill-link:active {
   filter: brightness(1.06);
 }
 
+.ar-reg-wizard-pill-btn:focus-visible,
+a.ar-reg-wizard-pill-link:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 3px;
+}
+
 /* Name step — Далее */
 .ar-reg-wizard-name-next {
   transition:
@@ -215,6 +240,11 @@ a.ar-reg-wizard-pill-link:active {
   opacity: 0.55;
 }
 
+.ar-reg-wizard-name-next:focus-visible:not(:disabled) {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 4px;
+}
+
 /* Consent step */
 .ar-reg-wizard-consent-submit {
   transition:
@@ -235,6 +265,21 @@ a.ar-reg-wizard-pill-link:active {
   transform: scale(0.985);
   filter: brightness(0.98);
   box-shadow: inset 0 3px 14px rgba(0, 0, 0, 0.35);
+}
+
+.ar-reg-wizard-consent-submit:focus-visible:not(:disabled) {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 4px;
+}
+
+.ar-reg-wizard-choice-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.42);
+  outline-offset: 3px;
+}
+
+a.ar-reg-wizard-choice-link:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.42);
+  outline-offset: 3px;
 }
 
 .ar-reg-wizard-consent-read {

@@ -25,3 +25,5 @@ export interface Run {
   speed: number;      // e.g. km/h
   createdAt: string;  // ISO date string
 }
+
+export type { RunSession, RunSessionStatus, RunType } from './run.js';

@@ -131,15 +131,16 @@ export function RegistrationFlow() {
 
     setLoading(true);
     try {
-      await api.register({
+      const created = await api.register({
         name,
         phone: phoneResult.normalized,
         sex: form.gender,
         runMode: 'time',
         runName: 'Регистрация',
       });
-      navigate('/result', {
-        state: { message: 'Регистрация успешна! Вы в очереди.' },
+      navigate('/run-select', {
+        replace: true,
+        state: { participantId: created.id, participantName: created.name },
       });
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Ошибка регистрации');

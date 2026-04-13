@@ -5,6 +5,8 @@ import StartRunningPage from '../pages/StartRunningPage';
 import LeaderboardPage from '../pages/LeaderboardPage';
 import ResultPage from '../pages/ResultPage';
 import Main from '../pages/Main';
+import RunSelectionPage from '../pages/RunSelectionPage';
+import RunWaitingPage from '../pages/RunWaitingPage';
 
 export function AppRoutes() {
   return (
@@ -15,6 +17,8 @@ export function AppRoutes() {
       <Route path="/start" element={<StartRunningPage />} />
       <Route path="/leaderboard" element={<LeaderboardPage />} />
       <Route path="/result" element={<ResultPage />} />
+      <Route path="/run-select" element={<RunSelectionPage />} />
+      <Route path="/run/waiting" element={<RunWaitingPage />} />
     </Routes>
   );
 }

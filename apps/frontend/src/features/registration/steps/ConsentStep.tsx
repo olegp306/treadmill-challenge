@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { RegistrationFormData } from '../types';
 import { ConsentLegalModal } from '../ConsentLegalModal';
+import { ConsentCheckboxRow, PrimaryButton } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 
@@ -15,21 +16,6 @@ type Props = {
 };
 
 type DocModal = 'rules' | 'privacy' | null;
-
-function ConsentCheckIcon() {
-  return (
-    <svg width="55%" height="55%" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
-      <path
-        fill="none"
-        stroke="#ffffff"
-        strokeWidth={2.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M5 13l5 5L20 7"
-      />
-    </svg>
-  );
-}
 
 /** Figma 691:2835 / 718:570 / 952:1341 — согласия + модалки «Ознакомиться». */
 export function ConsentStep({
@@ -46,18 +32,15 @@ export function ConsentStep({
 
   const footer = (
     <div style={reg.ageFigmaButtonRow}>
-      <button
-        type="button"
-        className="ar-reg-wizard-consent-submit"
-        style={{
-          ...reg.consentSubmitBtn,
-          ...(canSubmit ? reg.consentSubmitBtnReady : reg.consentSubmitBtnDisabled),
-        }}
+      <PrimaryButton
+        variant="cta"
+        ready={canSubmit}
         disabled={!canSubmit}
+        loading={loading}
         onClick={onSubmit}
       >
-        {loading ? 'Отправка…' : 'Принять участие'}
-      </button>
+        Принять участие
+      </PrimaryButton>
     </div>
   );
 
@@ -68,73 +51,36 @@ export function ConsentStep({
           <span style={reg.consentHeadingLine}>Подтверди согласие</span>
           <span style={reg.consentHeadingLine}>на участие в забеге</span>
         </h2>
-        {stepError ? <p style={reg.error}>{stepError}</p> : null}
-        {submitError ? <p style={reg.error}>{submitError}</p> : null}
+        {stepError || submitError ? (
+          <div style={reg.consentErrorStack}>
+            {stepError ? (
+              <p style={{ ...reg.error, ...reg.stepErrorCentered, margin: 0 }}>{stepError}</p>
+            ) : null}
+            {submitError ? (
+              <p style={{ ...reg.error, ...reg.stepErrorCentered, margin: 0 }}>{submitError}</p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div style={reg.consentCardsRow}>
-          <div style={reg.consentCard}>
-            <div style={reg.consentCardInner}>
-              <label className="ar-reg-consent-check-label" style={reg.consentCheckLabel}>
-                <input
-                  type="checkbox"
-                  style={reg.consentCheckInput}
-                  checked={form.consentParticipation}
-                  onChange={(e) => onChange({ consentParticipation: e.target.checked })}
-                  aria-label="Согласие с правилами участия"
-                />
-                <span className="ar-reg-consent-check-frame" style={reg.consentCheckFrame}>
-                  {form.consentParticipation ? (
-                    <span style={reg.consentCheckMark}>
-                      <ConsentCheckIcon />
-                    </span>
-                  ) : null}
-                </span>
-              </label>
-              <div style={reg.consentCardTextCol}>
-                <p style={reg.consentCardTitle}>Правила участия</p>
-                <button
-                  type="button"
-                  className="ar-reg-wizard-consent-read"
-                  style={reg.consentReadBtn}
-                  onClick={() => setDocModal('rules')}
-                >
-                  Ознакомиться
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div style={reg.consentCard}>
-            <div style={reg.consentCardInner}>
-              <label className="ar-reg-consent-check-label" style={reg.consentCheckLabel}>
-                <input
-                  type="checkbox"
-                  style={reg.consentCheckInput}
-                  checked={form.consentPersonalData}
-                  onChange={(e) => onChange({ consentPersonalData: e.target.checked })}
-                  aria-label="Согласие на обработку персональных данных"
-                />
-                <span className="ar-reg-consent-check-frame" style={reg.consentCheckFrame}>
-                  {form.consentPersonalData ? (
-                    <span style={reg.consentCheckMark}>
-                      <ConsentCheckIcon />
-                    </span>
-                  ) : null}
-                </span>
-              </label>
-              <div style={reg.consentCardTextCol}>
-                <p style={reg.consentCardTitle}>Обработка перс. данных</p>
-                <button
-                  type="button"
-                  className="ar-reg-wizard-consent-read"
-                  style={reg.consentReadBtn}
-                  onClick={() => setDocModal('privacy')}
-                >
-                  Ознакомиться
-                </button>
-              </div>
-            </div>
-          </div>
+          <ConsentCheckboxRow
+            checked={form.consentParticipation}
+            onChange={onChange}
+            field="consentParticipation"
+            title="Правила участия"
+            checkAriaLabel="Согласие с правилами участия"
+            cardVariant="rules"
+            onRead={() => setDocModal('rules')}
+          />
+          <ConsentCheckboxRow
+            checked={form.consentPersonalData}
+            onChange={onChange}
+            field="consentPersonalData"
+            title="Обработка перс. данных"
+            checkAriaLabel="Согласие на обработку персональных данных"
+            cardVariant="privacy"
+            onRead={() => setDocModal('privacy')}
+          />
         </div>
       </div>
 
