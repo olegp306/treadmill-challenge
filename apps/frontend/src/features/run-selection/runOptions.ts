@@ -21,7 +21,7 @@ export const RUN_OPTIONS: RunOptionDefinition[] = [
   },
   {
     runType: 'stayer_sprint_5km',
-    title: 'Стайер-спринт на 5 километров',
+    title: 'Стайер-спринт на 5 км',
     description: 'Продемонстрируй скоростную выносливость на длинной дистанции.',
   },
 ];

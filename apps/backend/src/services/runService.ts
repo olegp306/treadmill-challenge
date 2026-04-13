@@ -18,7 +18,7 @@ function fakeMetrics(runType: RunType): { resultTime: number; distance: number; 
 const RUN_DISPLAY_NAME: Record<RunType, string> = {
   max_5_min: 'Максимум за 5 минут',
   golden_km: 'Золотой километр',
-  stayer_sprint_5km: 'Стайер-спринт на 5 километров',
+  stayer_sprint_5km: 'Стайер-спринт на 5 км',
 };
 
 export function runDisplayName(runType: RunType): string {
