@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import type { RunType } from '@treadmill-challenge/shared';
+import type { RunTypeId } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
 import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
@@ -14,7 +14,7 @@ import { useQueue } from '../hooks/useQueue';
 export type RunQueueLocationState = {
   participantId: string;
   runSessionId: string;
-  runType: RunType;
+  runTypeId: RunTypeId;
   position: number;
 };
 
@@ -114,18 +114,18 @@ export default function RunQueuePage() {
 
   const participantId = state?.participantId ?? '';
   const runSessionId = state?.runSessionId ?? '';
-  const runType = state?.runType ?? null;
+  const runTypeId = state?.runTypeId ?? null;
   const position = state?.position ?? 0;
 
-  const { entries, loading, error } = useQueue(runType);
+  const { entries, loading, error } = useQueue(runTypeId);
   const [devMsg, setDevMsg] = useState<string | null>(null);
   const [devLoading, setDevLoading] = useState(false);
 
   useEffect(() => {
-    if (!participantId || !runSessionId || !runType) {
+    if (!participantId || !runSessionId || runTypeId === null) {
       navigate('/', { replace: true });
     }
-  }, [participantId, runSessionId, runType, navigate]);
+  }, [participantId, runSessionId, runTypeId, navigate]);
 
   const handleDevFinish = async () => {
     setDevMsg(null);
@@ -140,7 +140,7 @@ export default function RunQueuePage() {
     }
   };
 
-  if (!participantId || !runSessionId || !runType) {
+  if (!participantId || !runSessionId || runTypeId === null) {
     return null;
   }
 

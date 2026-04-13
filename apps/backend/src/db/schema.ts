@@ -25,6 +25,7 @@ export function initSchema(db: Db): void {
     CREATE TABLE IF NOT EXISTS run_sessions (
       id TEXT PRIMARY KEY,
       participantId TEXT NOT NULL,
+      runTypeId INTEGER NOT NULL,
       runType TEXT NOT NULL,
       status TEXT NOT NULL,
       queueNumber INTEGER NOT NULL,
@@ -37,6 +38,6 @@ export function initSchema(db: Db): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_run_sessions_participant ON run_sessions(participantId);
-    CREATE INDEX IF NOT EXISTS idx_run_sessions_queue ON run_sessions(runType, status, queueNumber);
+    CREATE INDEX IF NOT EXISTS idx_run_sessions_queue ON run_sessions(runTypeId, status, queueNumber);
   `);
 }

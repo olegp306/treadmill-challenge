@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { RunType } from '@treadmill-challenge/shared';
+import type { RunTypeId } from '@treadmill-challenge/shared';
+import { getRunTypeShortName } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
 import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
@@ -13,8 +14,8 @@ type QueueCardItem = {
   runSessionId: string;
   queueNumber: number;
   participantName: string;
-  runType: RunType;
-  runName: string;
+  runTypeId: RunTypeId;
+  runType: string;
   status: string;
 };
 
@@ -133,7 +134,7 @@ export default function Main() {
                                 ...(isActive ? styles.tagPillActive : styles.tagPillInactive),
                               }}
                             >
-                              {card.runName}
+                              {getRunTypeShortName(card.runTypeId)}
                             </span>
                           </div>
                           <div style={styles.cardName}>

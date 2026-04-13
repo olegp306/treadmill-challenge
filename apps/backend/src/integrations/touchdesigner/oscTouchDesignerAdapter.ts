@@ -59,8 +59,9 @@ export const oscTouchDesignerAdapter: TouchDesignerIntegration = {
         { type: 's', value: payload.firstName },
         { type: 's', value: payload.lastName },
         { type: 's', value: payload.phone },
-        { type: 's', value: payload.runType },
-        { type: 's', value: payload.runName },
+        { type: 'i', value: payload.runTypeId },
+        { type: 's', value: payload.runTypeName },
+        { type: 's', value: payload.runTypeKey },
       ],
     });
 

@@ -1,4 +1,4 @@
-import type { RunType } from '../types/run.js';
+import type { RunTypeId, RunTypeKey } from '../constants/runTypes.js';
 
 /**
  * Request body for participant registration.
@@ -35,15 +35,18 @@ export interface TouchDesignerRunSessionPayload {
   firstName: string;
   lastName: string;
   phone: string;
-  runType: RunType;
-  /** Human-readable run title for TD / OSC. */
-  runName: string;
+  /** Required stable id (0 | 1 | 2). */
+  runTypeId: RunTypeId;
+  /** Full display name from RUN_TYPES. */
+  runTypeName: string;
+  /** Key string, e.g. max_5_min — for OSC / debugging. */
+  runTypeKey: RunTypeKey;
 }
 
 /** Start a queued run session after hero selection. */
 export interface RunStartDto {
   participantId: string;
-  runType: RunType;
+  runTypeId: RunTypeId;
 }
 
 /**

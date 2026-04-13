@@ -1,4 +1,5 @@
 import type { Db } from './sqlite.js';
+import { runTypeKeyStringToId } from '@treadmill-challenge/shared';
 
 function tableColumns(db: Db, table: string): Set<string> {
   const rows = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
@@ -67,6 +68,16 @@ function migrateRunSessions(db: Db): void {
   const cols = tableColumns(db, 'run_sessions');
   if (!cols.size) return;
 
+  if (!cols.has('runTypeId')) {
+    db.exec(`ALTER TABLE run_sessions ADD COLUMN runTypeId INTEGER NOT NULL DEFAULT 0`);
+    const rows = db.prepare('SELECT id, runType FROM run_sessions').all() as { id: string; runType: string }[];
+    const upd = db.prepare('UPDATE run_sessions SET runTypeId = ? WHERE id = ?');
+    for (const r of rows) {
+      const id = runTypeKeyStringToId(r.runType) ?? 0;
+      upd.run(id, r.id);
+    }
+  }
+
   if (!cols.has('queueNumber')) {
     db.exec(`
       ALTER TABLE run_sessions ADD COLUMN queueNumber INTEGER NOT NULL DEFAULT 0;
@@ -88,13 +99,13 @@ function migrateRunSessions(db: Db): void {
 }
 
 function assignQueueNumbers(db: Db): void {
-  const types = db.prepare(`SELECT DISTINCT runType FROM run_sessions`).all() as { runType: string }[];
-  for (const { runType } of types) {
+  const types = db.prepare(`SELECT DISTINCT runTypeId FROM run_sessions`).all() as { runTypeId: number }[];
+  for (const { runTypeId } of types) {
     const rows = db
       .prepare(
-        `SELECT id FROM run_sessions WHERE runType = ? ORDER BY createdAt ASC, id ASC`
+        `SELECT id FROM run_sessions WHERE runTypeId = ? ORDER BY createdAt ASC, id ASC`
       )
-      .all(runType) as { id: string }[];
+      .all(runTypeId) as { id: string }[];
     let n = 1;
     const upd = db.prepare(`UPDATE run_sessions SET queueNumber = ? WHERE id = ?`);
     for (const r of rows) {

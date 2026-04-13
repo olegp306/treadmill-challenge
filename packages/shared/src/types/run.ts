@@ -1,5 +1,7 @@
-/** Run format (API + DB). */
-export type RunType = 'max_5_min' | 'golden_km' | 'stayer_sprint_5km';
+import type { RunTypeId, RunTypeKey } from '../constants/runTypes.js';
+
+/** @deprecated Use RunTypeKey — kept as alias for existing imports. */
+export type RunType = RunTypeKey;
 
 /** Run session lifecycle — never delete rows; only update status. */
 export type RunSessionStatus = 'queued' | 'running' | 'finished' | 'cancelled';
@@ -7,7 +9,10 @@ export type RunSessionStatus = 'queued' | 'running' | 'finished' | 'cancelled';
 export interface RunSession {
   id: string;
   participantId: string;
-  runType: RunType;
+  /** Canonical numeric run format (0 | 1 | 2). */
+  runTypeId: RunTypeId;
+  /** Denormalized key string (same as RUN_TYPES[].key). */
+  runType: RunTypeKey;
   status: RunSessionStatus;
   queueNumber: number;
   resultTime: number | null;

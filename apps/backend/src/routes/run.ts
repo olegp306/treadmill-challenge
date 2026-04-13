@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { devFinishLatestQueuedRun, getQueue, startRunSession } from '../services/runService.js';
-import { validateRunStartBody, validateRunTypeQuery } from '../utils/validation.js';
+import { parseRunQueueFilterQuery, validateRunStartBody } from '../utils/validation.js';
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 
 function allowDevFinish(): boolean {
@@ -27,16 +27,16 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get('/api/run/queue', async (request: FastifyRequest, reply: FastifyReply) => {
-    const rawRunType = (request.query as { runType?: unknown })?.runType;
-    const runType = typeof rawRunType === 'undefined' ? undefined : validateRunTypeQuery(rawRunType);
-    if (typeof rawRunType !== 'undefined' && !runType) {
-      return reply
-        .status(400)
-        .send({ error: 'runType query must be max_5_min, golden_km, or stayer_sprint_5km' });
+    const runType = parseRunQueueFilterQuery(
+      (request.query ?? {}) as Record<string, unknown>
+    );
+    if (runType === 'INVALID') {
+      return reply.status(400).send({
+        error: 'Invalid queue filter: use runTypeId (0|1|2) or runType (max_5_min, golden_km, stayer_sprint_5km)',
+      });
     }
-    const queueRunType = runType ?? undefined;
     try {
-      const data = getQueue(queueRunType);
+      const data = getQueue(runType);
       return reply.status(200).send(data);
     } catch (err) {
       request.log.error(err);

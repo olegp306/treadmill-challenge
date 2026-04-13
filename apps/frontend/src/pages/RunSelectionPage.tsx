@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import type { RunType } from '@treadmill-challenge/shared';
+import type { RunTypeId } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
 import { RegistrationLayout } from '../features/registration/RegistrationLayout';
 import { PrimaryButton } from '../features/registration/components';
@@ -34,7 +34,7 @@ export default function RunSelectionPage() {
     [state?.participantFirstName]
   );
 
-  const [selected, setSelected] = useState<RunType>('stayer_sprint_5km');
+  const [selected, setSelected] = useState<RunTypeId>(2);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,13 +51,13 @@ export default function RunSelectionPage() {
     setError(null);
     setLoading(true);
     try {
-      const res = await api.startRun({ participantId, runType: selected });
+      const res = await api.startRun({ participantId, runTypeId: selected });
       navigate('/run/queue', {
         replace: true,
         state: {
           participantId: res.participantId,
           runSessionId: res.runSessionId,
-          runType: res.runType,
+          runTypeId: res.runTypeId,
           position: res.position,
         },
       });

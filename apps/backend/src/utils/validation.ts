@@ -2,8 +2,8 @@ import type {
   RegisterParticipantDto,
   RunSessionResultDto,
   RunStartDto,
-  RunType,
 } from '@treadmill-challenge/shared';
+import { getRunTypeByKey, isRunTypeId, type RunTypeId } from '@treadmill-challenge/shared';
 
 export interface ValidationResult<T> {
   success: true;
@@ -84,36 +84,46 @@ export function validateRunSessionResultBody(body: unknown): Validation<RunSessi
   };
 }
 
-const RUN_TYPE_VALUES = ['max_5_min', 'golden_km', 'stayer_sprint_5km'] as const;
-
 export function validateRunStartBody(body: unknown): Validation<RunStartDto> {
   if (!body || typeof body !== 'object') {
     return { success: false, message: 'Request body must be an object' };
   }
   const o = body as Record<string, unknown>;
   const participantId = o.participantId;
-  const runType = o.runType;
+  const rawRunTypeId = o.runTypeId;
   if (typeof participantId !== 'string' || !participantId.trim()) {
     return { success: false, message: 'participantId is required and must be a non-empty string' };
   }
-  if (typeof runType !== 'string' || !RUN_TYPE_VALUES.includes(runType as (typeof RUN_TYPE_VALUES)[number])) {
-    return {
-      success: false,
-      message: 'runType must be one of: max_5_min, golden_km, stayer_sprint_5km',
-    };
+  const n = typeof rawRunTypeId === 'number' ? rawRunTypeId : Number(rawRunTypeId);
+  if (!Number.isFinite(n) || !isRunTypeId(n)) {
+    return { success: false, message: 'runTypeId must be 0, 1, or 2' };
   }
   return {
     success: true,
     data: {
       participantId: participantId.trim(),
-      runType: runType as RunStartDto['runType'],
+      runTypeId: n as RunTypeId,
     },
   };
 }
 
-export function validateRunTypeQuery(q: unknown): RunType | null {
-  if (typeof q !== 'string' || !RUN_TYPE_VALUES.includes(q as (typeof RUN_TYPE_VALUES)[number])) {
-    return null;
+/** Parse optional queue filter: `runTypeId` (number) or legacy `runType` (key string). */
+export function parseRunQueueFilterQuery(query: Record<string, unknown>): RunTypeId | undefined | 'INVALID' {
+  const hasId = query.runTypeId !== undefined && query.runTypeId !== '';
+  const hasKey = typeof query.runType === 'string' && query.runType.length > 0;
+  if (!hasId && !hasKey) {
+    return undefined;
   }
-  return q as RunType;
+  if (hasId) {
+    const n = Number(query.runTypeId);
+    if (!isRunTypeId(n)) {
+      return 'INVALID';
+    }
+    return n as RunTypeId;
+  }
+  const rt = getRunTypeByKey(query.runType as string);
+  if (!rt) {
+    return 'INVALID';
+  }
+  return rt.id;
 }

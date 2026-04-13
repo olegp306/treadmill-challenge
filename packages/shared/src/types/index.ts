@@ -21,4 +21,5 @@ export interface Run {
   createdAt: string; // ISO date string
 }
 
-export type { RunSession, RunSessionStatus, RunType } from './run.js';
+export type { RunSession, RunSessionStatus } from './run.js';
+export type { RunType, RunTypeId, RunTypeKey } from '../constants/runTypes.js';

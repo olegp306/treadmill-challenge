@@ -1,31 +1,21 @@
-import type { RunType } from '@treadmill-challenge/shared';
+import { RUN_TYPES, type RunTypeId, type RunTypeKey } from '@treadmill-challenge/shared';
 
-export type { RunType };
+export type { RunType, RunTypeId, RunTypeKey } from '@treadmill-challenge/shared';
 
 export interface RunOptionDefinition {
-  runType: RunType;
+  runTypeId: RunTypeId;
+  runType: RunTypeKey;
   title: string;
   description: string;
 }
 
-export const RUN_OPTIONS: RunOptionDefinition[] = [
-  {
-    runType: 'max_5_min',
-    title: 'Максимум за 5 минут',
-    description: 'Покажи максимум дистанции за отведённые пять минут.',
-  },
-  {
-    runType: 'golden_km',
-    title: 'Золотой километр',
-    description: 'Пройди километр и сравни свой результат с другими участниками.',
-  },
-  {
-    runType: 'stayer_sprint_5km',
-    title: 'Стайер-спринт на 5 км',
-    description: 'Продемонстрируй скоростную выносливость на длинной дистанции.',
-  },
-];
+export const RUN_OPTIONS: RunOptionDefinition[] = RUN_TYPES.map((t) => ({
+  runTypeId: t.id,
+  runType: t.key,
+  title: t.name,
+  description: t.description,
+}));
 
-export function getRunOption(runType: RunType): RunOptionDefinition {
-  return RUN_OPTIONS.find((o) => o.runType === runType) ?? RUN_OPTIONS[2];
+export function getRunOption(runTypeId: RunTypeId): RunOptionDefinition {
+  return RUN_OPTIONS.find((o) => o.runTypeId === runTypeId) ?? RUN_OPTIONS[2];
 }

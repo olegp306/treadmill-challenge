@@ -1,4 +1,4 @@
-import type { RunType } from '@treadmill-challenge/shared';
+import type { RunTypeId } from '@treadmill-challenge/shared';
 
 const API_BASE = '/api';
 
@@ -49,15 +49,16 @@ export const api = {
     }>('/leaderboard');
   },
 
-  getRunQueue(runType?: RunType) {
-    const q = runType ? `?runType=${encodeURIComponent(runType)}` : '';
+  getRunQueue(runTypeId?: RunTypeId) {
+    const q = runTypeId !== undefined ? `?runTypeId=${runTypeId}` : '';
     return request<{
       entries: Array<{
         runSessionId: string;
         queueNumber: number;
         participantId: string;
         participantName: string;
-        runType: RunType;
+        runTypeId: RunTypeId;
+        runType: string;
         runName: string;
         status: string;
       }>;
@@ -89,11 +90,13 @@ export const api = {
     });
   },
 
-  startRun(body: { participantId: string; runType: RunType }) {
+  startRun(body: { participantId: string; runTypeId: RunTypeId }) {
     return request<{
       runSessionId: string;
       participantId: string;
-      runType: RunType;
+      runTypeId: RunTypeId;
+      runType: string;
+      runName: string;
       status: string;
       queueNumber: number;
       position: number;
