@@ -256,3 +256,39 @@ a.ar-reg-wizard-pill-link:active {
   transform: scale(0.98);
   filter: brightness(1.05);
 }
+
+.ar-reg-wizard-consent-read:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.65);
+  outline-offset: 4px;
+}
+
+/* Consent checkboxes — Figma 717:550 / 718:570 */
+.ar-reg-consent-check-label:active .ar-reg-consent-check-frame {
+  transform: scale(0.96);
+}
+
+.ar-reg-consent-check-label:focus-within .ar-reg-consent-check-frame {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+/* Consent legal modal close */
+.ar-reg-consent-modal-close {
+  transition:
+    filter 0.18s ease,
+    transform 0.1s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ar-reg-consent-modal-close:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.ar-reg-consent-modal-close:active {
+  transform: scale(0.96);
+}
+
+.ar-reg-consent-modal-close:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { RegistrationFormData } from '../types';
+import { ConsentLegalModal } from '../ConsentLegalModal';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 
@@ -12,7 +14,24 @@ type Props = {
   submitError?: string | null;
 };
 
-/** Figma 691:2835 — согласия + Принять участие. */
+type DocModal = 'rules' | 'privacy' | null;
+
+function ConsentCheckIcon() {
+  return (
+    <svg width="55%" height="55%" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
+      <path
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth={2.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 13l5 5L20 7"
+      />
+    </svg>
+  );
+}
+
+/** Figma 691:2835 / 718:570 / 952:1341 — согласия + модалки «Ознакомиться». */
 export function ConsentStep({
   form,
   onChange,
@@ -23,6 +42,7 @@ export function ConsentStep({
   submitError,
 }: Props) {
   const canSubmit = form.consentParticipation && form.consentPersonalData && !loading;
+  const [docModal, setDocModal] = useState<DocModal>(null);
 
   const footer = (
     <div style={reg.ageFigmaButtonRow}>
@@ -45,9 +65,8 @@ export function ConsentStep({
     <WizardStepShell variant="tall" onBack={onBack} footer={footer} aria-label="Подтверждение согласий">
       <div style={reg.consentCenter}>
         <h2 style={reg.consentHeading}>
-          Подтверди согласие
-          <br />
-          на участие в забеге
+          <span style={reg.consentHeadingLine}>Подтверди согласие</span>
+          <span style={reg.consentHeadingLine}>на участие в забеге</span>
         </h2>
         {stepError ? <p style={reg.error}>{stepError}</p> : null}
         {submitError ? <p style={reg.error}>{submitError}</p> : null}
@@ -55,7 +74,7 @@ export function ConsentStep({
         <div style={reg.consentCardsRow}>
           <div style={reg.consentCard}>
             <div style={reg.consentCardInner}>
-              <div style={reg.consentCheckWrap}>
+              <label className="ar-reg-consent-check-label" style={reg.consentCheckLabel}>
                 <input
                   type="checkbox"
                   style={reg.consentCheckInput}
@@ -63,23 +82,21 @@ export function ConsentStep({
                   onChange={(e) => onChange({ consentParticipation: e.target.checked })}
                   aria-label="Согласие с правилами участия"
                 />
-                <div
-                  style={{
-                    ...reg.consentCheckBox,
-                    ...(form.consentParticipation ? reg.consentCheckBoxOn : {}),
-                  }}
-                  aria-hidden
-                />
-              </div>
+                <span className="ar-reg-consent-check-frame" style={reg.consentCheckFrame}>
+                  {form.consentParticipation ? (
+                    <span style={reg.consentCheckMark}>
+                      <ConsentCheckIcon />
+                    </span>
+                  ) : null}
+                </span>
+              </label>
               <div style={reg.consentCardTextCol}>
                 <p style={reg.consentCardTitle}>Правила участия</p>
                 <button
                   type="button"
                   className="ar-reg-wizard-consent-read"
                   style={reg.consentReadBtn}
-                  onClick={() => {
-                    /* TODO: открыть PDF / модальное окно с правилами */
-                  }}
+                  onClick={() => setDocModal('rules')}
                 >
                   Ознакомиться
                 </button>
@@ -89,7 +106,7 @@ export function ConsentStep({
 
           <div style={reg.consentCard}>
             <div style={reg.consentCardInner}>
-              <div style={reg.consentCheckWrap}>
+              <label className="ar-reg-consent-check-label" style={reg.consentCheckLabel}>
                 <input
                   type="checkbox"
                   style={reg.consentCheckInput}
@@ -97,23 +114,21 @@ export function ConsentStep({
                   onChange={(e) => onChange({ consentPersonalData: e.target.checked })}
                   aria-label="Согласие на обработку персональных данных"
                 />
-                <div
-                  style={{
-                    ...reg.consentCheckBox,
-                    ...(form.consentPersonalData ? reg.consentCheckBoxOn : {}),
-                  }}
-                  aria-hidden
-                />
-              </div>
+                <span className="ar-reg-consent-check-frame" style={reg.consentCheckFrame}>
+                  {form.consentPersonalData ? (
+                    <span style={reg.consentCheckMark}>
+                      <ConsentCheckIcon />
+                    </span>
+                  ) : null}
+                </span>
+              </label>
               <div style={reg.consentCardTextCol}>
                 <p style={reg.consentCardTitle}>Обработка перс. данных</p>
                 <button
                   type="button"
                   className="ar-reg-wizard-consent-read"
                   style={reg.consentReadBtn}
-                  onClick={() => {
-                    /* TODO: открыть политику конфиденциальности */
-                  }}
+                  onClick={() => setDocModal('privacy')}
                 >
                   Ознакомиться
                 </button>
@@ -122,6 +137,16 @@ export function ConsentStep({
           </div>
         </div>
       </div>
+
+      <ConsentLegalModal
+        open={docModal !== null}
+        title={
+          docModal === 'privacy'
+            ? 'Политика обработки персональных данных'
+            : 'Правила участия'
+        }
+        onClose={() => setDocModal(null)}
+      />
     </WizardStepShell>
   );
 }
