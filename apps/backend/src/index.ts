@@ -8,6 +8,7 @@ import runResultRoutes from './routes/runResult.js';
 import touchdesignerRoutes from './routes/touchdesigner.js';
 import runRoutes from './routes/run.js';
 import adminRoutes from './routes/admin.js';
+import eventsRoutes from './routes/events.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -20,7 +21,7 @@ async function main() {
   await app.register(cors, {
     origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Pin'],
   });
 
   await app.register(registerRoutes);
@@ -29,6 +30,7 @@ async function main() {
   await app.register(runResultRoutes);
   await app.register(touchdesignerRoutes);
   await app.register(runRoutes);
+  await app.register(eventsRoutes);
   await app.register(adminRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));

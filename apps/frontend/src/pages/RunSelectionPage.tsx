@@ -11,6 +11,7 @@ import { RunSelectionShell } from '../features/run-selection/RunSelectionShell';
 import { RunTypeTabBar } from '../features/run-selection/RunTypeTabBar';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { api } from '../api/client';
+import { logEvent, setLoggedRunSessionId } from '../logging/logEvent';
 
 export type RunSelectLocationState = {
   participantId: string;
@@ -52,10 +53,12 @@ export default function RunSelectionPage() {
     if (!participantId) return;
     setError(null);
     setLoading(true);
+    logEvent('button_click_start', { runTypeId: selected }, { participantId });
     try {
       const res = await api.startRun({ participantId, runTypeId: selected });
       if (!res.success) {
         if (res.reason === 'queue_full') {
+          logEvent('queue_rejected', { runTypeId: selected, reason: 'queue_full' }, { participantId });
           navigate('/run/queue-busy', {
             replace: true,
             state: {
@@ -67,6 +70,15 @@ export default function RunSelectionPage() {
           });
         }
         return;
+      }
+      setLoggedRunSessionId(res.runSessionId);
+      logEvent(
+        'run_started',
+        { runTypeId: res.runTypeId, demoMode: res.demoMode, queuePosition: res.position },
+        { participantId: res.participantId, runSessionId: res.runSessionId }
+      );
+      if (!res.demoMode) {
+        logEvent('added_to_queue', { runTypeId: res.runTypeId, queuePosition: res.position }, { participantId: res.participantId, runSessionId: res.runSessionId });
       }
       if (res.demoMode) {
         navigate('/run/demo', {
@@ -93,7 +105,9 @@ export default function RunSelectionPage() {
         },
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось начать забег');
+      const msg = e instanceof Error ? e.message : 'Не удалось начать забег';
+      logEvent('error_event', { context: 'run_start', message: msg }, { participantId });
+      setError(msg);
     } finally {
       setLoading(false);
     }

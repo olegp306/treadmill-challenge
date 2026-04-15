@@ -415,4 +415,22 @@ export const api = {
       body: JSON.stringify(body),
     });
   },
+
+  adminEvents(params?: { limit?: number; type?: string }) {
+    const q = new URLSearchParams();
+    if (params?.limit != null) q.set('limit', String(params.limit));
+    if (params?.type?.trim()) q.set('type', params.type.trim());
+    const qs = q.toString();
+    return adminRequest<{
+      events: Array<{
+        id: string;
+        createdAt: string;
+        type: string;
+        sessionId: string;
+        participantId: string | null;
+        runSessionId: string | null;
+        payloadPreview: string;
+      }>;
+    }>(`/admin/events${qs ? `?${qs}` : ''}`);
+  },
 };

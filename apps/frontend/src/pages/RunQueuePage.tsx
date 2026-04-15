@@ -8,6 +8,7 @@ import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
 import { PrimaryButton } from '../features/registration/components';
 import { rs } from '../features/run-selection/runSelectionStyles';
+import { logEvent } from '../logging/logEvent';
 
 export type RunQueueLocationState = {
   participantId: string;
@@ -61,6 +62,11 @@ export default function RunQueuePage() {
     setDevLoading(true);
     try {
       const res = await api.devFinishRun();
+      logEvent(
+        'run_finished',
+        { runTypeId, source: 'dev_finish', runIdPrefix: res.runId.slice(0, 8) },
+        { participantId, runSessionId: res.runSessionId }
+      );
       setDevMsg(`Забег завершён (dev). runId: ${res.runId.slice(0, 8)}…`);
     } catch (e) {
       setDevMsg(e instanceof Error ? e.message : 'Ошибка');

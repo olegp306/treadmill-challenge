@@ -18,6 +18,23 @@ export function runMigrations(db: Db): void {
   migrateParticipants(db);
   migrateRunSessions(db);
   migrateCompetitionsAndSessions(db);
+  migrateEvents(db);
+}
+
+function migrateEvents(db: Db): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS events (
+      id TEXT PRIMARY KEY,
+      sessionId TEXT NOT NULL,
+      participantId TEXT,
+      runSessionId TEXT,
+      type TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_events_created ON events(createdAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
+  `);
 }
 
 function migrateParticipants(db: Db): void {

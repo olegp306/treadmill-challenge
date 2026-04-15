@@ -14,6 +14,7 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminCompetitionPage from '../pages/admin/AdminCompetitionPage';
 import AdminArchivePage from '../pages/admin/AdminArchivePage';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
+import AdminEventsPage from '../pages/admin/AdminEventsPage';
 import { RequireAdmin } from '../features/admin/RequireAdmin';
 
 export function AppRoutes() {
@@ -60,6 +61,14 @@ export function AppRoutes() {
         element={
           <RequireAdmin>
             <AdminSettingsPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/admin/events"
+        element={
+          <RequireAdmin>
+            <AdminEventsPage />
           </RequireAdmin>
         }
       />

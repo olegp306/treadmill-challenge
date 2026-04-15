@@ -9,6 +9,7 @@ import {
 } from '@treadmill-challenge/shared';
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 import { adminSettings, competitions, getDb, participants, runs, runSessions } from '../db/index.js';
+import * as events from '../db/events.js';
 import { resetTestData } from '../services/adminService.js';
 import {
   assignWinnerManually,
@@ -561,5 +562,35 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         })),
       };
     });
+
+    scoped.get('/api/admin/events', async (request) => {
+      const db = getDb();
+      const q = (request.query ?? {}) as Record<string, unknown>;
+      const limitRaw = q.limit != null ? Number(q.limit) : 50;
+      const limit = Number.isFinite(limitRaw) ? limitRaw : 50;
+      const typeFilter = typeof q.type === 'string' && q.type.trim() ? q.type.trim() : null;
+      const rows = events.listRecentEvents(db, limit, typeFilter);
+      return {
+        events: rows.map((r) => ({
+          id: r.id,
+          createdAt: r.createdAt,
+          type: r.type,
+          sessionId: r.sessionId,
+          participantId: r.participantId,
+          runSessionId: r.runSessionId,
+          payloadPreview: formatEventPayloadPreview(r.payload),
+        })),
+      };
+    });
   });
+}
+
+function formatEventPayloadPreview(payloadJson: string): string {
+  try {
+    const o = JSON.parse(payloadJson) as unknown;
+    const s = JSON.stringify(o);
+    return s.length > 240 ? `${s.slice(0, 240)}…` : s;
+  } catch {
+    return payloadJson.length > 240 ? `${payloadJson.slice(0, 240)}…` : payloadJson;
+  }
 }

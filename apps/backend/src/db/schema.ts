@@ -60,5 +60,18 @@ export function initSchema(db: Db): void {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS events (
+      id TEXT PRIMARY KEY,
+      sessionId TEXT NOT NULL,
+      participantId TEXT,
+      runSessionId TEXT,
+      type TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      createdAt TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_events_created ON events(createdAt DESC);
+    CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
   `);
 }

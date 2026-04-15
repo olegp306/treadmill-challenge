@@ -38,6 +38,9 @@ export function AdminLayout({
           <Link to="/admin/settings" style={navBtn}>
             Настройки
           </Link>
+          <Link to="/admin/events" style={navBtn}>
+            События
+          </Link>
           <button type="button" onClick={exit} style={{ ...navBtn, cursor: 'pointer' }}>
             Выход
           </button>

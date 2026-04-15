@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
 import { h } from '../arOzio/dimensions';
 import { api } from '../api/client';
+import { clearLoggedRunSessionId, logEvent } from '../logging/logEvent';
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
@@ -49,13 +50,17 @@ export default function RunLeaveQueueConfirmPage() {
 
   const handleConfirmLeave = async () => {
     if (!runSessionId || !participantId) return;
+    logEvent('button_click_leave_queue', { runSessionId }, { participantId, runSessionId });
     setLeaveError(null);
     setLoading(true);
     try {
       await api.leaveQueue({ runSessionId, participantId });
+      clearLoggedRunSessionId();
       navigate('/', { replace: true });
     } catch (e) {
-      setLeaveError(e instanceof Error ? e.message : 'Не удалось выйти из очереди');
+      const msg = e instanceof Error ? e.message : 'Не удалось выйти из очереди';
+      logEvent('error_event', { context: 'leave_queue', message: msg }, { participantId, runSessionId });
+      setLeaveError(msg);
       setLoading(false);
     }
   };

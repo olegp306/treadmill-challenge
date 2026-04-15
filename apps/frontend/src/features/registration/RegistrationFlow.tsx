@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
+import { logEvent, setLoggedParticipantId } from '../../logging/logEvent';
 import { RegistrationLayout } from './RegistrationLayout';
 import { validateNamePart } from './nameValidation';
 import { validatePhoneForSubmit } from './phoneValidation';
@@ -87,6 +88,7 @@ export function RegistrationFlow() {
     }
     setFieldError(false);
     setStepError(null);
+    logEvent('form_submit_name', { firstLen: firstResult.normalized.length, lastLen: lastResult.normalized.length });
     patchForm({
       firstName: firstResult.normalized,
       lastName: lastResult.normalized,
@@ -105,6 +107,7 @@ export function RegistrationFlow() {
     }
     setFieldError(false);
     setStepError(null);
+    logEvent('form_submit_phone', { phoneDigitsLen: result.normalized.length });
     patchForm({ phone: result.normalized });
     setStep(RegistrationStep.Consent);
   }, [form.phone, patchForm]);
@@ -150,6 +153,8 @@ export function RegistrationFlow() {
         runMode: 'time',
         runName: 'Регистрация',
       });
+      setLoggedParticipantId(created.id);
+      logEvent('registration_completed', { participantId: created.id, sex: form.gender });
       navigate('/run-select', {
         replace: true,
         state: {
@@ -159,7 +164,9 @@ export function RegistrationFlow() {
         },
       });
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Ошибка регистрации');
+      const msg = e instanceof Error ? e.message : 'Ошибка регистрации';
+      logEvent('error_event', { context: 'registration_submit', message: msg });
+      setSubmitError(msg);
     } finally {
       setLoading(false);
     }

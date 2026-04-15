@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { generateDemoMetrics } from '@treadmill-challenge/shared';
 import type { RunTypeId } from '@treadmill-challenge/shared';
@@ -10,6 +10,7 @@ import { PrimaryButton } from '../features/registration/components';
 import { RunSelectionShell } from '../features/run-selection/RunSelectionShell';
 import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
+import { logEvent } from '../logging/logEvent';
 
 export type DemoRunLocationState = {
   participantId: string;
@@ -35,6 +36,7 @@ export default function DemoRunPage() {
   const [loadingName, setLoadingName] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loggedDemoGen = useRef(false);
 
   const runSessionId = state?.runSessionId ?? '';
   const runTypeId = state?.runTypeId ?? 0;
@@ -45,6 +47,12 @@ export default function DemoRunPage() {
     () => (runSessionId ? generateDemoMetrics(runTypeId, runSessionId) : { resultTime: 0, distance: 0 }),
     [runSessionId, runTypeId]
   );
+
+  useEffect(() => {
+    if (!runSessionId || loggedDemoGen.current) return;
+    loggedDemoGen.current = true;
+    logEvent('demo_run_generated', { runTypeId }, { participantId, runSessionId });
+  }, [runSessionId, runTypeId, participantId]);
 
   useEffect(() => {
     if (!participantId || !runSessionId) {
@@ -89,6 +97,11 @@ export default function DemoRunPage() {
         resultTime: metrics.resultTime,
         distance: metrics.distance,
       });
+      logEvent(
+        'run_finished',
+        { runTypeId, resultTime: metrics.resultTime, distance: metrics.distance },
+        { participantId, runSessionId }
+      );
       const q = new URLSearchParams({
         runTypeId: String(runTypeId),
         gender: participantSex,
@@ -96,7 +109,9 @@ export default function DemoRunPage() {
       });
       navigate(`/leaderboard?${q.toString()}`, { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сохранить результат');
+      const msg = e instanceof Error ? e.message : 'Не удалось сохранить результат';
+      logEvent('error_event', { context: 'demo_submit_result', message: msg }, { participantId, runSessionId });
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
