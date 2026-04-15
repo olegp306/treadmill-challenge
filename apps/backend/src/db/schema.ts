@@ -50,7 +50,8 @@ export function initSchema(db: Db): void {
       startedAt TEXT NOT NULL,
       stoppedAt TEXT,
       winnerParticipantId TEXT,
-      winnerRunSessionId TEXT
+      winnerRunSessionId TEXT,
+      queuePaused INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_comp_active_pair
@@ -68,10 +69,13 @@ export function initSchema(db: Db): void {
       runSessionId TEXT,
       type TEXT NOT NULL,
       payload TEXT NOT NULL,
+      readableMessage TEXT NOT NULL DEFAULT '',
       createdAt TEXT NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS idx_events_created ON events(createdAt DESC);
     CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
+    CREATE INDEX IF NOT EXISTS idx_events_session ON events(sessionId);
+    CREATE INDEX IF NOT EXISTS idx_events_participant ON events(participantId);
   `);
 }

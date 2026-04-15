@@ -134,6 +134,9 @@ export const api = {
     if (res.status === 409 && data.reason === 'queue_full') {
       return { success: false as const, reason: 'queue_full' as const };
     }
+    if (res.status === 409 && data.reason === 'queue_paused') {
+      return { success: false as const, reason: 'queue_paused' as const };
+    }
     if (!res.ok) {
       throw new Error((data as { error?: string }).error ?? `Request failed: ${res.status}`);
     }
@@ -188,7 +191,9 @@ export const api = {
           stoppedAt: string | null;
           winnerParticipantId: string | null;
           winnerRunSessionId: string | null;
+          queuePaused: boolean;
         } | null;
+        queuePaused: boolean;
         queuedCount: number;
         leader: {
           participantName: string;
@@ -221,6 +226,20 @@ export const api = {
     });
   },
 
+  adminStopAndStartCompetition(body: { runTypeId: RunTypeId; gender: Gender }) {
+    return adminRequest<{ previous: unknown; next: unknown }>('/admin/competitions/stop-and-start', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+
+  adminSetCompetitionQueuePause(competitionId: string, paused: boolean) {
+    return adminRequest<{ competition: unknown }>(`/admin/competitions/${competitionId}/queue-pause`, {
+      method: 'POST',
+      body: JSON.stringify({ paused }),
+    });
+  },
+
   adminCompetitionDetail(id: string) {
     return adminRequest<{
       competition: {
@@ -232,6 +251,7 @@ export const api = {
         status: string;
         startedAt: string;
         stoppedAt: string | null;
+        queuePaused?: boolean;
       };
       counts: { queued: number; running: number; finished: number };
     }>(`/admin/competitions/${id}`);
@@ -416,10 +436,21 @@ export const api = {
     });
   },
 
-  adminEvents(params?: { limit?: number; type?: string }) {
+  adminEvents(params?: {
+    limit?: number;
+    type?: string;
+    sessionId?: string;
+    participantId?: string;
+    runSessionId?: string;
+    order?: 'asc' | 'desc';
+  }) {
     const q = new URLSearchParams();
     if (params?.limit != null) q.set('limit', String(params.limit));
     if (params?.type?.trim()) q.set('type', params.type.trim());
+    if (params?.sessionId?.trim()) q.set('sessionId', params.sessionId.trim());
+    if (params?.participantId?.trim()) q.set('participantId', params.participantId.trim());
+    if (params?.runSessionId?.trim()) q.set('runSessionId', params.runSessionId.trim());
+    if (params?.order) q.set('order', params.order);
     const qs = q.toString();
     return adminRequest<{
       events: Array<{
@@ -429,6 +460,7 @@ export const api = {
         sessionId: string;
         participantId: string | null;
         runSessionId: string | null;
+        readableMessage: string;
         payloadPreview: string;
       }>;
     }>(`/admin/events${qs ? `?${qs}` : ''}`);

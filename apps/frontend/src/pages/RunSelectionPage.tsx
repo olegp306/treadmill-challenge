@@ -47,6 +47,31 @@ export default function RunSelectionPage() {
     }
   }, [participantId, navigate]);
 
+  useEffect(() => {
+    if (!participantId) return;
+    logEvent(
+      'run_select_enter',
+      {},
+      {
+        participantId,
+        readableMessage: 'Пользователь на экране выбора формата забега (после регистрации)',
+      }
+    );
+  }, [participantId]);
+
+  useEffect(() => {
+    if (!participantId) return;
+    const opt = getRunOption(selected);
+    logEvent(
+      'run_type_selected',
+      { runTypeId: selected },
+      {
+        participantId,
+        readableMessage: `Пользователь выбрал забег: ${opt.title}`,
+      }
+    );
+  }, [selected, participantId]);
+
   const activeOption = getRunOption(selected);
 
   const handleStart = async () => {
@@ -58,7 +83,14 @@ export default function RunSelectionPage() {
       const res = await api.startRun({ participantId, runTypeId: selected });
       if (!res.success) {
         if (res.reason === 'queue_full') {
-          logEvent('queue_rejected', { runTypeId: selected, reason: 'queue_full' }, { participantId });
+          logEvent(
+            'queue_rejected',
+            { runTypeId: selected, reason: 'queue_full' },
+            {
+              participantId,
+              readableMessage: 'Очередь заполнена: пользователь перенаправлен на экран уведомления',
+            }
+          );
           navigate('/run/queue-busy', {
             replace: true,
             state: {
@@ -68,6 +100,16 @@ export default function RunSelectionPage() {
               runTypeId: selected,
             },
           });
+        } else if (res.reason === 'queue_paused') {
+          logEvent(
+            'queue_rejected',
+            { runTypeId: selected, reason: 'queue_paused' },
+            {
+              participantId,
+              readableMessage: 'Очередь на паузе (оператор). Попробуйте позже.',
+            }
+          );
+          setError('Очередь временно на паузе. Попробуйте позже.');
         }
         return;
       }
@@ -75,10 +117,24 @@ export default function RunSelectionPage() {
       logEvent(
         'run_started',
         { runTypeId: res.runTypeId, demoMode: res.demoMode, queuePosition: res.position },
-        { participantId: res.participantId, runSessionId: res.runSessionId }
+        {
+          participantId: res.participantId,
+          runSessionId: res.runSessionId,
+          readableMessage: res.demoMode
+            ? 'Забег начат в демо-режиме (без TouchDesigner)'
+            : `Забег начат, пользователь в очереди (позиция ${res.position})`,
+        }
       );
       if (!res.demoMode) {
-        logEvent('added_to_queue', { runTypeId: res.runTypeId, queuePosition: res.position }, { participantId: res.participantId, runSessionId: res.runSessionId });
+        logEvent(
+          'added_to_queue',
+          { runTypeId: res.runTypeId, queuePosition: res.position },
+          {
+            participantId: res.participantId,
+            runSessionId: res.runSessionId,
+            readableMessage: `Пользователь добавлен в очередь. Номер в очереди: ${res.position}`,
+          }
+        );
       }
       if (res.demoMode) {
         navigate('/run/demo', {
@@ -106,7 +162,14 @@ export default function RunSelectionPage() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Не удалось начать забег';
-      logEvent('error_event', { context: 'run_start', message: msg }, { participantId });
+      logEvent(
+        'error_event',
+        { context: 'run_start', message: msg },
+        {
+          participantId,
+          readableMessage: `Ошибка при старте забега: ${msg}`,
+        }
+      );
       setError(msg);
     } finally {
       setLoading(false);
@@ -137,7 +200,9 @@ export default function RunSelectionPage() {
           }
         >
           <div style={rs.runSelectTopBlock}>
-            <p style={rs.greeting}>Привет, {greetingName}!</p>
+            <p style={rs.greeting}>
+              Привет, <span style={reg.logoRed}>{greetingName}</span>!
+            </p>
             <p style={rs.subtitle}>Выбери свой формат забега</p>
             {error ? <p style={{ ...reg.error, ...rs.subtitle, color: '#f85149' }}>{error}</p> : null}
             <RunTypeTabBar options={RUN_OPTIONS} selected={selected} onSelect={setSelected} />

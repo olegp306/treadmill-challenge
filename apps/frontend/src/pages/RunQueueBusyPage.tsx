@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
 import { api } from '../api/client';
+import { logEvent } from '../logging/logEvent';
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
@@ -47,6 +48,18 @@ export default function RunQueueBusyPage() {
     };
   }, [participantId, navigate, state?.participantFirstName]);
 
+  useEffect(() => {
+    if (!participantId) return;
+    logEvent(
+      'queue_busy_enter',
+      {},
+      {
+        participantId,
+        readableMessage: 'Пользователь увидел экран «Дорожка занята» (очередь заполнена)',
+      }
+    );
+  }, [participantId]);
+
   if (!participantId || !state) {
     return null;
   }
@@ -62,13 +75,37 @@ export default function RunQueueBusyPage() {
       participantDisplayName={displayName}
       footer={
         <>
-          <button type="button" style={rq.btnWide} onClick={() => navigate('/')}>
+          <button
+            type="button"
+            style={rq.btnWide}
+            onClick={() => {
+              logEvent(
+                'queue_busy_click_home',
+                {},
+                {
+                  participantId,
+                  readableMessage: 'Пользователь нажал «Сойти с забега» на экране «дорожка занята»',
+                }
+              );
+              navigate('/');
+            }}
+          >
             Сойти с забега
           </button>
           <button
             type="button"
             style={rq.btnWideSolid}
-            onClick={() => navigate('/run-select', { state: retryState, replace: true })}
+            onClick={() => {
+              logEvent(
+                'queue_busy_retry',
+                {},
+                {
+                  participantId,
+                  readableMessage: 'Пользователь нажал «Занять очередь» (повторная попытка)',
+                }
+              );
+              navigate('/run-select', { state: retryState, replace: true });
+            }}
           >
             Занять очередь
           </button>

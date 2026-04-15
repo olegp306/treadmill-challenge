@@ -24,7 +24,7 @@ function fakeMetrics(runTypeId: RunTypeId): { resultTime: number; distance: numb
 
 export type StartRunOutcome =
   | { ok: true; data: RunSessionStartResponse }
-  | { ok: false; reason: 'queue_full' };
+  | { ok: false; reason: 'queue_full' | 'queue_paused' };
 
 export function startRunSession(
   dto: RunStartDto,
@@ -46,6 +46,10 @@ export function startRunSession(
     throw new Error(
       'Нет активного соревнования для этого формата и пола участника. Оператор должен запустить соревнование в панели.'
     );
+  }
+
+  if (comp.queuePaused) {
+    return { ok: false, reason: 'queue_paused' };
   }
 
   const maxQueue = adminSettings.getMaxQueueSizePerRun(db);

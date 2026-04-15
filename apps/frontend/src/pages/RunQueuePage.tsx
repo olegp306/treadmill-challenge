@@ -7,6 +7,7 @@ import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
 import { PrimaryButton } from '../features/registration/components';
+import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { logEvent } from '../logging/logEvent';
 
@@ -57,6 +58,19 @@ export default function RunQueuePage() {
     };
   }, [participantId, runSessionId, runTypeId, navigate, state?.participantFirstName]);
 
+  useEffect(() => {
+    if (!participantId || !runSessionId || runTypeId === null) return;
+    logEvent(
+      'queue_screen_enter',
+      { position, runTypeId },
+      {
+        participantId,
+        runSessionId,
+        readableMessage: `Пользователь на экране очереди. Номер: ${position} («${getRunOption(runTypeId).title}»)`,
+      }
+    );
+  }, [participantId, runSessionId, runTypeId, position]);
+
   const handleDevFinish = async () => {
     setDevMsg(null);
     setDevLoading(true);
@@ -65,11 +79,25 @@ export default function RunQueuePage() {
       logEvent(
         'run_finished',
         { runTypeId, source: 'dev_finish', runIdPrefix: res.runId.slice(0, 8) },
-        { participantId, runSessionId: res.runSessionId }
+        {
+          participantId,
+          runSessionId: res.runSessionId,
+          readableMessage: 'Забег завершён (режим разработчика), результат записан',
+        }
       );
       setDevMsg(`Забег завершён (dev). runId: ${res.runId.slice(0, 8)}…`);
     } catch (e) {
-      setDevMsg(e instanceof Error ? e.message : 'Ошибка');
+      const msg = e instanceof Error ? e.message : 'Ошибка';
+      logEvent(
+        'error_event',
+        { context: 'dev_finish_run', message: msg },
+        {
+          participantId,
+          runSessionId,
+          readableMessage: `Ошибка завершения забега (dev): ${msg}`,
+        }
+      );
+      setDevMsg(msg);
     } finally {
       setDevLoading(false);
     }
@@ -77,6 +105,15 @@ export default function RunQueuePage() {
 
   const goLeaveConfirm = () => {
     if (!runSessionId || runTypeId === null) return;
+    logEvent(
+      'queue_leave_confirm_open',
+      {},
+      {
+        participantId,
+        runSessionId,
+        readableMessage: 'Пользователь нажал «Сойти с забега» — переход к подтверждению',
+      }
+    );
     navigate('/run/leave-queue', {
       state: {
         runSessionId,

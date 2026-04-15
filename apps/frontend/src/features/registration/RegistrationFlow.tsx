@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { logEvent, setLoggedParticipantId } from '../../logging/logEvent';
 import { RegistrationLayout } from './RegistrationLayout';
 import { validateNamePart } from './nameValidation';
+import { formatPhoneFromDigits } from './phoneFormat';
 import { validatePhoneForSubmit } from './phoneValidation';
 import {
   INITIAL_FORM,
@@ -31,6 +32,21 @@ export function RegistrationFlow() {
     setForm((prev) => ({ ...prev, ...p }));
   }, []);
 
+  useEffect(() => {
+    const stepMessages: Record<RegistrationStep, string> = {
+      [RegistrationStep.Age]: 'Пользователь на экране подтверждения возраста',
+      [RegistrationStep.Gender]: 'Пользователь на экране выбора пола',
+      [RegistrationStep.Name]: 'Пользователь на экране «Как тебя зовут?»',
+      [RegistrationStep.Phone]: 'Пользователь на экране ввода номера телефона',
+      [RegistrationStep.Consent]: 'Пользователь на экране согласий',
+    };
+    logEvent(
+      'registration_step_view',
+      { step: RegistrationStep[step] },
+      { readableMessage: stepMessages[step] }
+    );
+  }, [step]);
+
   const clearErrors = useCallback(() => {
     setStepError(null);
     setFieldError(false);
@@ -53,11 +69,21 @@ export function RegistrationFlow() {
       setAgeChoice(choice);
       setStepError(null);
       if (choice === 'yes') {
+        logEvent(
+          'age_confirm',
+          { choice: 'yes' },
+          { readableMessage: 'Пользователь подтвердил возраст: Да' }
+        );
         patchForm({ isAdult: true });
         setStep(RegistrationStep.Gender);
         return;
       }
       if (choice === 'no') {
+        logEvent(
+          'age_confirm',
+          { choice: 'no' },
+          { readableMessage: 'Пользователь подтвердил возраст: Нет' }
+        );
         patchForm({ isAdult: false });
       }
     },
@@ -66,6 +92,16 @@ export function RegistrationFlow() {
 
   const handleGenderSelect = useCallback(
     (gender: 'male' | 'female') => {
+      logEvent(
+        'gender_select',
+        { gender },
+        {
+          readableMessage:
+            gender === 'male'
+              ? 'Пользователь выбрал пол: Мужской'
+              : 'Пользователь выбрал пол: Женский',
+        }
+      );
       patchForm({ gender });
       clearErrors();
       setStep(RegistrationStep.Name);
@@ -77,18 +113,34 @@ export function RegistrationFlow() {
     const firstResult = validateNamePart(form.firstName, 'first');
     const lastResult = validateNamePart(form.lastName, 'last');
     if (!firstResult.ok) {
+      logEvent(
+        'validation_error',
+        { step: 'name', field: 'firstName' },
+        { readableMessage: `Ошибка проверки имени: ${firstResult.message}` }
+      );
       setStepError(firstResult.message);
       setFieldError(true);
       return;
     }
     if (!lastResult.ok) {
+      logEvent(
+        'validation_error',
+        { step: 'name', field: 'lastName' },
+        { readableMessage: `Ошибка проверки фамилии: ${lastResult.message}` }
+      );
       setStepError(lastResult.message);
       setFieldError(true);
       return;
     }
     setFieldError(false);
     setStepError(null);
-    logEvent('form_submit_name', { firstLen: firstResult.normalized.length, lastLen: lastResult.normalized.length });
+    logEvent(
+      'form_submit_name',
+      { firstLen: firstResult.normalized.length, lastLen: lastResult.normalized.length },
+      {
+        readableMessage: `Пользователь отправил форму «Как тебя зовут?»: ${firstResult.normalized} ${lastResult.normalized}`,
+      }
+    );
     patchForm({
       firstName: firstResult.normalized,
       lastName: lastResult.normalized,
@@ -101,28 +153,54 @@ export function RegistrationFlow() {
   const goNextFromPhone = useCallback(() => {
     const result = validatePhoneForSubmit(form.phone);
     if (!result.ok) {
+      logEvent(
+        'validation_error',
+        { step: 'phone' },
+        { readableMessage: `Ошибка проверки телефона: ${result.message}` }
+      );
       setStepError(result.message);
       setFieldError(true);
       return;
     }
     setFieldError(false);
     setStepError(null);
-    logEvent('form_submit_phone', { phoneDigitsLen: result.normalized.length });
+    logEvent(
+      'form_submit_phone',
+      { phoneDigitsLen: result.normalized.length },
+      {
+        readableMessage: `Пользователь отправил форму телефона: ${formatPhoneFromDigits(result.normalized)}`,
+      }
+    );
     patchForm({ phone: result.normalized });
     setStep(RegistrationStep.Consent);
   }, [form.phone, patchForm]);
 
   const handleSubmit = useCallback(async () => {
+    logEvent(
+      'consent_primary_click',
+      {},
+      { readableMessage: 'Пользователь нажал «Принять участие»' }
+    );
     setSubmitError(null);
     setStepError(null);
 
     if (!form.consentParticipation || !form.consentPersonalData) {
+      logEvent(
+        'validation_error',
+        { step: 'consent' },
+        { readableMessage: 'Ошибка: не отмечены оба согласия' }
+      );
       setStepError('Необходимо подтвердить оба согласия');
       return;
     }
 
     const phoneResult = validatePhoneForSubmit(form.phone);
     if (!phoneResult.ok) {
+      logEvent(
+        'validation_error',
+        { step: 'consent', field: 'phone' },
+        { readableMessage: `Ошибка перед отправкой: телефон — ${phoneResult.message}` }
+      );
       setStepError(phoneResult.message);
       return;
     }
@@ -130,16 +208,31 @@ export function RegistrationFlow() {
     const nameFirst = validateNamePart(form.firstName, 'first');
     const nameLast = validateNamePart(form.lastName, 'last');
     if (!nameFirst.ok) {
+      logEvent(
+        'validation_error',
+        { step: 'consent', field: 'firstName' },
+        { readableMessage: `Ошибка перед отправкой: имя — ${nameFirst.message}` }
+      );
       setStepError(nameFirst.message);
       return;
     }
     if (!nameLast.ok) {
+      logEvent(
+        'validation_error',
+        { step: 'consent', field: 'lastName' },
+        { readableMessage: `Ошибка перед отправкой: фамилия — ${nameLast.message}` }
+      );
       setStepError(nameLast.message);
       return;
     }
     const name = `${nameFirst.normalized} ${nameLast.normalized}`.trim();
 
     if (!form.isAdult || form.gender === null) {
+      logEvent(
+        'validation_error',
+        { step: 'consent' },
+        { readableMessage: 'Ошибка: не все данные анкеты заполнены' }
+      );
       setStepError('Не все данные заполнены');
       return;
     }
@@ -154,7 +247,14 @@ export function RegistrationFlow() {
         runName: 'Регистрация',
       });
       setLoggedParticipantId(created.id);
-      logEvent('registration_completed', { participantId: created.id, sex: form.gender });
+      logEvent(
+        'registration_completed',
+        { participantId: created.id, sex: form.gender },
+        {
+          participantId: created.id,
+          readableMessage: 'Регистрация успешно завершена, пользователь переходит к выбору забега',
+        }
+      );
       navigate('/run-select', {
         replace: true,
         state: {
@@ -165,7 +265,11 @@ export function RegistrationFlow() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Ошибка регистрации';
-      logEvent('error_event', { context: 'registration_submit', message: msg });
+      logEvent(
+        'error_event',
+        { context: 'registration_submit', message: msg },
+        { readableMessage: `Ошибка при регистрации: ${msg}` }
+      );
       setSubmitError(msg);
     } finally {
       setLoading(false);

@@ -2,6 +2,8 @@ import { useId, useMemo } from 'react';
 import { useInput } from 'input-format/react-hook';
 import type { RegistrationFormData } from '../types';
 import { formatPhoneParsed, parsePhoneChar } from '../phoneFormat';
+import { logEvent } from '../../../logging/logEvent';
+import { formatPhoneFromDigits } from '../phoneFormat';
 import { digitsOnly, validatePhoneForSubmit } from '../phoneValidation';
 import { PrimaryButton, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
@@ -62,6 +64,17 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
           >
             <input
               {...inputProps}
+              onBlur={() => {
+                const r = validatePhoneForSubmit(form.phone);
+                if (!r.ok) return;
+                logEvent(
+                  'field_phone_blur',
+                  { phoneDigitsLen: r.normalized.length },
+                  {
+                    readableMessage: `Пользователь ввёл номер телефона: ${formatPhoneFromDigits(r.normalized)}`,
+                  }
+                );
+              }}
               style={{
                 border: 'none',
                 borderRadius: 0,

@@ -8,6 +8,7 @@ function parseBody(body: unknown): {
   sessionId?: string;
   participantId?: string;
   runSessionId?: string;
+  readableMessage?: string;
 } | null {
   if (!body || typeof body !== 'object') return null;
   const b = body as Record<string, unknown>;
@@ -20,12 +21,15 @@ function parseBody(body: unknown): {
   const sessionId = typeof b.sessionId === 'string' ? b.sessionId.trim() : '';
   const participantId = typeof b.participantId === 'string' ? b.participantId.trim() : '';
   const runSessionId = typeof b.runSessionId === 'string' ? b.runSessionId.trim() : '';
+  const readableMessage =
+    typeof b.readableMessage === 'string' ? b.readableMessage.trim() : undefined;
   return {
     type,
     payload,
     sessionId: sessionId || undefined,
     participantId: participantId || undefined,
     runSessionId: runSessionId || undefined,
+    readableMessage: readableMessage || undefined,
   };
 }
 
@@ -50,6 +54,7 @@ export default async function eventsRoutes(app: FastifyInstance): Promise<void> 
         runSessionId: parsed.runSessionId ?? null,
         type: parsed.type,
         payloadJson,
+        readableMessage: parsed.readableMessage ?? '',
       });
       return reply.status(201).send({ ok: true, id });
     } catch (err) {

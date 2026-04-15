@@ -13,8 +13,11 @@ import * as events from '../db/events.js';
 import { resetTestData } from '../services/adminService.js';
 import {
   assignWinnerManually,
+  ensureActiveCompetitionsForAllSlots,
   restartCompetitionSlot,
+  setCompetitionQueuePaused,
   startCompetition,
+  stopAndStartNewCompetition,
   stopCompetition,
 } from '../services/competitionService.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
@@ -54,11 +57,13 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     scoped.addHook('preHandler', assertAdmin);
 
     scoped.get('/api/admin/dashboard', async () => {
+      ensureActiveCompetitionsForAllSlots();
       const db = getDb();
       const slots: Array<{
         runTypeId: RunTypeId;
         gender: Gender;
         competition: ReturnType<typeof competitions.getCompetitionById>;
+        queuePaused: boolean;
         queuedCount: number;
         leader: {
           participantName: string;
@@ -71,19 +76,16 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         const runTypeId = rt as RunTypeId;
         for (const gender of ['male', 'female'] as const) {
           const active = competitions.getActiveCompetition(db, runTypeId, gender);
-          const stopped = active ? null : competitions.getLatestStoppedCompetition(db, runTypeId, gender);
-          const comp = active ?? stopped ?? null;
-          const queueSource = active ?? null;
-          const counts = queueSource
-            ? competitions.competitionRowCount(db, queueSource.id)
+          const comp = active;
+          const counts = comp
+            ? competitions.competitionRowCount(db, comp.id)
             : { queued: 0, running: 0, finished: 0 };
-          const lb = queueSource
-            ? runs.getTopLeaderboardEntryForCompetition(db, queueSource.id, runTypeId)
-            : null;
+          const lb = comp ? runs.getTopLeaderboardEntryForCompetition(db, comp.id, runTypeId) : null;
           slots.push({
             runTypeId,
             gender,
             competition: comp,
+            queuePaused: comp?.queuePaused ?? false,
             queuedCount: counts.queued + counts.running,
             leader: lb
               ? {
@@ -137,6 +139,37 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       }
       try {
         const c = restartCompetitionSlot(runTypeId, gender);
+        return reply.send({ competition: c });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Failed';
+        return reply.status(400).send({ error: msg });
+      }
+    });
+
+    scoped.post('/api/admin/competitions/stop-and-start', async (request, reply) => {
+      const body = request.body as { runTypeId?: unknown; gender?: unknown };
+      const runTypeId = parseRunTypeId(body.runTypeId);
+      const gender = typeof body.gender === 'string' ? normalizeGender(body.gender) : null;
+      if (runTypeId === null || gender === null) {
+        return reply.status(400).send({ error: 'runTypeId and gender required' });
+      }
+      try {
+        ensureActiveCompetitionsForAllSlots();
+        const result = stopAndStartNewCompetition(runTypeId, gender);
+        return reply.send({ previous: result.previous, next: result.next });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Failed';
+        return reply.status(400).send({ error: msg });
+      }
+    });
+
+    scoped.post('/api/admin/competitions/:id/queue-pause', async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const body = request.body as { paused?: unknown };
+      const paused = Boolean(body?.paused);
+      if (!id.trim()) return reply.status(400).send({ error: 'id required' });
+      try {
+        const c = setCompetitionQueuePaused(id.trim(), paused);
         return reply.send({ competition: c });
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Failed';
@@ -569,7 +602,20 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const limitRaw = q.limit != null ? Number(q.limit) : 50;
       const limit = Number.isFinite(limitRaw) ? limitRaw : 50;
       const typeFilter = typeof q.type === 'string' && q.type.trim() ? q.type.trim() : null;
-      const rows = events.listRecentEvents(db, limit, typeFilter);
+      const sessionId = typeof q.sessionId === 'string' && q.sessionId.trim() ? q.sessionId.trim() : null;
+      const participantId =
+        typeof q.participantId === 'string' && q.participantId.trim() ? q.participantId.trim() : null;
+      const runSessionId =
+        typeof q.runSessionId === 'string' && q.runSessionId.trim() ? q.runSessionId.trim() : null;
+      const orderRaw = typeof q.order === 'string' ? q.order.trim().toLowerCase() : '';
+      const order: 'asc' | 'desc' = orderRaw === 'asc' ? 'asc' : 'desc';
+      const rows = events.listRecentEvents(db, limit, {
+        type: typeFilter,
+        sessionId,
+        participantId,
+        runSessionId,
+        order,
+      });
       return {
         events: rows.map((r) => ({
           id: r.id,
@@ -578,6 +624,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
           sessionId: r.sessionId,
           participantId: r.participantId,
           runSessionId: r.runSessionId,
+          readableMessage: r.readableMessage,
           payloadPreview: formatEventPayloadPreview(r.payload),
         })),
       };

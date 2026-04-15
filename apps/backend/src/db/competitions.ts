@@ -14,6 +14,7 @@ function rowToCompetition(row: Record<string, unknown>): Competition {
     stoppedAt: row.stoppedAt != null ? String(row.stoppedAt) : null,
     winnerParticipantId: row.winnerParticipantId != null ? String(row.winnerParticipantId) : null,
     winnerRunSessionId: row.winnerRunSessionId != null ? String(row.winnerRunSessionId) : null,
+    queuePaused: row.queuePaused != null ? Number(row.queuePaused) === 1 : false,
   };
 }
 
@@ -75,8 +76,8 @@ export function insertCompetition(db: Db, c: Competition): void {
     `
     INSERT INTO competitions (
       id, runTypeId, runTypeKey, gender, title, status, startedAt, stoppedAt,
-      winnerParticipantId, winnerRunSessionId
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      winnerParticipantId, winnerRunSessionId, queuePaused
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `
   ).run(
     c.id,
@@ -88,8 +89,13 @@ export function insertCompetition(db: Db, c: Competition): void {
     c.startedAt,
     c.stoppedAt ?? null,
     c.winnerParticipantId ?? null,
-    c.winnerRunSessionId ?? null
+    c.winnerRunSessionId ?? null,
+    c.queuePaused ? 1 : 0
   );
+}
+
+export function setQueuePaused(db: Db, id: string, paused: boolean): void {
+  db.prepare(`UPDATE competitions SET queuePaused = ? WHERE id = ?`).run(paused ? 1 : 0, id);
 }
 
 export function updateCompetitionStatus(

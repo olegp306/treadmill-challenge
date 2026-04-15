@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Competition, Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeById } from '@treadmill-challenge/shared';
-import { getDb, competitions, runs, runSessions } from '../db/index.js';
+import { getDb, competitions, runs } from '../db/index.js';
 
 function archiveCompetition(db: ReturnType<typeof getDb>, id: string): void {
   const cur = competitions.getCompetitionById(db, id);
@@ -37,6 +37,7 @@ export function startCompetition(runTypeId: RunTypeId, gender: Gender): Competit
     stoppedAt: null,
     winnerParticipantId: null,
     winnerRunSessionId: null,
+    queuePaused: false,
   };
   competitions.insertCompetition(db, c);
   return competitions.getCompetitionById(db, id)!;
@@ -73,6 +74,47 @@ export function adminArchiveCompetition(competitionId: string): void {
     throw new Error('Сначала остановите соревнование');
   }
   archiveCompetition(db, competitionId);
+}
+
+/** Ensure each (runType × gender) slot has exactly one active competition. */
+export function ensureActiveCompetitionsForAllSlots(): void {
+  const db = getDb();
+  for (let rt = 0; rt <= 2; rt++) {
+    const runTypeId = rt as RunTypeId;
+    for (const gender of ['male', 'female'] as const) {
+      if (!competitions.getActiveCompetition(db, runTypeId, gender)) {
+        startCompetition(runTypeId, gender);
+      }
+    }
+  }
+}
+
+/** Stop current active competition (winner from leaderboard), archive it, start a fresh active one. */
+export function stopAndStartNewCompetition(runTypeId: RunTypeId, gender: Gender): {
+  previous: Competition | null;
+  next: Competition;
+} {
+  const db = getDb();
+  const active = competitions.getActiveCompetition(db, runTypeId, gender);
+  if (!active) {
+    const next = startCompetition(runTypeId, gender);
+    return { previous: null, next };
+  }
+  const stopped = stopCompetition(active.id);
+  archiveCompetition(db, stopped.id);
+  const next = startCompetition(runTypeId, gender);
+  return { previous: stopped, next };
+}
+
+export function setCompetitionQueuePaused(competitionId: string, paused: boolean): Competition {
+  const db = getDb();
+  const comp = competitions.getCompetitionById(db, competitionId);
+  if (!comp) throw new Error('Соревнование не найдено');
+  if (comp.status !== 'active') {
+    throw new Error('Пауза доступна только для активного соревнования');
+  }
+  competitions.setQueuePaused(db, competitionId, paused);
+  return competitions.getCompetitionById(db, competitionId)!;
 }
 
 export function assignWinnerManually(

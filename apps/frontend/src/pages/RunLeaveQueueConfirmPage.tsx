@@ -48,9 +48,30 @@ export default function RunLeaveQueueConfirmPage() {
     };
   }, [runSessionId, participantId, navigate]);
 
+  useEffect(() => {
+    if (!runSessionId || !participantId) return;
+    logEvent(
+      'leave_queue_confirm_enter',
+      {},
+      {
+        participantId,
+        runSessionId,
+        readableMessage: 'Пользователь на экране подтверждения выхода из очереди',
+      }
+    );
+  }, [runSessionId, participantId]);
+
   const handleConfirmLeave = async () => {
     if (!runSessionId || !participantId) return;
-    logEvent('button_click_leave_queue', { runSessionId }, { participantId, runSessionId });
+    logEvent(
+      'button_click_leave_queue',
+      { runSessionId },
+      {
+        participantId,
+        runSessionId,
+        readableMessage: 'Пользователь подтвердил выход из очереди («Сойти с забега»)',
+      }
+    );
     setLeaveError(null);
     setLoading(true);
     try {
@@ -59,7 +80,15 @@ export default function RunLeaveQueueConfirmPage() {
       navigate('/', { replace: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Не удалось выйти из очереди';
-      logEvent('error_event', { context: 'leave_queue', message: msg }, { participantId, runSessionId });
+      logEvent(
+        'error_event',
+        { context: 'leave_queue', message: msg },
+        {
+          participantId,
+          runSessionId,
+          readableMessage: `Ошибка выхода из очереди: ${msg}`,
+        }
+      );
       setLeaveError(msg);
       setLoading(false);
     }

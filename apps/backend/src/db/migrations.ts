@@ -30,11 +30,18 @@ function migrateEvents(db: Db): void {
       runSessionId TEXT,
       type TEXT NOT NULL,
       payload TEXT NOT NULL,
+      readableMessage TEXT NOT NULL DEFAULT '',
       createdAt TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_events_created ON events(createdAt DESC);
     CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
+    CREATE INDEX IF NOT EXISTS idx_events_session ON events(sessionId);
+    CREATE INDEX IF NOT EXISTS idx_events_participant ON events(participantId);
   `);
+  const evCols = tableColumns(db, 'events');
+  if (evCols.size && !evCols.has('readableMessage')) {
+    db.exec(`ALTER TABLE events ADD COLUMN readableMessage TEXT NOT NULL DEFAULT ''`);
+  }
 }
 
 function migrateParticipants(db: Db): void {
@@ -156,8 +163,8 @@ function seedLegacyCompetitions(db: Db): void {
   const ins = db.prepare(`
     INSERT OR IGNORE INTO competitions (
       id, runTypeId, runTypeKey, gender, title, status, startedAt, stoppedAt,
-      winnerParticipantId, winnerRunSessionId
-    ) VALUES (?, ?, ?, ?, ?, 'archived', ?, ?, NULL, NULL)
+      winnerParticipantId, winnerRunSessionId, queuePaused
+    ) VALUES (?, ?, ?, ?, ?, 'archived', ?, ?, NULL, NULL, 0)
   `);
   const old = new Date(Date.now() - 86400000 * 365).toISOString();
   for (let runTypeId = 0; runTypeId <= 2; runTypeId++) {
@@ -229,6 +236,11 @@ function migrateCompetitionsAndSessions(db: Db): void {
       value TEXT NOT NULL
     );
   `);
+
+  const compCols = tableColumns(db, 'competitions');
+  if (compCols.size && !compCols.has('queuePaused')) {
+    db.exec(`ALTER TABLE competitions ADD COLUMN queuePaused INTEGER NOT NULL DEFAULT 0`);
+  }
 
   seedLegacyCompetitions(db);
   seedAdminSettings(db);

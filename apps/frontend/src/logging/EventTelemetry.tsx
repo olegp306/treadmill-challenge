@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { logEvent } from './logEvent';
+import { getScreenReadableMessage } from './screenPathLabels';
 
 const HEARTBEAT_MS = 30_000;
 
@@ -13,12 +14,17 @@ export function EventTelemetry() {
     const path = `${location.pathname}${location.search || ''}`;
     if (pathRef.current === path) return;
     pathRef.current = path;
-    logEvent('screen_view', { path: location.pathname, search: location.search || undefined });
+    const readableMessage = getScreenReadableMessage(location.pathname, location.search || '');
+    logEvent(
+      'screen_view',
+      { path: location.pathname, search: location.search || undefined },
+      { readableMessage }
+    );
   }, [location.pathname, location.search]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
-      logEvent('heartbeat', {});
+      logEvent('heartbeat', {}, { readableMessage: 'Сессия активна (пульс)' });
     }, HEARTBEAT_MS);
     return () => window.clearInterval(id);
   }, []);

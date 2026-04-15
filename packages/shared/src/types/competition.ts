@@ -14,4 +14,6 @@ export interface Competition {
   stoppedAt: string | null;
   winnerParticipantId: string | null;
   winnerRunSessionId: string | null;
+  /** When true, active competition does not accept new queue entries (operator pause). */
+  queuePaused: boolean;
 }

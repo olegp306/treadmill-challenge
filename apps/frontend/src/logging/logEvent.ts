@@ -12,6 +12,13 @@ const SENSITIVE_KEYS = new Set([
   'ssn',
 ]);
 
+export type LogEventOptions = {
+  participantId?: string | null;
+  runSessionId?: string | null;
+  /** Russian summary for operators (stored separately from payload). */
+  readableMessage?: string;
+};
+
 export function getOrCreateLogSessionId(): string {
   if (typeof sessionStorage === 'undefined') return 'ssr-unknown';
   let id = sessionStorage.getItem(SESSION_KEY);
@@ -50,6 +57,7 @@ function readStoredRunSessionId(): string | undefined {
 function sanitizePayload(payload: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(payload)) {
+    if (k === 'readableMessage') continue;
     const keyLower = k.toLowerCase();
     if (SENSITIVE_KEYS.has(keyLower) || keyLower.includes('phone')) {
       out[k] = '[redacted]';
@@ -70,17 +78,18 @@ function sanitizePayload(payload: Record<string, unknown>): Record<string, unkno
 
 /**
  * Fire-and-forget client analytics / debug event. Does not throw.
- * Avoid putting PII in payload; phone-like fields are stripped.
+ * Structured payload is sanitized; readableMessage is sent as-is for operator display.
  */
 export function logEvent(
   type: string,
   payload: Record<string, unknown> = {},
-  opts?: { participantId?: string | null; runSessionId?: string | null }
+  opts?: LogEventOptions
 ): void {
   const sessionId = getOrCreateLogSessionId();
   const participantId = opts?.participantId ?? readStoredParticipantId();
   const runSessionId = opts?.runSessionId ?? readStoredRunSessionId();
   const safe = sanitizePayload(payload);
+  const readableMessage = opts?.readableMessage?.trim() ?? '';
   void fetch('/api/events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -88,6 +97,7 @@ export function logEvent(
       type,
       payload: safe,
       sessionId,
+      ...(readableMessage ? { readableMessage } : {}),
       ...(participantId ? { participantId } : {}),
       ...(runSessionId ? { runSessionId } : {}),
     }),

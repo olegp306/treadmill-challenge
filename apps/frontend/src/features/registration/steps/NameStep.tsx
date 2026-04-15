@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RegistrationFormData } from '../types';
+import { logEvent } from '../../../logging/logEvent';
 import { validateNamePart } from '../nameValidation';
 import { PrimaryButton, StepBody, UnderlineField } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
@@ -82,11 +83,16 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
                 onChange({ firstName: e.target.value });
                 setBlurFirstError(null);
               }}
-              onBlur={() => {
-                const r = validateNamePart(form.firstName, 'first');
+              onBlur={(e) => {
+                const r = validateNamePart(e.target.value, 'first');
                 if (r.ok) {
                   onChange({ firstName: r.normalized });
                   setBlurFirstError(null);
+                  logEvent(
+                    'field_name_first_blur',
+                    { length: r.normalized.length },
+                    { readableMessage: `Пользователь ввёл имя: ${r.normalized}` }
+                  );
                 } else {
                   setBlurFirstError(r.message);
                 }
@@ -118,11 +124,16 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
                 onChange({ lastName: e.target.value });
                 setBlurLastError(null);
               }}
-              onBlur={() => {
-                const r = validateNamePart(form.lastName, 'last');
+              onBlur={(e) => {
+                const r = validateNamePart(e.target.value, 'last');
                 if (r.ok) {
                   onChange({ lastName: r.normalized });
                   setBlurLastError(null);
+                  logEvent(
+                    'field_name_last_blur',
+                    { length: r.normalized.length },
+                    { readableMessage: `Пользователь ввёл фамилию: ${r.normalized}` }
+                  );
                 } else {
                   setBlurLastError(r.message);
                 }

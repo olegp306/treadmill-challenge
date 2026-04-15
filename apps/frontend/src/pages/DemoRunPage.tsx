@@ -51,8 +51,29 @@ export default function DemoRunPage() {
   useEffect(() => {
     if (!runSessionId || loggedDemoGen.current) return;
     loggedDemoGen.current = true;
-    logEvent('demo_run_generated', { runTypeId }, { participantId, runSessionId });
+    logEvent(
+      'demo_run_generated',
+      { runTypeId },
+      {
+        participantId,
+        runSessionId,
+        readableMessage: `Сгенерированы демо-показатели для забега «${getRunOption(runTypeId).title}»`,
+      }
+    );
   }, [runSessionId, runTypeId, participantId]);
+
+  useEffect(() => {
+    if (!participantId || !runSessionId) return;
+    logEvent(
+      'demo_run_screen_enter',
+      { runTypeId },
+      {
+        participantId,
+        runSessionId,
+        readableMessage: 'Пользователь на экране демо-забега',
+      }
+    );
+  }, [participantId, runSessionId, runTypeId]);
 
   useEffect(() => {
     if (!participantId || !runSessionId) {
@@ -100,7 +121,11 @@ export default function DemoRunPage() {
       logEvent(
         'run_finished',
         { runTypeId, resultTime: metrics.resultTime, distance: metrics.distance },
-        { participantId, runSessionId }
+        {
+          participantId,
+          runSessionId,
+          readableMessage: `Пользователь завершил забег (демо). Результат: ${Math.round(metrics.distance)} м за ${Math.round(metrics.resultTime)} сек`,
+        }
       );
       const q = new URLSearchParams({
         runTypeId: String(runTypeId),
@@ -110,7 +135,15 @@ export default function DemoRunPage() {
       navigate(`/leaderboard?${q.toString()}`, { replace: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Не удалось сохранить результат';
-      logEvent('error_event', { context: 'demo_submit_result', message: msg }, { participantId, runSessionId });
+      logEvent(
+        'error_event',
+        { context: 'demo_submit_result', message: msg },
+        {
+          participantId,
+          runSessionId,
+          readableMessage: `Ошибка сохранения результата демо: ${msg}`,
+        }
+      );
       setError(msg);
     } finally {
       setSubmitting(false);

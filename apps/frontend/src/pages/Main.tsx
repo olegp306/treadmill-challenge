@@ -7,6 +7,7 @@ import { ScreenContainer } from '../arOzio/ScreenContainer';
 import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
 import { AdminPinModal } from '../features/admin/AdminPinModal';
+import { logEvent } from '../logging/logEvent';
 
 /** Figma hero — local assets (WebP + JPEG fallback, tiny LQIP blur). */
 const HERO_BG_WEBP = '/assets/hero/hero-bg.webp';
@@ -246,7 +247,17 @@ export default function Main() {
             <Link to="/leaderboard" style={styles.btnLeaderboard}>
               Лидерборд
             </Link>
-            <Link to="/register" style={styles.btnParticipate}>
+            <Link
+              to="/register"
+              style={styles.btnParticipate}
+              onClick={() =>
+                logEvent(
+                  'landing_click_register',
+                  {},
+                  { readableMessage: 'Пользователь нажал кнопку «Принять участие»' }
+                )
+              }
+            >
               Принять участие
             </Link>
           </nav>

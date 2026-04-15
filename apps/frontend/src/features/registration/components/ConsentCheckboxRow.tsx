@@ -1,3 +1,4 @@
+import { logEvent } from '../../../logging/logEvent';
 import type { RegistrationFormData } from '../types';
 import { reg } from '../registrationStyles';
 
@@ -44,7 +45,23 @@ export function ConsentCheckboxRow({
             type="checkbox"
             style={reg.consentCheckInput}
             checked={checked}
-            onChange={(e) => onChange({ [field]: e.target.checked } as Partial<RegistrationFormData>)}
+            onChange={(e) => {
+              const next = e.target.checked;
+              onChange({ [field]: next } as Partial<RegistrationFormData>);
+              const label =
+                field === 'consentParticipation'
+                  ? 'Правила участия'
+                  : 'Обработка персональных данных';
+              logEvent(
+                'consent_toggle',
+                { field, checked: next },
+                {
+                  readableMessage: next
+                    ? `Пользователь отметил согласие: «${label}»`
+                    : `Пользователь снял отметку: «${label}»`,
+                }
+              );
+            }}
             aria-label={checkAriaLabel}
           />
           <span className="ar-reg-consent-check-frame" style={reg.consentCheckFrame}>
