@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RegistrationFormData } from '../types';
+import { focusInputForMobileKeyboard } from '../iosInputFocus';
 import { logEvent } from '../../../logging/logEvent';
 import { validateNamePart } from '../nameValidation';
 import { PrimaryButton, StepBody, UnderlineField } from '../components';
@@ -39,10 +40,21 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
   useLayoutEffect(() => {
     const el = firstRef.current;
     if (!el) return;
-    const t = window.setTimeout(() => {
-      el.focus({ preventScroll: true });
-    }, 0);
-    return () => window.clearTimeout(t);
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) focusInputForMobileKeyboard(el);
+    };
+    const id1 = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        run();
+      });
+    });
+    const t = window.setTimeout(run, 120);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id1);
+      window.clearTimeout(t);
+    };
   }, []);
 
   const tryAdvance = () => {
@@ -71,12 +83,15 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               hasError={firstErrHighlight}
               errorText={firstErrText}
               name="givenName"
+              type="text"
+              inputMode="text"
               autoComplete="given-name"
               autoCapitalize="words"
               autoCorrect="on"
               spellCheck={false}
               enterKeyHint="next"
               lang="ru"
+              autoFocus
               value={form.firstName}
               aria-label="Имя"
               onChange={(e) => {
@@ -111,6 +126,7 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               hasError={lastErrHighlight}
               errorText={lastErrText}
               name="familyName"
+              type="text"
               autoComplete="family-name"
               autoCapitalize="words"
               autoCorrect="on"

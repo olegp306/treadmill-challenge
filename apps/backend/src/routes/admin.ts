@@ -501,7 +501,6 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         tdHost: adminSettings.getSetting(db, 'tdHost') ?? '127.0.0.1',
         tdPort: adminSettings.getSetting(db, 'tdPort') ?? '7000',
         tdAdapter: adminSettings.getSetting(db, 'tdAdapter') ?? 'mock',
-        testMode: adminSettings.getSetting(db, 'testMode') === 'true',
         tdDemoMode: adminSettings.getTdDemoMode(db),
         maxQueueSizePerRun: adminSettings.getMaxQueueSizePerRun(db),
         eventTitle: adminSettings.getSetting(db, 'eventTitle') ?? 'Amazing Red',
@@ -515,7 +514,6 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         tdHost?: string;
         tdPort?: string;
         tdAdapter?: string;
-        testMode?: boolean;
         tdDemoMode?: boolean;
         maxQueueSizePerRun?: number;
         eventTitle?: string;
@@ -524,21 +522,13 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       if (body.tdHost !== undefined) adminSettings.setSetting(db, 'tdHost', body.tdHost.trim());
       if (body.tdPort !== undefined) adminSettings.setSetting(db, 'tdPort', String(body.tdPort).trim());
       if (body.tdAdapter !== undefined) adminSettings.setSetting(db, 'tdAdapter', body.tdAdapter.trim());
-      if (body.testMode !== undefined) adminSettings.setSetting(db, 'testMode', body.testMode ? 'true' : 'false');
       if (body.tdDemoMode !== undefined) adminSettings.setSetting(db, 'tdDemoMode', body.tdDemoMode ? 'true' : 'false');
       if (body.maxQueueSizePerRun !== undefined) {
         const n = Math.min(500, Math.max(1, Math.floor(Number(body.maxQueueSizePerRun))));
         adminSettings.setSetting(db, 'maxQueueSizePerRun', String(n));
       }
       if (body.eventTitle !== undefined) adminSettings.setSetting(db, 'eventTitle', body.eventTitle.trim());
-      return reply.send({ ok: true });
-    });
-
-    scoped.post('/api/admin/test-mode/toggle', async (request, reply) => {
-      const db = getDb();
-      const cur = adminSettings.getSetting(db, 'testMode') === 'true';
-      adminSettings.setSetting(db, 'testMode', cur ? 'false' : 'true');
-      return reply.send({ testMode: !cur });
+        return reply.send({ ok: true });
     });
 
     scoped.post('/api/admin/test-data/reset', async (_request, reply) => {

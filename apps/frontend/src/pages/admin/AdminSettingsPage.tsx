@@ -35,7 +35,6 @@ export default function AdminSettingsPage() {
         tdHost: settings.tdHost,
         tdPort: settings.tdPort,
         tdAdapter: settings.tdAdapter,
-        testMode: settings.testMode,
         tdDemoMode: settings.tdDemoMode,
         maxQueueSizePerRun: settings.maxQueueSizePerRun,
         eventTitle: settings.eventTitle,
@@ -87,15 +86,6 @@ export default function AdminSettingsPage() {
               onChange={(e) => setSettings({ ...settings, tdAdapter: e.target.value })}
               style={inp}
             />
-          </label>
-          <label style={{ ...lab, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <input
-              type="checkbox"
-              checked={settings.testMode}
-              onChange={(e) => setSettings({ ...settings, testMode: e.target.checked })}
-              style={{ width: 24, height: 24 }}
-            />
-            Тестовый режим
           </label>
           <label style={{ ...lab, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <input

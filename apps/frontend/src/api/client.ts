@@ -2,13 +2,19 @@ import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 
 const API_BASE = '/api';
 
+function hasNonEmptyRequestBody(body: RequestInit['body']): boolean {
+  if (body === undefined || body === null) return false;
+  if (typeof body === 'string') return body.length > 0;
+  return true;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
-      'Content-Type': 'application/json',
+      ...(hasNonEmptyRequestBody(options.body) ? { 'Content-Type': 'application/json' } : {}),
       ...options.headers,
     },
     ...options,
@@ -168,6 +174,7 @@ export const api = {
   devFinishRun() {
     return request<{ runSessionId: string; runId: string; participantId: string }>('/run/dev-finish', {
       method: 'POST',
+      body: JSON.stringify({}),
     });
   },
 
@@ -378,7 +385,6 @@ export const api = {
       tdHost: string;
       tdPort: string;
       tdAdapter: string;
-      testMode: boolean;
       tdDemoMode: boolean;
       maxQueueSizePerRun: number;
       eventTitle: string;
@@ -390,16 +396,11 @@ export const api = {
     tdHost: string;
     tdPort: string;
     tdAdapter: string;
-    testMode: boolean;
     tdDemoMode: boolean;
     maxQueueSizePerRun: number;
     eventTitle: string;
   }>) {
     return adminRequest<{ ok: boolean }>('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
-  },
-
-  adminToggleTestMode() {
-    return adminRequest<{ testMode: boolean }>('/admin/test-mode/toggle', { method: 'POST' });
   },
 
   adminResetTestData() {

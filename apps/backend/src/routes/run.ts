@@ -83,8 +83,15 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
     if (!allowDevFinish()) {
       return reply.status(404).send({ error: 'Not found' });
     }
+    request.log.info({ msg: 'dev_finish_request', body: request.body ?? null });
     try {
       const result = devFinishLatestQueuedRun();
+      request.log.info({
+        msg: 'dev_finish_saved',
+        runSessionId: result.runSessionId,
+        runId: result.runId,
+        participantId: result.participantId,
+      });
       return reply.status(200).send(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to finish run';

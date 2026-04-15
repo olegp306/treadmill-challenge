@@ -1,6 +1,8 @@
-import { useId, useMemo } from 'react';
+import type { InputHTMLAttributes, MutableRefObject, Ref } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef } from 'react';
 import { useInput } from 'input-format/react-hook';
 import type { RegistrationFormData } from '../types';
+import { focusInputForMobileKeyboard } from '../iosInputFocus';
 import { formatPhoneParsed, parsePhoneChar } from '../phoneFormat';
 import { logEvent } from '../../../logging/logEvent';
 import { formatPhoneFromDigits } from '../phoneFormat';
@@ -24,6 +26,7 @@ type Props = {
  */
 export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError, fieldError }: Props) {
   const idPhone = useId();
+  const phoneInputRef = useRef<HTMLInputElement | null>(null);
 
   const digitsValue = useMemo(() => digitsOnly(form.phone), [form.phone]);
   const filled = useMemo(() => validatePhoneForSubmit(form.phone).ok, [form.phone]);
@@ -45,6 +48,28 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
     placeholder: '+7 999 999 9999',
   });
 
+  const hookRef = (inputProps as { ref?: Ref<HTMLInputElement> }).ref;
+
+  useLayoutEffect(() => {
+    const el = phoneInputRef.current;
+    if (!el) return;
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) focusInputForMobileKeyboard(el);
+    };
+    const id1 = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        run();
+      });
+    });
+    const t = window.setTimeout(run, 120);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id1);
+      window.clearTimeout(t);
+    };
+  }, []);
+
   return (
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод номера телефона">
       <StepBody variant="short">
@@ -64,7 +89,17 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
           >
             <input
               {...inputProps}
-              onBlur={() => {
+              ref={(node) => {
+                phoneInputRef.current = node;
+                if (typeof hookRef === 'function') {
+                  hookRef(node);
+                } else if (hookRef && typeof hookRef === 'object' && 'current' in hookRef) {
+                  (hookRef as MutableRefObject<HTMLInputElement | null>).current = node;
+                }
+              }}
+              autoFocus
+              onBlur={(e) => {
+                (inputProps as InputHTMLAttributes<HTMLInputElement>).onBlur?.(e);
                 const r = validatePhoneForSubmit(form.phone);
                 if (!r.ok) return;
                 logEvent(

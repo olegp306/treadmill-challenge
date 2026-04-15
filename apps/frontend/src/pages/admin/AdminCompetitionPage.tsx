@@ -366,14 +366,6 @@ export default function AdminCompetitionPage() {
           >
             Сбросить текущего бегуна
           </button>
-          <button
-            type="button"
-            disabled={!!busy}
-            style={{ ...smallBtn, minHeight: 52, fontSize: 17 }}
-            onClick={() => run('tm', () => api.adminToggleTestMode())}
-          >
-            Переключить тестовый режим
-          </button>
           <button type="button" disabled={!!busy} style={{ ...smallBtn, minHeight: 48 }} onClick={() => void loadTd()}>
             Обновить статус TD
           </button>

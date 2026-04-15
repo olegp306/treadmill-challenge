@@ -19,6 +19,11 @@ export function runMigrations(db: Db): void {
   migrateRunSessions(db);
   migrateCompetitionsAndSessions(db);
   migrateEvents(db);
+  migrateRemoveTestModeSetting(db);
+}
+
+function migrateRemoveTestModeSetting(db: Db): void {
+  db.prepare(`DELETE FROM admin_settings WHERE key = 'testMode'`).run();
 }
 
 function migrateEvents(db: Db): void {
@@ -185,7 +190,6 @@ function seedAdminSettings(db: Db): void {
   ins.run('tdHost', process.env.TD_HOST ?? '127.0.0.1');
   ins.run('tdPort', process.env.TD_PORT ?? '7000');
   ins.run('tdAdapter', process.env.TD_ADAPTER ?? 'mock');
-  ins.run('testMode', 'false');
   ins.run('tdDemoMode', 'false');
   ins.run('eventTitle', 'Amazing Red');
   ins.run('maxQueueSizePerRun', '3');

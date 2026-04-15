@@ -113,11 +113,15 @@ export default function DemoRunPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await api.submitRunResult({
+      const payload = {
         runSessionId,
         resultTime: metrics.resultTime,
         distance: metrics.distance,
-      });
+      };
+      if (import.meta.env.DEV) {
+        console.debug('[demo run] POST /api/run-result', payload);
+      }
+      await api.submitRunResult(payload);
       logEvent(
         'run_finished',
         { runTypeId, resultTime: metrics.resultTime, distance: metrics.distance },

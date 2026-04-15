@@ -29,6 +29,15 @@ Run `npm run dev`. This starts both. Wait a few seconds.
 
 When you see “ready” or “listening” in the terminal, the app is running.
 
+### 3a. Open the app on your phone (same Wi‑Fi)
+
+1. Connect your **phone and laptop to the same Wi‑Fi** network.
+2. From the repo root, run `npm install` (once), then `npm run dev` (starts backend + frontend).
+3. When the Vite dev server is ready, the **frontend** terminal prints a **LAN URL** (for example `http://192.168.x.x:5173`) and an **ASCII QR code**. Scan the QR with your phone’s camera, or type the URL in the mobile browser.
+4. Optional: run `npm run print-dev-qr` in another terminal to print the same URL and QR again (default port **5173**; override with `PORT=5174 npm run print-dev-qr` on Unix, or `set PORT=5174&& npm run print-dev-qr` on Windows if you use a different port).
+
+The dev server listens on all interfaces (`host: true` / `vite --host`), so the app is available at your machine’s local IP, not only `localhost`. API calls from the phone go to `/api` on the Vite dev server, which **proxies** to the backend on `localhost:3001`. The backend listens on `0.0.0.0:3001`; CORS in development allows requests from your phone’s origin.
+
 ### 3. Open the app and see all pages
 
 Open your browser and go to: **http://localhost:5173**

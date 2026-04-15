@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
+  generateDemoMetrics,
   getRunTypeById,
   getRunTypeName,
   type Gender,
@@ -182,7 +183,8 @@ export function devFinishLatestQueuedRun(): {
     throw new Error('No run session to finish');
   }
 
-  const { resultTime, distance, speed } = fakeMetrics(session.runTypeId);
+  const { resultTime, distance } = generateDemoMetrics(session.runTypeId, session.id);
+  const speed = (distance / 1000 / resultTime) * 3600;
   const runId = randomUUID();
   runs.createRun(db, runId, session.participantId, session.competitionId, session.id, resultTime, distance, speed);
   runSessions.updateSessionResults(db, session.id, resultTime, distance);
