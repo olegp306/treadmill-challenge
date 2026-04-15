@@ -9,7 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/oswald": "^5.2.8",
     "@treadmill-challenge/shared": "*",
+    "input-format": "^0.3.14",
+    "libphonenumber-js": "^1.12.41",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0"

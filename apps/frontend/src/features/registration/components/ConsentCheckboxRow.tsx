@@ -10,8 +10,6 @@ type Props = {
   title: string;
   checkAriaLabel: string;
   onRead: () => void;
-  /** Wider container for long one-line titles (Figma). */
-  cardVariant?: 'rules' | 'privacy';
 };
 
 function ConsentCheckIcon() {
@@ -37,11 +35,9 @@ export function ConsentCheckboxRow({
   title,
   checkAriaLabel,
   onRead,
-  cardVariant = 'rules',
 }: Props) {
-  const cardStyle = cardVariant === 'privacy' ? reg.consentCardPrivacy : reg.consentCardRules;
   return (
-    <div style={cardStyle}>
+    <div style={reg.consentCard}>
       <div style={reg.consentCardInner}>
         <label className="ar-reg-consent-check-label" style={reg.consentCheckLabel}>
           <input

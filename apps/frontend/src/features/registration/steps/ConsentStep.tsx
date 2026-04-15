@@ -69,16 +69,14 @@ export function ConsentStep({
             field="consentParticipation"
             title="Правила участия"
             checkAriaLabel="Согласие с правилами участия"
-            cardVariant="rules"
             onRead={() => setDocModal('rules')}
           />
           <ConsentCheckboxRow
             checked={form.consentPersonalData}
             onChange={onChange}
             field="consentPersonalData"
-            title="Обработка перс. данных"
+            title="Обработка персональных данных"
             checkAriaLabel="Согласие на обработку персональных данных"
-            cardVariant="privacy"
             onRead={() => setDocModal('privacy')}
           />
         </div>

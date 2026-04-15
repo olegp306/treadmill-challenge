@@ -6,7 +6,7 @@ export type RegistrationFormData = {
   name: string;
   firstName: string;
   lastName: string;
-  /** National mobile digits (9XXXXXXXXX), up to 10; +7 added on submit. */
+  /** Phone step: digits only (no +). After phone «Далее» / API: E.164 string (+…). */
   phone: string;
   consentParticipation: boolean;
   consentPersonalData: boolean;

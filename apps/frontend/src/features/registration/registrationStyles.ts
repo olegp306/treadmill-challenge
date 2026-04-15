@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { w, h } from '../../arOzio/dimensions';
 
-/** Shared AR Ozio / iPad canvas styles (aligned with LeaderboardPage / Main) */
+/** Inner column inside `ScreenContainer` (padding applied by screen layout). */
 export const reg: Record<string, CSSProperties> = {
   page: {
     width: '100%',
@@ -11,10 +11,6 @@ export const reg: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: h(16),
-    paddingLeft: w(120),
-    paddingRight: w(120),
-    paddingTop: h(12),
-    paddingBottom: h(12),
     boxSizing: 'border-box',
   },
   header: {
@@ -370,6 +366,8 @@ export const reg: Record<string, CSSProperties> = {
     width: '100%',
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'center',
     gap: h(31),
     boxSizing: 'border-box',
   },
@@ -689,6 +687,16 @@ export const reg: Record<string, CSSProperties> = {
     gap: h(16),
     minWidth: 0,
   },
+  nameFieldInlineError: {
+    margin: 0,
+    paddingLeft: w(40),
+    paddingRight: w(40),
+    color: '#f85149',
+    fontSize: w(22),
+    lineHeight: 1.2,
+    textTransform: 'none',
+    textAlign: 'left',
+  },
   nameFieldLabel: {
     margin: 0,
     paddingLeft: w(40),
@@ -878,46 +886,37 @@ export const reg: Record<string, CSSProperties> = {
     textAlign: 'center',
     whiteSpace: 'nowrap',
   },
+  /** Two equal columns; group centered with max-width so outer / gap / outer balance (Figma). */
   consentCardsRow: {
     display: 'flex',
     flexDirection: 'row',
-    // flexWrap: 'wrap',
-    gap: w(40),
     justifyContent: 'center',
     alignItems: 'stretch',
+    gap: w(40),
     width: '100%',
+    maxWidth: w(2000),
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    boxSizing: 'border-box',
   },
-  consentCardRules: {
-    flex: '0 1 auto',
-    width: 'auto',
-    maxWidth: w(820),
-    minHeight: h(200),
+  /** Single style for both consent cards (rules + personal data). */
+  consentCard: {
+    flex: '1 1 0',
+    minWidth: w(680),
+    maxWidth: w(980),
+    minHeight: 0,
     backgroundColor: 'rgba(217,217,217,0.1)',
     borderRadius: w(40),
-    padding: `${h(32)} ${w(50)} ${h(32)} ${w(30)}`,
+    padding: `${h(22)} ${w(36)} ${h(22)} ${w(28)}`,
     boxSizing: 'border-box',
-    overflow: 'visible',
-    alignSelf: 'stretch',
-  },
-  /** Wider card so «Обработка персональных данных» stays on one line; may differ from rules card width. */
-  consentCardPrivacy: {
-    flex: '0 1 auto',
-    width: 'auto',
-    minWidth: w(1180),
-    maxWidth: w(1500),
-    minHeight: h(200),
-    backgroundColor: 'rgba(217,217,217,0.1)',
-    borderRadius: w(40),
-    padding: `${h(32)} ${w(50)} ${h(32)} ${w(30)}`,
-    boxSizing: 'border-box',
-    overflow: 'visible',
+    overflow: 'hidden',
     alignSelf: 'stretch',
   },
   consentCardInner: {
     display: 'flex',
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: w(34),
+    alignItems: 'center',
+    gap: w(30),
     minHeight: 0,
   },
   /** Figma 717:550 / 744:270 — 120×120, r36; unchecked = empty well; checked = red tile + check (718:570). */
@@ -967,15 +966,16 @@ export const reg: Record<string, CSSProperties> = {
   consentCardTextCol: {
     display: 'flex',
     flexDirection: 'column',
-    gap: h(20),
+    gap: h(14),
     alignItems: 'flex-start',
-    minWidth: 'min-content',
+    justifyContent: 'center',
+    minWidth: 0,
     flex: '1 1 auto',
   },
   consentCardTitle: {
     margin: 0,
     fontSize: w(36),
-    lineHeight: 1.5,
+    lineHeight: 1.22,
     fontWeight: 400,
     color: '#ffffff',
     textTransform: 'uppercase',

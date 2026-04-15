@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { getDb, participants } from '../db/index.js';
 import type { TouchDesignerIntegration } from '../integrations/touchdesigner/types.js';
 import type { RegisterParticipantDto, Participant } from '@treadmill-challenge/shared';
+import { normalizeGender } from '@treadmill-challenge/shared';
 
 function splitName(dto: RegisterParticipantDto): { firstName: string; lastName: string } {
   if (dto.firstName?.trim() && dto.lastName?.trim()) {
@@ -21,7 +22,8 @@ export function registerParticipant(
   const db = getDb();
   const id = randomUUID();
   const { firstName, lastName } = splitName(dto);
-  const participant = participants.createParticipant(db, id, firstName, lastName, dto.phone.trim());
+  const sex = normalizeGender(dto.sex);
+  const participant = participants.createParticipant(db, id, firstName, lastName, dto.phone.trim(), sex);
 
   touchDesigner.sendParticipantRegistered({
     login: participant.id,

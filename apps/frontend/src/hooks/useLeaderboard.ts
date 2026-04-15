@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { api } from '../api/client';
 
 export interface LeaderboardEntry {
@@ -11,10 +12,20 @@ export interface LeaderboardEntry {
   createdAt: string;
 }
 
+export interface LeaderboardMeta {
+  scoped: boolean;
+  runTypeId: RunTypeId | null;
+  gender: Gender | null;
+  runTypeName: string | null;
+  competitionTitle: string | null;
+}
+
+export type LeaderboardScope = { runTypeId: RunTypeId; gender: Gender };
+
 /** Simulated network delay (ms) when using fake data */
 const FAKE_FETCH_MS = 1000;
 
-/** Dev: fake data + delay. Override: `VITE_USE_FAKE_LEADERBOARD=true` in .env */
+/** Dev: fake data + delay. Override: `VITE_USE_FAKE_LEADERBOARD=true` in .env — only for global (unscoped) leaderboard. */
 const useFakeLeaderboard =
   import.meta.env.DEV || import.meta.env.VITE_USE_FAKE_LEADERBOARD === 'true';
 
@@ -79,10 +90,12 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function useLeaderboard() {
+export function useLeaderboard(scope: LeaderboardScope | null) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [meta, setMeta] = useState<LeaderboardMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const scopeKey = scope ? `${scope.runTypeId}-${scope.gender}` : 'global';
 
   useEffect(() => {
     let cancelled = false;
@@ -91,17 +104,31 @@ export function useLeaderboard() {
       setLoading(true);
       setError(null);
       try {
-        if (useFakeLeaderboard) {
+        if (useFakeLeaderboard && !scope) {
           await delay(FAKE_FETCH_MS);
           if (!cancelled) {
             setEntries([...FAKE_ENTRIES]);
+            setMeta({
+              scoped: false,
+              runTypeId: null,
+              gender: null,
+              runTypeName: null,
+              competitionTitle: null,
+            });
           }
           return;
         }
 
-        const data = await api.getLeaderboard();
+        const data = await api.getLeaderboard(scope ?? undefined);
         if (!cancelled) {
           setEntries(data.leaderboard);
+          setMeta({
+            scoped: data.scoped,
+            runTypeId: data.runTypeId,
+            gender: data.gender,
+            runTypeName: data.runTypeName,
+            competitionTitle: data.competitionTitle,
+          });
         }
       } catch (err) {
         if (!cancelled) {
@@ -118,7 +145,7 @@ export function useLeaderboard() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [scopeKey]);
 
-  return { entries, loading, error };
+  return { entries, meta, loading, error };
 }

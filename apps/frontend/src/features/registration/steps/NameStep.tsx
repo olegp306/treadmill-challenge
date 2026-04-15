@@ -1,5 +1,6 @@
-import { useId, useLayoutEffect, useRef } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RegistrationFormData } from '../types';
+import { validateNamePart } from '../nameValidation';
 import { PrimaryButton, StepBody, UnderlineField } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
@@ -19,6 +20,16 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
   const idLast = useId();
   const firstRef = useRef<HTMLInputElement>(null);
   const lastRef = useRef<HTMLInputElement>(null);
+  const [blurFirstError, setBlurFirstError] = useState<string | null>(null);
+  const [blurLastError, setBlurLastError] = useState<string | null>(null);
+
+  const firstResult = useMemo(() => validateNamePart(form.firstName, 'first'), [form.firstName]);
+  const lastResult = useMemo(() => validateNamePart(form.lastName, 'last'), [form.lastName]);
+
+  const firstErrHighlight = Boolean(blurFirstError || (fieldError && !firstResult.ok));
+  const lastErrHighlight = Boolean(blurLastError || (fieldError && !lastResult.ok));
+  const firstErrText = blurFirstError ?? (fieldError && !firstResult.ok ? firstResult.message : null);
+  const lastErrText = blurLastError ?? (fieldError && !lastResult.ok ? lastResult.message : null);
 
   const first = form.firstName.trim();
   const last = form.lastName.trim();
@@ -36,9 +47,6 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
   const tryAdvance = () => {
     onNext();
   };
-
-  const firstErr = fieldError && !form.firstName.trim();
-  const lastErr = fieldError && !form.lastName.trim();
 
   return (
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод имени">
@@ -59,18 +67,30 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               ref={firstRef}
               id={idFirst}
               label="Имя"
-              hasError={firstErr}
+              hasError={firstErrHighlight}
+              errorText={firstErrText}
               name="givenName"
               autoComplete="given-name"
               autoCapitalize="words"
               autoCorrect="on"
               spellCheck={false}
-              inputMode="text"
               enterKeyHint="next"
-              autoFocus
+              lang="ru"
               value={form.firstName}
               aria-label="Имя"
-              onChange={(e) => onChange({ firstName: e.target.value })}
+              onChange={(e) => {
+                onChange({ firstName: e.target.value });
+                setBlurFirstError(null);
+              }}
+              onBlur={() => {
+                const r = validateNamePart(form.firstName, 'first');
+                if (r.ok) {
+                  onChange({ firstName: r.normalized });
+                  setBlurFirstError(null);
+                } else {
+                  setBlurFirstError(r.message);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -82,7 +102,8 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               ref={lastRef}
               id={idLast}
               label="Фамилия"
-              hasError={lastErr}
+              hasError={lastErrHighlight}
+              errorText={lastErrText}
               name="familyName"
               autoComplete="family-name"
               autoCapitalize="words"
@@ -90,9 +111,22 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               spellCheck={false}
               inputMode="text"
               enterKeyHint="done"
+              lang="ru"
               value={form.lastName}
               aria-label="Фамилия"
-              onChange={(e) => onChange({ lastName: e.target.value })}
+              onChange={(e) => {
+                onChange({ lastName: e.target.value });
+                setBlurLastError(null);
+              }}
+              onBlur={() => {
+                const r = validateNamePart(form.lastName, 'last');
+                if (r.ok) {
+                  onChange({ lastName: r.normalized });
+                  setBlurLastError(null);
+                } else {
+                  setBlurLastError(r.message);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && filled) {
                   e.preventDefault();

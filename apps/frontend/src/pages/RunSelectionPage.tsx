@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
 import { RegistrationLayout } from '../features/registration/RegistrationLayout';
@@ -15,6 +15,7 @@ import { api } from '../api/client';
 export type RunSelectLocationState = {
   participantId: string;
   participantFirstName: string;
+  participantSex: 'male' | 'female';
 };
 
 function displayGreetingFirstName(raw: string): string {
@@ -29,6 +30,7 @@ export default function RunSelectionPage() {
   const state = location.state as RunSelectLocationState | null;
 
   const participantId = state?.participantId ?? '';
+  const participantSex = state?.participantSex ?? 'male';
   const greetingName = useMemo(
     () => displayGreetingFirstName(state?.participantFirstName ?? ''),
     [state?.participantFirstName]
@@ -52,6 +54,33 @@ export default function RunSelectionPage() {
     setLoading(true);
     try {
       const res = await api.startRun({ participantId, runTypeId: selected });
+      if (!res.success) {
+        if (res.reason === 'queue_full') {
+          navigate('/run/queue-busy', {
+            replace: true,
+            state: {
+              participantId,
+              participantFirstName: state?.participantFirstName,
+              participantSex,
+              runTypeId: selected,
+            },
+          });
+        }
+        return;
+      }
+      if (res.demoMode) {
+        navigate('/run/demo', {
+          replace: true,
+          state: {
+            participantId: res.participantId,
+            runSessionId: res.runSessionId,
+            runTypeId: res.runTypeId,
+            participantSex,
+            competitionId: res.competitionId,
+          },
+        });
+        return;
+      }
       navigate('/run/queue', {
         replace: true,
         state: {
@@ -59,6 +88,8 @@ export default function RunSelectionPage() {
           runSessionId: res.runSessionId,
           runTypeId: res.runTypeId,
           position: res.position,
+          participantSex,
+          participantFirstName: state?.participantFirstName,
         },
       });
     } catch (e) {
@@ -76,6 +107,7 @@ export default function RunSelectionPage() {
     <ArOzioViewport>
       <RegistrationLayout chrome="wizard">
         <RunSelectionShell
+          runSelectBody
           footer={
             <div style={rs.footerRow}>
               <PrimaryButton
@@ -90,16 +122,15 @@ export default function RunSelectionPage() {
             </div>
           }
         >
-          <p style={rs.greeting}>Привет, {greetingName}!</p>
-          <p style={rs.subtitle}>Выбери свой формат забега</p>
-          {error ? <p style={{ ...reg.error, ...rs.subtitle, color: '#f85149' }}>{error}</p> : null}
-          <RunTypeTabBar options={RUN_OPTIONS} selected={selected} onSelect={setSelected} />
-          <RunDetailCard option={activeOption} />
-          <p style={{ margin: 0, textAlign: 'center' }}>
-            <Link to="/" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85em' }}>
-              На главную
-            </Link>
-          </p>
+          <div style={rs.runSelectTopBlock}>
+            <p style={rs.greeting}>Привет, {greetingName}!</p>
+            <p style={rs.subtitle}>Выбери свой формат забега</p>
+            {error ? <p style={{ ...reg.error, ...rs.subtitle, color: '#f85149' }}>{error}</p> : null}
+            <RunTypeTabBar options={RUN_OPTIONS} selected={selected} onSelect={setSelected} />
+          </div>
+          <div style={rs.runSelectCardZone}>
+            <RunDetailCard option={activeOption} />
+          </div>
         </RunSelectionShell>
       </RegistrationLayout>
     </ArOzioViewport>

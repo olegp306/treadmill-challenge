@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArOzioViewport } from '../../arOzio/ArOzioViewport';
+import { ScreenContainer } from '../../arOzio/ScreenContainer';
 import { h } from '../../arOzio/dimensions';
 import { reg } from './registrationStyles';
 import type { ReactNode } from 'react';
@@ -29,7 +30,7 @@ export function RegistrationLayout({
 
   return (
     <ArOzioViewport>
-      <div style={pageStyle}>
+      <ScreenContainer style={pageStyle}>
         {chrome === 'intro' ? (
           <>
             <header style={reg.header}>
@@ -55,7 +56,7 @@ export function RegistrationLayout({
         ) : null}
 
         {children}
-      </div>
+      </ScreenContainer>
     </ArOzioViewport>
   );
 }

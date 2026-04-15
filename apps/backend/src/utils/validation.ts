@@ -3,7 +3,13 @@ import type {
   RunSessionResultDto,
   RunStartDto,
 } from '@treadmill-challenge/shared';
-import { getRunTypeByKey, isRunTypeId, type RunTypeId } from '@treadmill-challenge/shared';
+import {
+  getRunTypeByKey,
+  isRunTypeId,
+  normalizeGender,
+  type Gender,
+  type RunTypeId,
+} from '@treadmill-challenge/shared';
 
 export interface ValidationResult<T> {
   success: true;
@@ -105,6 +111,35 @@ export function validateRunStartBody(body: unknown): Validation<RunStartDto> {
       runTypeId: n as RunTypeId,
     },
   };
+}
+
+/** Optional `gender` / `sex` query: male | female (public queue filter). */
+export function parseGenderQuery(query: Record<string, unknown>): Gender | undefined | 'INVALID' {
+  const raw = query.gender ?? query.sex;
+  if (raw === undefined || raw === '') return undefined;
+  if (raw === 'male' || raw === 'female') return raw;
+  return 'INVALID';
+}
+
+/** Both `runTypeId` and `gender`/`sex` required for competition-scoped leaderboard. */
+export function parseLeaderboardScopeQuery(
+  query: Record<string, unknown>
+): { runTypeId: RunTypeId; gender: Gender } | undefined | 'INVALID' {
+  const hasRt = query.runTypeId !== undefined && query.runTypeId !== '';
+  const rawG = query.gender ?? query.sex;
+  const hasG = rawG !== undefined && rawG !== '';
+  if (!hasRt && !hasG) {
+    return undefined;
+  }
+  if (!hasRt || !hasG) {
+    return 'INVALID';
+  }
+  const n = Number(query.runTypeId);
+  if (!isRunTypeId(n)) {
+    return 'INVALID';
+  }
+  const g = normalizeGender(String(rawG));
+  return { runTypeId: n as RunTypeId, gender: g };
 }
 
 /** Parse optional queue filter: `runTypeId` (number) or legacy `runType` (key string). */

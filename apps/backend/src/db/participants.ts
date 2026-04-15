@@ -1,5 +1,6 @@
 import type { Db } from './sqlite.js';
-import type { Participant } from '@treadmill-challenge/shared';
+import type { Gender, Participant } from '@treadmill-challenge/shared';
+import { normalizeGender } from '@treadmill-challenge/shared';
 
 function rowToParticipant(row: Record<string, unknown>): Participant {
   return {
@@ -7,6 +8,7 @@ function rowToParticipant(row: Record<string, unknown>): Participant {
     firstName: String(row.firstName ?? ''),
     lastName: String(row.lastName ?? ''),
     phone: row.phone as string,
+    sex: normalizeGender(row.sex != null ? String(row.sex) : 'male'),
     createdAt: row.createdAt as string,
   };
 }
@@ -20,14 +22,37 @@ export function createParticipant(
   id: string,
   firstName: string,
   lastName: string,
-  phone: string
+  phone: string,
+  sex: Gender
 ): Participant {
   const createdAt = new Date().toISOString();
   db.prepare(`
-    INSERT INTO participants (id, firstName, lastName, phone, createdAt)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(id, firstName.trim(), lastName.trim(), phone, createdAt);
-  return { id, firstName: firstName.trim(), lastName: lastName.trim(), phone, createdAt };
+    INSERT INTO participants (id, firstName, lastName, phone, sex, createdAt)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(id, firstName.trim(), lastName.trim(), phone, sex, createdAt);
+  return { id, firstName: firstName.trim(), lastName: lastName.trim(), phone, sex, createdAt };
+}
+
+export function updateParticipantFields(
+  db: Db,
+  id: string,
+  fields: Partial<Pick<Participant, 'firstName' | 'lastName' | 'phone' | 'sex'>>
+): void {
+  const cur = getParticipantById(db, id);
+  if (!cur) throw new Error('Participant not found');
+  const next = {
+    firstName: fields.firstName ?? cur.firstName,
+    lastName: fields.lastName ?? cur.lastName,
+    phone: fields.phone ?? cur.phone,
+    sex: fields.sex ?? cur.sex,
+  };
+  db.prepare(`UPDATE participants SET firstName = ?, lastName = ?, phone = ?, sex = ? WHERE id = ?`).run(
+    next.firstName.trim(),
+    next.lastName.trim(),
+    next.phone.trim(),
+    next.sex,
+    id
+  );
 }
 
 export function getParticipantById(db: Db, id: string): Participant | null {

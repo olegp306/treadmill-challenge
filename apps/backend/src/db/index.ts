@@ -1,6 +1,8 @@
 import { initDb, type Db } from './sqlite.js';
 import { initSchema } from './schema.js';
 import { runMigrations } from './migrations.js';
+import * as adminSettings from './adminSettings.js';
+import * as competitions from './competitions.js';
 import * as participants from './participants.js';
 import * as runs from './runs.js';
 import * as runSessions from './runSessions.js';
@@ -21,4 +23,4 @@ export function getDb(): Db {
   return db;
 }
 
-export { participants, runs, runSessions };
+export { adminSettings, competitions, participants, runs, runSessions };

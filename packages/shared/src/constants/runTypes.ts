@@ -20,7 +20,7 @@ export const RUN_TYPES = [
   {
     id: 2 as const,
     key: 'stayer_sprint_5km' as const,
-    name: 'Стайер-спринт на 5 километров',
+    name: 'Стайер-спринт на 5 км',
     shortName: 'Стайер-спринт на 5 км',
     description: 'Продемонстрируй скоростную выносливость на длинной дистанции.',
   },

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { RunTypeId } from '@treadmill-challenge/shared';
+import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { api } from '../api/client';
 
 export interface QueueEntry {
@@ -9,7 +9,7 @@ export interface QueueEntry {
   participantName: string;
 }
 
-export function useQueue(runTypeId: RunTypeId | null) {
+export function useQueue(runTypeId: RunTypeId | null, gender: Gender) {
   const [entries, setEntries] = useState<QueueEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function useQueue(runTypeId: RunTypeId | null) {
       setLoading(true);
       setError(null);
       try {
-        const data = await api.getRunQueue(filterRunTypeId);
+        const data = await api.getRunQueue(filterRunTypeId, gender);
         if (!cancelled) {
           setEntries(data.entries);
         }
@@ -47,7 +47,7 @@ export function useQueue(runTypeId: RunTypeId | null) {
     return () => {
       cancelled = true;
     };
-  }, [runTypeId]);
+  }, [runTypeId, gender]);
 
   return { entries, loading, error };
 }

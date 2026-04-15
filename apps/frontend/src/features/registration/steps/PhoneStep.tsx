@@ -1,6 +1,8 @@
 import { useId, useMemo } from 'react';
+import { useInput } from 'input-format/react-hook';
 import type { RegistrationFormData } from '../types';
-import { digitsOnly } from '../phoneValidation';
+import { formatPhoneParsed, parsePhoneChar } from '../phoneFormat';
+import { digitsOnly, validatePhoneForSubmit } from '../phoneValidation';
 import { PrimaryButton, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
@@ -14,19 +16,32 @@ type Props = {
   fieldError: boolean;
 };
 
-/** National 10 digits (9XXXXXXXXX); strips leading 7/8 country or trunk codes. */
-function toNationalMobileDigits(raw: string): string {
-  let d = digitsOnly(raw);
-  if (d.startsWith('7')) d = d.slice(1);
-  if (d.startsWith('8')) d = d.slice(1);
-  return d.slice(0, 10);
-}
-
-/** Figma 691:2534 — phone row + «Далее» aligned; block vertically centered. */
-export function PhoneStep({ form, onChange, onNext, onBack, stepError, fieldError }: Props) {
+/**
+ * Phone step: `input-format` useInput (stable caret) + libphonenumber-js AsYouType formatting.
+ * Stored value is digits only (no "+"); default after name step is "7" → display "+7".
+ */
+export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError, fieldError }: Props) {
   const idPhone = useId();
-  const digits = useMemo(() => toNationalMobileDigits(form.phone), [form.phone]);
-  const filled = digits.length === 10 && digits[0] === '9';
+
+  const digitsValue = useMemo(() => digitsOnly(form.phone), [form.phone]);
+  const filled = useMemo(() => validatePhoneForSubmit(form.phone).ok, [form.phone]);
+
+  const inputProps = useInput({
+    value: digitsValue,
+    onChange: (v) => patchForm({ phone: (v as string | undefined) ?? '' }),
+    parse: parsePhoneChar,
+    format: formatPhoneParsed,
+    id: idPhone,
+    type: 'tel' as const,
+    inputMode: 'tel' as const,
+    autoComplete: 'tel',
+    autoCorrect: 'off',
+    spellCheck: false,
+    name: 'participantPhone',
+    enterKeyHint: 'done' as const,
+    'aria-label': 'Номер телефона',
+    placeholder: '+7 999 999 9999',
+  });
 
   return (
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод номера телефона">
@@ -45,23 +60,8 @@ export function PhoneStep({ form, onChange, onNext, onBack, stepError, fieldErro
               ...(fieldError ? reg.wizardFieldUnderlineError : {}),
             }}
           >
-            <span style={reg.phoneCountryPrefix} aria-hidden>
-              +7
-            </span>
             <input
-              id={idPhone}
-              type="tel"
-              name="participantPhone"
-              inputMode="tel"
-              autoComplete="tel"
-              enterKeyHint="done"
-              placeholder="9991234567"
-              aria-label="Номер телефона"
-              value={digits}
-              onChange={(e) => {
-                const next = toNationalMobileDigits(e.target.value);
-                onChange({ phone: next });
-              }}
+              {...inputProps}
               style={{
                 border: 'none',
                 borderRadius: 0,

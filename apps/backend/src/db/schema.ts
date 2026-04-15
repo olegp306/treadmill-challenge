@@ -39,5 +39,26 @@ export function initSchema(db: Db): void {
 
     CREATE INDEX IF NOT EXISTS idx_run_sessions_participant ON run_sessions(participantId);
     CREATE INDEX IF NOT EXISTS idx_run_sessions_queue ON run_sessions(runTypeId, status, queueNumber);
+
+    CREATE TABLE IF NOT EXISTS competitions (
+      id TEXT PRIMARY KEY,
+      runTypeId INTEGER NOT NULL,
+      runTypeKey TEXT NOT NULL,
+      gender TEXT NOT NULL,
+      title TEXT NOT NULL,
+      status TEXT NOT NULL,
+      startedAt TEXT NOT NULL,
+      stoppedAt TEXT,
+      winnerParticipantId TEXT,
+      winnerRunSessionId TEXT
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_comp_active_pair
+    ON competitions(runTypeId, gender) WHERE status = 'active';
+
+    CREATE TABLE IF NOT EXISTS admin_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
 }

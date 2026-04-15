@@ -7,12 +7,19 @@ import { rs } from './runSelectionStyles';
 type Props = {
   children: ReactNode;
   footer?: ReactNode;
+  /** Tighter body: no inner scroll on run-format picker. */
+  runSelectBody?: boolean;
 };
 
-export function RunSelectionShell({ children, footer }: Props) {
+export function RunSelectionShell({ children, footer, runSelectBody }: Props) {
+  const bodyStyle =
+    runSelectBody === true ? { ...rs.heroBody, ...rs.heroBodyRunSelect } : rs.heroBody;
+  const mainStyle =
+    runSelectBody === true ? { ...rs.heroMain, ...rs.heroMainRunSelect } : rs.heroMain;
+
   return (
-    <div style={rs.heroRoot}>
-      <div style={rs.heroMain}>
+    <div style={runSelectBody === true ? { ...rs.heroRoot, ...rs.heroRootRunSelect } : rs.heroRoot}>
+      <div style={mainStyle}>
         <WizardCardBackdrop />
         <div style={rs.heroStack}>
           <header style={rs.heroHeader}>
@@ -24,7 +31,7 @@ export function RunSelectionShell({ children, footer }: Props) {
               Выйти
             </Link>
           </header>
-          <div style={rs.heroBody}>{children}</div>
+          <div style={bodyStyle}>{children}</div>
         </div>
       </div>
       {footer ?? null}

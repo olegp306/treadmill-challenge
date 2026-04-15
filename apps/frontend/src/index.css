@@ -1,14 +1,13 @@
 /*
- * Figma uses Druk Wide Cyr (Medium). For production, prefer a licensed woff2
- * under /public/fonts and point src= there; Oswald remains the fallback.
+ * Druk Wide Cyr: local woff2 in /public/assets/fonts (bundled as static asset).
+ * Oswald: self-hosted via @fontsource/oswald (imported in main.tsx).
  */
 @font-face {
   font-family: 'Druk Wide Cyr';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('https://db.onlinewebfonts.com/t/e7fa3e0f70e1466b2f73ee1ac39c8c30.woff2')
-    format('woff2');
+  src: url('/assets/fonts/DrukWideCyr-400.woff2') format('woff2');
 }
 
 .ar-ozio-ipad {
@@ -87,7 +86,9 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: 'Druk Wide Cyr', 'Oswald', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  font-synthesis: none;
   background: #0f1419;
   color: #e6edf3;
   min-height: 100vh;

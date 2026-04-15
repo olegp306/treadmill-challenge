@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { RunTypeId } from '@treadmill-challenge/shared';
+import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeShortName } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
+import { ScreenContainer } from '../arOzio/ScreenContainer';
 import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
+import { AdminPinModal } from '../features/admin/AdminPinModal';
 
-/** Figma: AR x OZIO — iPad, «Заставка фоновая» (426:474), canvas 2360×1640 */
-const ASSET_HERO_BG =
-  'https://www.figma.com/api/mcp/asset/88913198-2966-446c-af0a-00cfe2c16047';
+/** Figma hero — local assets (WebP + JPEG fallback, tiny LQIP blur). */
+const HERO_BG_WEBP = '/assets/hero/hero-bg.webp';
+const HERO_BG_FULL = '/assets/hero/hero-bg.jpg';
+const HERO_BG_LQ = '/assets/hero/hero-bg-lq.jpg';
 
 type QueueCardItem = {
   runSessionId: string;
@@ -17,6 +20,7 @@ type QueueCardItem = {
   runTypeId: RunTypeId;
   runType: string;
   status: string;
+  gender: Gender;
 };
 
 function splitNameLines(fullName: string): { nameLine1: string; nameLine2?: string } {
@@ -27,9 +31,23 @@ function splitNameLines(fullName: string): { nameLine1: string; nameLine2?: stri
   return { nameLine1: parts[0], nameLine2: parts.slice(1).join(' ') };
 }
 
+const ADMIN_TAP_SEQ = ['amazing', 'amazing', 'red', 'red', 'amazing', 'red'] as const;
+
 export default function Main() {
   const [queueCards, setQueueCards] = useState<QueueCardItem[]>([]);
   const [loadingQueue, setLoadingQueue] = useState(true);
+  const [heroFullLoaded, setHeroFullLoaded] = useState(false);
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const heroFullImgRef = useRef<HTMLImageElement>(null);
+  const adminTapIdx = useRef(0);
+
+  useLayoutEffect(() => {
+    const el = heroFullImgRef.current;
+    if (!el) return;
+    if (el.complete && el.naturalWidth > 0) {
+      setHeroFullLoaded(true);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,8 +60,7 @@ export default function Main() {
       try {
         const data = await api.getRunQueue();
         if (!cancelled) {
-          const sorted = [...data.entries].sort((a, b) => a.queueNumber - b.queueNumber);
-          setQueueCards(sorted);
+          setQueueCards(data.entries as QueueCardItem[]);
         }
       } catch {
         if (!cancelled) {
@@ -73,19 +90,71 @@ export default function Main() {
     [queueCards]
   );
 
+  const onAdminTap = (zone: 'amazing' | 'red') => {
+    const expected = ADMIN_TAP_SEQ[adminTapIdx.current];
+    if (zone !== expected) {
+      adminTapIdx.current = 0;
+      return;
+    }
+    adminTapIdx.current += 1;
+    if (adminTapIdx.current >= ADMIN_TAP_SEQ.length) {
+      adminTapIdx.current = 0;
+      setPinModalOpen(true);
+    }
+  };
+
   return (
     <ArOzioViewport>
-      <div style={styles.page}>
+      <ScreenContainer style={styles.page}>
           <section style={styles.heroSection} aria-label="Заставка">
             <div style={styles.heroBgPlate} aria-hidden />
+            <div style={styles.heroImageWrap} aria-hidden>
+              <img
+                src={HERO_BG_LQ}
+                alt=""
+                style={styles.heroLqImage}
+                decoding="async"
+                fetchPriority="low"
+              />
+              <picture style={styles.heroPicture}>
+                <source srcSet={HERO_BG_WEBP} type="image/webp" />
+                <img
+                  ref={heroFullImgRef}
+                  src={HERO_BG_FULL}
+                  alt=""
+                  style={{
+                    ...styles.heroImage,
+                    opacity: heroFullLoaded ? 1 : 0,
+                    transition: 'opacity 280ms ease-out',
+                  }}
+                  decoding="async"
+                  fetchPriority="high"
+                  onLoad={() => setHeroFullLoaded(true)}
+                  onError={() => setHeroFullLoaded(true)}
+                />
+              </picture>
+            </div>
+            <div
+              style={{
+                ...styles.heroContentLayer,
+                opacity: heroFullLoaded ? 1 : 0,
+                transition: 'opacity 280ms ease-out',
+                pointerEvents: heroFullLoaded ? 'auto' : 'none',
+              }}
+            >
             <div style={styles.logoRow}>
               <p style={styles.logoMark} aria-label="AMAZING RED">
-                <span style={styles.logoAmazing}>AMAZING</span>
-                <span style={styles.logoRed}>RED</span>
+                <span
+                  style={styles.logoAmazing}
+                  onClick={() => onAdminTap('amazing')}
+                  role="presentation"
+                >
+                  AMAZING
+                </span>
+                <span style={styles.logoRed} onClick={() => onAdminTap('red')} role="presentation">
+                  RED
+                </span>
               </p>
-            </div>
-            <div style={styles.heroImageWrap} aria-hidden>
-              <img src={ASSET_HERO_BG} alt="" style={styles.heroImage} />
             </div>
 
             <div style={styles.heroForeground}>
@@ -136,6 +205,15 @@ export default function Main() {
                             >
                               {getRunTypeShortName(card.runTypeId)}
                             </span>
+                            <span
+                              style={{
+                                ...styles.tagPill,
+                                ...(isActive ? styles.tagPillActive : styles.tagPillInactive),
+                                marginLeft: w(8),
+                              }}
+                            >
+                              {card.gender === 'female' ? 'Ж' : 'М'}
+                            </span>
                           </div>
                           <div style={styles.cardName}>
                             <span>{nameLine1}</span>
@@ -153,9 +231,18 @@ export default function Main() {
                 </div>
               </div>
             </div>
+            </div>
           </section>
 
-          <nav style={styles.bottomNav} aria-label="Основные действия">
+          <nav
+            style={{
+              ...styles.bottomNav,
+              opacity: heroFullLoaded ? 1 : 0,
+              transition: 'opacity 280ms ease-out',
+              pointerEvents: heroFullLoaded ? 'auto' : 'none',
+            }}
+            aria-label="Основные действия"
+          >
             <Link to="/leaderboard" style={styles.btnLeaderboard}>
               Лидерборд
             </Link>
@@ -163,25 +250,16 @@ export default function Main() {
               Принять участие
             </Link>
           </nav>
-        </div>
+        </ScreenContainer>
+      <AdminPinModal open={pinModalOpen} onClose={() => setPinModalOpen(false)} />
     </ArOzioViewport>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
-    width: '100%',
-    height: '100%',
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
     gap: w(32),
-    paddingLeft: w(120),
-    paddingRight: w(120),
-    paddingTop: h(12),
-    paddingBottom: h(12),
-    boxSizing: 'border-box',
+    justifyContent: 'space-between',
   },
   heroSection: {
     position: 'relative',
@@ -203,6 +281,26 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#080809',
     boxShadow: 'inset 0 -280px 250px -350px #e6233a',
     pointerEvents: 'none',
+  },
+  heroContentLayer: {
+    position: 'relative',
+    zIndex: 3,
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  heroLqImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '121.36%',
+    left: 0,
+    top: '-19.65%',
+    objectFit: 'cover',
+    filter: 'blur(28px)',
+    transform: 'scale(1.08)',
+    opacity: 1,
   },
   logoRow: {
     position: 'relative',
@@ -228,9 +326,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   logoAmazing: {
     color: '#ffffff',
+    cursor: 'pointer',
+    userSelect: 'none',
   },
   logoRed: {
     color: '#e6233a',
+    cursor: 'pointer',
+    userSelect: 'none',
   },
   heroImageWrap: {
     position: 'absolute',
@@ -244,6 +346,14 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.5,
     mixBlendMode: 'color-dodge',
     pointerEvents: 'none',
+  },
+  heroPicture: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    margin: 0,
+    display: 'block',
   },
   heroImage: {
     position: 'absolute',

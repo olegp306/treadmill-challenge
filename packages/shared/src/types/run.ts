@@ -9,6 +9,8 @@ export type RunSessionStatus = 'queued' | 'running' | 'finished' | 'cancelled';
 export interface RunSession {
   id: string;
   participantId: string;
+  /** Competition this session belongs to (queue + results scope). */
+  competitionId: string;
   /** Canonical numeric run format (0 | 1 | 2). */
   runTypeId: RunTypeId;
   /** Denormalized key string (same as RUN_TYPES[].key). */

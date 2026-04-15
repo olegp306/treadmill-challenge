@@ -8,8 +8,14 @@ export const rs: Record<string, CSSProperties> = {
     width: '100%',
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'center',
     gap: h(31),
     boxSizing: 'border-box',
+  },
+  /** Run selection: less gap between card and footer so the column fits the viewport. */
+  heroRootRunSelect: {
+    gap: h(18),
   },
   heroMain: {
     position: 'relative',
@@ -22,6 +28,10 @@ export const rs: Record<string, CSSProperties> = {
     padding: `${h(50)} ${w(50)}`,
     boxSizing: 'border-box',
     overflow: 'hidden',
+  },
+  /** Run selection: slightly tighter outer padding so content fits without scrolling. */
+  heroMainRunSelect: {
+    padding: `${h(40)} ${w(50)}`,
   },
   heroStack: {
     position: 'relative',
@@ -54,6 +64,40 @@ export const rs: Record<string, CSSProperties> = {
     paddingBottom: h(16),
     boxSizing: 'border-box',
     width: '100%',
+  },
+  /**
+   * Run selection: stack from top; do NOT justify whole body (prevents tab bar jumping when card height changes).
+   * Two zones: fixed top (copy + tabs) + flex card area (centered).
+   */
+  heroBodyRunSelect: {
+    overflow: 'hidden',
+    gap: 0,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    paddingTop: h(8),
+    paddingBottom: h(8),
+  },
+  /** Greeting, subtitle, error, run-type tabs — fixed height block; does not reflow when description changes. */
+  runSelectTopBlock: {
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    gap: h(16),
+    boxSizing: 'border-box',
+  },
+  /** Remaining space: detail card vertically centered; tabs above stay fixed. */
+  runSelectCardZone: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    boxSizing: 'border-box',
   },
   greeting: {
     margin: 0,
@@ -114,14 +158,16 @@ export const rs: Record<string, CSSProperties> = {
     backgroundColor: '#ffffff',
     color: '#333333',
   },
-  /** ~10% vertical padding (h(52) ≈ 10% of minHeight 520) on the whole title+description block. */
+  /** Title + description: Figma 50px top/bottom padding; min height so short copy does not collapse layout. */
   detailCard: {
     width: '100%',
     maxWidth: w(2020),
-    minHeight: h(520),
+    minHeight: h(360),
+    flexShrink: 0,
+    alignSelf: 'stretch',
     backgroundColor: 'rgba(255,255,255,0.07)',
     borderRadius: w(60),
-    padding: `${h(52)} ${w(50)}`,
+    padding: `${h(50)} ${w(50)}`,
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
@@ -134,7 +180,7 @@ export const rs: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: h(30),
+    gap: h(15),
     width: '100%',
     maxWidth: w(1800),
     boxSizing: 'border-box',

@@ -7,13 +7,15 @@ export type UnderlineFieldProps = {
   label: string;
   /** Show error color on label + underline. */
   hasError?: boolean;
+  /** Optional validation hint (blur / submit); does not change layout when empty. */
+  errorText?: string | null;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'style'> & {
   style?: CSSProperties;
 };
 
 /** Name step: label + underline-only text input (Figma). */
 export const UnderlineField = forwardRef<HTMLInputElement, UnderlineFieldProps>(
-  function UnderlineField({ id, label, hasError, style, ...inputProps }, ref) {
+  function UnderlineField({ id, label, hasError, errorText, style, ...inputProps }, ref) {
     return (
       <div style={reg.nameFieldCol}>
         <label
@@ -37,6 +39,7 @@ export const UnderlineField = forwardRef<HTMLInputElement, UnderlineFieldProps>(
           }}
           {...inputProps}
         />
+        {errorText ? <p style={reg.nameFieldInlineError}>{errorText}</p> : null}
       </div>
     );
   }

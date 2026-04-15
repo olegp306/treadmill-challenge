@@ -17,6 +17,12 @@ export function submitRunSessionResult(dto: RunSessionResultDto): {
   if (!session) {
     throw new Error('Run session not found');
   }
+  if (session.status === 'finished') {
+    throw new Error('Run session already finished');
+  }
+  if (session.status === 'cancelled') {
+    throw new Error('Run session cancelled');
+  }
   const participant = participants.getParticipantById(db, session.participantId);
   if (!participant) {
     throw new Error('Participant not found');
@@ -24,7 +30,16 @@ export function submitRunSessionResult(dto: RunSessionResultDto): {
 
   const speed = speedFromTimeDistance(dto.resultTime, dto.distance);
   const runId = randomUUID();
-  runs.createRun(db, runId, session.participantId, dto.resultTime, dto.distance, speed);
+  runs.createRun(
+    db,
+    runId,
+    session.participantId,
+    session.competitionId,
+    session.id,
+    dto.resultTime,
+    dto.distance,
+    speed
+  );
   runSessions.updateSessionResults(db, session.id, dto.resultTime, dto.distance);
 
   return { runId, runSessionId: session.id, participantId: session.participantId };

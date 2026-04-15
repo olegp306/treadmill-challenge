@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { RegistrationLayout } from './RegistrationLayout';
-import { normalizeRussianPhone } from './phoneValidation';
+import { validateNamePart } from './nameValidation';
+import { validatePhoneForSubmit } from './phoneValidation';
 import {
   INITIAL_FORM,
   RegistrationStep,
@@ -72,23 +73,31 @@ export function RegistrationFlow() {
   );
 
   const goNextFromName = useCallback(() => {
-    const first = form.firstName.trim();
-    const last = form.lastName.trim();
-    if (!first || !last) {
-      setStepError('Введите имя и фамилию');
+    const firstResult = validateNamePart(form.firstName, 'first');
+    const lastResult = validateNamePart(form.lastName, 'last');
+    if (!firstResult.ok) {
+      setStepError(firstResult.message);
+      setFieldError(true);
+      return;
+    }
+    if (!lastResult.ok) {
+      setStepError(lastResult.message);
       setFieldError(true);
       return;
     }
     setFieldError(false);
     setStepError(null);
-    patchForm({ name: `${first} ${last}`.trim() });
+    patchForm({
+      firstName: firstResult.normalized,
+      lastName: lastResult.normalized,
+      name: `${firstResult.normalized} ${lastResult.normalized}`.trim(),
+      phone: '7',
+    });
     setStep(RegistrationStep.Phone);
   }, [form.firstName, form.lastName, patchForm]);
 
   const goNextFromPhone = useCallback(() => {
-    const digits = form.phone.replace(/\D/g, '');
-    const payload = digits.length === 10 && digits[0] === '9' ? `7${digits}` : digits;
-    const result = normalizeRussianPhone(payload);
+    const result = validatePhoneForSubmit(form.phone);
     if (!result.ok) {
       setStepError(result.message);
       setFieldError(true);
@@ -96,7 +105,7 @@ export function RegistrationFlow() {
     }
     setFieldError(false);
     setStepError(null);
-    patchForm({ phone: digits });
+    patchForm({ phone: result.normalized });
     setStep(RegistrationStep.Consent);
   }, [form.phone, patchForm]);
 
@@ -109,20 +118,23 @@ export function RegistrationFlow() {
       return;
     }
 
-    const digits = form.phone.replace(/\D/g, '');
-    const phonePayload = digits.length === 10 && digits[0] === '9' ? `7${digits}` : digits;
-    const phoneResult = normalizeRussianPhone(phonePayload);
+    const phoneResult = validatePhoneForSubmit(form.phone);
     if (!phoneResult.ok) {
       setStepError(phoneResult.message);
       return;
     }
 
-    const name =
-      `${form.firstName} ${form.lastName}`.trim() || form.name.trim();
-    if (!name) {
-      setStepError('Введите имя и фамилию');
+    const nameFirst = validateNamePart(form.firstName, 'first');
+    const nameLast = validateNamePart(form.lastName, 'last');
+    if (!nameFirst.ok) {
+      setStepError(nameFirst.message);
       return;
     }
+    if (!nameLast.ok) {
+      setStepError(nameLast.message);
+      return;
+    }
+    const name = `${nameFirst.normalized} ${nameLast.normalized}`.trim();
 
     if (!form.isAdult || form.gender === null) {
       setStepError('Не все данные заполнены');
@@ -140,7 +152,11 @@ export function RegistrationFlow() {
       });
       navigate('/run-select', {
         replace: true,
-        state: { participantId: created.id, participantFirstName: created.firstName },
+        state: {
+          participantId: created.id,
+          participantFirstName: created.firstName,
+          participantSex: form.gender,
+        },
       });
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Ошибка регистрации');
