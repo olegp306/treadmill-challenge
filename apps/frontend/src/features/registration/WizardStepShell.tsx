@@ -4,6 +4,8 @@ import { h, w } from '../../arOzio/dimensions';
 import { WIZARD_ASSETS } from './registrationWizardAssets';
 import { reg } from './registrationStyles';
 import { WizardCardBackdrop } from './WizardCardBackdrop';
+import { LogoMark } from '../../ui/components/LogoMark';
+import { Sheet } from '../../ui/components/Sheet';
 
 type Props = {
   onBack: () => void;
@@ -24,7 +26,7 @@ export function WizardStepShell({ onBack, variant, children, footer, ...rest }: 
 
   return (
     <div style={reg.ageFigmaRoot} {...rest}>
-      <div style={mainStyle}>
+      <Sheet style={{ ...mainStyle, border: 'none' }}>
         <WizardCardBackdrop />
         <div style={reg.ageFigmaStack}>
           <header style={reg.ageFigmaHeader}>
@@ -42,10 +44,7 @@ export function WizardStepShell({ onBack, variant, children, footer, ...rest }: 
               />
               Назад
             </button>
-            <p style={reg.ageFigmaLogo} aria-label="AMAZING RED">
-              <span style={reg.logoAmazing}>AMAZING</span>
-              <span style={reg.logoRed}>RED</span>
-            </p>
+            <LogoMark aria-label="AMAZING RED" style={reg.ageFigmaLogo} />
             <Link to="/" className="ar-reg-wizard-pill-link" style={reg.ageFigmaPillLink}>
               Выйти
             </Link>
@@ -59,7 +58,7 @@ export function WizardStepShell({ onBack, variant, children, footer, ...rest }: 
             {children}
           </div>
         </div>
-      </div>
+      </Sheet>
       {footer}
     </div>
   );

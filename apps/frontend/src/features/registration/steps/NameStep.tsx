@@ -3,9 +3,10 @@ import type { RegistrationFormData } from '../types';
 import { focusInputForMobileKeyboard } from '../iosInputFocus';
 import { logEvent } from '../../../logging/logEvent';
 import { validateNamePart } from '../nameValidation';
-import { PrimaryButton, StepBody, UnderlineField } from '../components';
+import { PrimaryButton, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
+import { InputField } from '../../../ui/components/InputField';
 
 type Props = {
   form: RegistrationFormData;
@@ -77,9 +78,9 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
             tryAdvance();
           }}
         >
-          <UnderlineField
+            <InputField
             ref={firstRef}
-            id={idFirst}
+              id={idFirst}
             placeholder="Имя"
             hasError={firstErrHighlight}
             errorText={firstErrText}
@@ -123,7 +124,7 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               }
             }}
           />
-          <UnderlineField
+          <InputField
             ref={lastRef}
             id={idLast}
             placeholder="Фамилия"

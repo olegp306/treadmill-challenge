@@ -10,6 +10,7 @@ import { digitsOnly, validatePhoneForSubmit } from '../phoneValidation';
 import { PrimaryButton, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
+import { InputField } from '../../../ui/components/InputField';
 
 type Props = {
   form: RegistrationFormData;
@@ -81,49 +82,34 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
         ) : null}
 
         <div style={reg.phoneFieldButtonRow}>
-          <div
-            style={{
-              ...reg.phoneInputUnderlineWrap,
-              ...(fieldError ? reg.wizardFieldUnderlineError : {}),
+          <InputField
+            {...inputProps}
+            wrapperStyle={reg.phoneInputUnderlineWrap}
+            hasError={fieldError}
+            errorText={null}
+            inputBaseStyle={reg.phoneDigitsInput}
+            ref={(node) => {
+              phoneInputRef.current = node;
+              if (typeof hookRef === 'function') {
+                hookRef(node);
+              } else if (hookRef && typeof hookRef === 'object' && 'current' in hookRef) {
+                (hookRef as MutableRefObject<HTMLInputElement | null>).current = node;
+              }
             }}
-          >
-            <input
-              {...inputProps}
-              ref={(node) => {
-                phoneInputRef.current = node;
-                if (typeof hookRef === 'function') {
-                  hookRef(node);
-                } else if (hookRef && typeof hookRef === 'object' && 'current' in hookRef) {
-                  (hookRef as MutableRefObject<HTMLInputElement | null>).current = node;
+            autoFocus
+            onBlur={(e) => {
+              (inputProps as InputHTMLAttributes<HTMLInputElement>).onBlur?.(e);
+              const r = validatePhoneForSubmit(form.phone);
+              if (!r.ok) return;
+              logEvent(
+                'field_phone_blur',
+                { phoneDigitsLen: r.normalized.length },
+                {
+                  readableMessage: `Пользователь ввёл номер телефона: ${formatPhoneFromDigits(r.normalized)}`,
                 }
-              }}
-              autoFocus
-              onBlur={(e) => {
-                (inputProps as InputHTMLAttributes<HTMLInputElement>).onBlur?.(e);
-                const r = validatePhoneForSubmit(form.phone);
-                if (!r.ok) return;
-                logEvent(
-                  'field_phone_blur',
-                  { phoneDigitsLen: r.normalized.length },
-                  {
-                    readableMessage: `Пользователь ввёл номер телефона: ${formatPhoneFromDigits(r.normalized)}`,
-                  }
-                );
-              }}
-              style={{
-                border: 'none',
-                borderRadius: 0,
-                backgroundColor: 'transparent',
-                outline: 'none',
-                boxShadow: 'none',
-                WebkitAppearance: 'none' as const,
-                appearance: 'none' as const,
-                margin: 0,
-                padding: 0,
-                ...reg.phoneDigitsInput,
-              }}
-            />
-          </div>
+              );
+            }}
+          />
 
           <PrimaryButton
             variant="next"

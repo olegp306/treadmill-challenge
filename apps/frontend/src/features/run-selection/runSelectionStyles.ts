@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { h, w } from '../../arOzio/dimensions';
+import { ui } from '../../ui/tokens';
 
 export const rs: Record<string, CSSProperties> = {
   heroRoot: {
@@ -23,11 +24,8 @@ export const rs: Record<string, CSSProperties> = {
     minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: '#080809',
-    borderRadius: w(70),
     padding: `${h(50)} ${w(50)}`,
     boxSizing: 'border-box',
-    overflow: 'hidden',
   },
   /** Run selection: slightly tighter outer padding so content fits without scrolling. */
   heroMainRunSelect: {
@@ -107,7 +105,7 @@ export const rs: Record<string, CSSProperties> = {
     letterSpacing: '0.02em',
     textTransform: 'uppercase',
     textAlign: 'center',
-    color: '#ffffff',
+    color: ui.color.text,
     width: '100%',
     maxWidth: w(1900),
   },
@@ -118,7 +116,7 @@ export const rs: Record<string, CSSProperties> = {
     lineHeight: 1.4,
     textTransform: 'uppercase',
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.76)',
+    color: ui.color.textMuted,
     width: '100%',
     maxWidth: w(1900),
   },
@@ -155,11 +153,6 @@ export const rs: Record<string, CSSProperties> = {
     justifyContent: 'center',
     gap: h(4),
   },
-  tabBtnIndex: {
-    fontSize: w(24),
-    lineHeight: 1,
-    opacity: 0.8,
-  },
   tabBtnTitle: {
     lineHeight: 1.2,
   },
@@ -168,7 +161,7 @@ export const rs: Record<string, CSSProperties> = {
     color: 'rgba(255,255,255,0.6)',
   },
   tabBtnSelected: {
-    backgroundColor: '#ffffff',
+    backgroundColor: ui.color.text,
     color: '#333333',
   },
   /** Title + description: Figma 50px top/bottom padding; min height so short copy does not collapse layout. */
@@ -204,7 +197,7 @@ export const rs: Record<string, CSSProperties> = {
     fontSize: w(72),
     lineHeight: 1.1,
     textTransform: 'uppercase',
-    color: '#ffffff',
+    color: ui.color.text,
     width: '100%',
   },
   detailDesc: {

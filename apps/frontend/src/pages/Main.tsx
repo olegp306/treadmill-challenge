@@ -9,6 +9,8 @@ import { api } from '../api/client';
 import { AdminPinModal } from '../features/admin/AdminPinModal';
 import { logEvent } from '../logging/logEvent';
 import { pluralizePeople } from '../utils/russianPlural';
+import { LogoMark } from '../ui/components/LogoMark';
+import { ui } from '../ui/tokens';
 
 /** Figma hero — local assets (WebP + JPEG fallback, tiny LQIP blur). */
 const HERO_BG_WEBP = '/assets/hero/hero-bg.webp';
@@ -146,18 +148,12 @@ export default function Main() {
               }}
             >
             <div style={styles.logoRow}>
-              <p style={styles.logoMark} aria-label="AMAZING RED">
-                <span
-                  style={styles.logoAmazing}
-                  onClick={() => onAdminTap('amazing')}
-                  role="presentation"
-                >
-                  AMAZING
-                </span>
-                <span style={styles.logoRed} onClick={() => onAdminTap('red')} role="presentation">
-                  RED
-                </span>
-              </p>
+              <LogoMark
+                aria-label="AMAZING RED"
+                style={styles.logoMark}
+                onAmazingClick={() => onAdminTap('amazing')}
+                onRedClick={() => onAdminTap('red')}
+              />
             </div>
 
             <div style={styles.heroForeground}>
@@ -294,8 +290,8 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     height: '100%',
     borderRadius: w(70),
-    background: '#080809',
-    boxShadow: 'inset 0 -280px 250px -350px #e6233a',
+    background: ui.color.panel,
+    boxShadow: `inset 0 -280px 250px -350px ${ui.color.red}`,
     pointerEvents: 'none',
   },
   heroContentLayer: {
@@ -327,28 +323,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: `${h(50)} ${w(40)} 0`,
   },
   logoMark: {
-    margin: 0,
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'center',
-    alignItems: 'baseline',
-    gap: '0.28em',
-    fontSize: w(37),
-    lineHeight: 1,
-    letterSpacing: '0.02em',
-    textTransform: 'uppercase',
-    fontWeight: 400,
-  },
-  logoAmazing: {
-    color: '#ffffff',
-    cursor: 'pointer',
-    userSelect: 'none',
-  },
-  logoRed: {
-    color: '#e6233a',
-    cursor: 'pointer',
-    userSelect: 'none',
+    flexWrap: 'wrap',
   },
   heroImageWrap: {
     position: 'absolute',
@@ -397,7 +373,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: w(128),
     lineHeight: 1,
     textTransform: 'uppercase',
-    color: '#fff',
+    color: ui.color.text,
   },
   queueBlock: {
     display: 'flex',
@@ -413,10 +389,10 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
   },
   queueTitleWhite: {
-    color: '#fff',
+    color: ui.color.text,
   },
   queueAccent: {
-    color: '#e6233a',
+    color: ui.color.red,
   },
   cardsRow: {
     display: 'flex',
@@ -442,7 +418,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: w(56),
     lineHeight: 1.05,
     textTransform: 'uppercase',
-    color: '#fff',
+    color: ui.color.text,
   },
   emptyQueueText: {
     margin: 0,
@@ -464,7 +440,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
   },
   cardActive: {
-    backgroundColor: '#e6233a',
+    backgroundColor: ui.color.red,
   },
   cardInactive: {
     backgroundColor: '#000000',
@@ -482,14 +458,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: w(30),
     lineHeight: 1,
     textTransform: 'uppercase',
-    color: '#fff',
+    color: ui.color.text,
   },
   tagPill: {
     fontWeight: 400,
     fontSize: w(20),
     lineHeight: 1.2,
     textTransform: 'uppercase',
-    color: '#fff',
+    color: ui.color.text,
     padding: `${h(10)} ${w(12)}`,
     borderRadius: w(16),
     whiteSpace: 'nowrap',
@@ -505,7 +481,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: w(40),
     lineHeight: 1.1,
     textTransform: 'uppercase',
-    color: '#fff',
+    color: ui.color.text,
     textAlign: 'left',
   },
   bottomNav: {
@@ -524,14 +500,14 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     background: '#000',
-    color: '#fff',
+    color: ui.color.text,
     fontWeight: 400,
     fontSize: w(56),
     lineHeight: 1,
     textTransform: 'uppercase',
     textDecoration: 'none',
     borderRadius: w(48),
-    border: '1px solid #1e1e1e',
+    border: `1px solid ${ui.color.panelBorder}`,
     boxSizing: 'border-box',
   },
   btnParticipate: {
@@ -541,8 +517,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#e6233a',
-    color: '#fff',
+    background: ui.color.red,
+    color: ui.color.text,
     fontWeight: 400,
     fontSize: w(56),
     lineHeight: 1,

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { h, w } from '../../arOzio/dimensions';
+import { ui } from '../../ui/tokens';
 
 /** Figma 718:870 / 718:897 / 748:1353 — queue & treadmill screens (AR Ozio iPad). */
 export const rq: Record<string, CSSProperties> = {
@@ -18,12 +19,7 @@ export const rq: Record<string, CSSProperties> = {
     marginLeft: 'auto',
     marginRight: 'auto',
     alignSelf: 'center',
-    borderRadius: w(70),
-    background: '#080809',
-    border: '1px solid #1e1e1e',
     boxSizing: 'border-box',
-    overflow: 'hidden',
-    position: 'relative',
     boxShadow: 'inset 0 -160px 160px -200px rgba(230, 35, 58, 0.35)',
   },
   sheetGlow: {
@@ -54,15 +50,13 @@ export const rq: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     fontWeight: 400,
   },
-  logoAmazing: { color: '#ffffff' },
-  logoRed: { color: '#e6233a' },
   namePill: {
     margin: 0,
     padding: `${h(24)} ${w(50)}`,
     borderRadius: w(80),
     fontSize: w(36),
     letterSpacing: '0.05em',
-    color: '#fff',
+    color: ui.color.text,
     textTransform: 'uppercase',
     fontWeight: 400,
   },
@@ -85,11 +79,11 @@ export const rq: Record<string, CSSProperties> = {
     lineHeight: 1.12,
     fontWeight: 400,
     textTransform: 'uppercase',
-    color: '#fff',
+    color: ui.color.text,
     maxWidth: w(2000),
   },
   titleAccent: {
-    color: '#e6233a',
+    color: ui.color.red,
   },
   subtitle: {
     margin: `${h(20)} 0 0`,
@@ -102,7 +96,7 @@ export const rq: Record<string, CSSProperties> = {
     maxWidth: w(1400),
   },
   subtitleStrong: {
-    color: '#fff',
+    color: ui.color.text,
   },
   footerRow: {
     display: 'flex',
@@ -125,7 +119,7 @@ export const rq: Record<string, CSSProperties> = {
     borderRadius: w(48),
     border: '1px solid rgba(255,255,255,0.35)',
     background: 'transparent',
-    color: '#fff',
+    color: ui.color.text,
     fontSize: w(54),
     fontWeight: 400,
     textTransform: 'uppercase',

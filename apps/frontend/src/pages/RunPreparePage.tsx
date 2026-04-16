@@ -8,6 +8,7 @@ import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
 import { logEvent } from '../logging/logEvent';
+import { ui } from '../ui/tokens';
 
 type RunPrepareLocationState = {
   participantId: string;
@@ -175,7 +176,7 @@ export default function RunPreparePage() {
             </p>
             {demoRank != null ? (
               <p style={{ margin: '10px 0 0', color: '#fff' }}>
-                Финиш: место <span style={{ color: '#e6233a' }}>{demoRank}</span> (отправлено в TouchDesigner — эмуляция)
+                Финиш: место <span style={{ color: ui.color.red }}>{demoRank}</span> (отправлено в TouchDesigner — эмуляция)
               </p>
             ) : null}
             {demoMsg ? <p style={{ margin: '10px 0 0', color: 'rgba(255,255,255,0.85)' }}>{demoMsg}</p> : null}

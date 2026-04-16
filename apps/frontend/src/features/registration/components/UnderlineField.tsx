@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import type { CSSProperties, InputHTMLAttributes } from 'react';
-import { reg } from '../registrationStyles';
+import type { InputFieldProps } from '../../../ui/components/InputField';
+import { InputField } from '../../../ui/components/InputField';
 
 export type UnderlineFieldProps = {
   id: string;
@@ -12,26 +13,16 @@ export type UnderlineFieldProps = {
   style?: CSSProperties;
 };
 
-/** Name step: label + underline-only text input (Figma). */
+/** Legacy alias for `InputField` (kept for minimal churn). */
 export const UnderlineField = forwardRef<HTMLInputElement, UnderlineFieldProps>(
   function UnderlineField({ id, hasError, errorText, style, ...inputProps }, ref) {
-    return (
-      <div style={reg.nameFieldCol}>
-        <input
-          ref={ref}
-          id={id}
-          style={{
-            ...reg.wizardFieldUnderline,
-            ...reg.nameFieldInput,
-            ...(hasError ? reg.wizardFieldUnderlineError : {}),
-            ...style,
-          }}
-          {...inputProps}
-        />
-        <p style={{ ...reg.nameFieldInlineError, visibility: errorText ? 'visible' : 'hidden' }}>
-          {errorText ?? ' '}
-        </p>
-      </div>
-    );
+    const props: InputFieldProps = {
+      ...(inputProps as Omit<InputFieldProps, 'hasError' | 'errorText'>),
+      id,
+      hasError,
+      errorText,
+      style,
+    };
+    return <InputField ref={ref} {...props} />;
   }
 );
