@@ -66,6 +66,9 @@
 .ar-ozio-ipad-canvas {
   container-type: size;
   container-name: ar-ozio;
+  /* Default sizing units; JS may override for iOS fallback. */
+  --ar-cqw: 1cqw;
+  --ar-cqh: 1cqh;
   display: flex;
   flex-direction: column;
   width: min(100vw, 100vh * 2360 / 1640);
