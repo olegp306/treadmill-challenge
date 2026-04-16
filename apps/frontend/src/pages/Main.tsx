@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeShortName } from '@treadmill-challenge/shared';
@@ -38,6 +38,7 @@ const ADMIN_TAP_SEQ = ['amazing', 'amazing', 'red', 'red', 'amazing', 'red'] as 
 export default function Main() {
   const [queueCards, setQueueCards] = useState<QueueCardItem[]>([]);
   const [loadingQueue, setLoadingQueue] = useState(true);
+  const [queueBlockVisible, setQueueBlockVisible] = useState(false);
   const [heroFullLoaded, setHeroFullLoaded] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const heroFullImgRef = useRef<HTMLImageElement>(null);
@@ -63,10 +64,12 @@ export default function Main() {
         const data = await api.getRunQueue();
         if (!cancelled) {
           setQueueCards(data.entries as QueueCardItem[]);
+          setQueueBlockVisible(true);
         }
       } catch {
         if (!cancelled) {
           setQueueCards([]);
+          setQueueBlockVisible(true);
         }
       } finally {
         if (!cancelled && showLoading) {
@@ -88,10 +91,7 @@ export default function Main() {
 
   const queuePeopleCount = queueCards.length;
   const queueSummary = pluralizePeople(queuePeopleCount);
-  const activeRunningId = useMemo(
-    () => queueCards.find((card) => card.status === 'running')?.runSessionId ?? null,
-    [queueCards]
-  );
+  const blockShown = heroFullLoaded && queueBlockVisible;
 
   const onAdminTap = (zone: 'amazing' | 'red') => {
     const expected = ADMIN_TAP_SEQ[adminTapIdx.current];
@@ -167,7 +167,15 @@ export default function Main() {
                 на максимум!
               </h1>
 
-              <div style={styles.queueBlock}>
+              <div
+                style={{
+                  ...styles.queueBlock,
+                  opacity: blockShown ? 1 : 0,
+                  transform: blockShown ? 'translateY(0)' : `translateY(${h(10)})`,
+                  transition: 'opacity 280ms ease-out, transform 280ms ease-out',
+                  willChange: blockShown ? undefined : 'opacity, transform',
+                }}
+              >
                 <p style={styles.queueTitle}>
                   <span style={styles.queueTitleWhite}>Очередь забега</span>
                   <span style={styles.queueTitleWhite}>:</span>
@@ -183,9 +191,7 @@ export default function Main() {
                 ) : (
                   <div className="ar-ozio-cards-scroll" style={styles.cardsRow}>
                     {queueCards.map((card, i) => {
-                      const isActive = activeRunningId
-                        ? card.runSessionId === activeRunningId
-                        : i === 0;
+                      const isActive = i === 0;
                       const { nameLine1, nameLine2 } = splitNameLines(card.participantName);
                       return (
                         <article
@@ -397,6 +403,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: w(40),
+    minHeight: h(420),
   },
   queueTitle: {
     margin: 0,
@@ -460,7 +467,7 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#e6233a',
   },
   cardInactive: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#000000',
   },
   cardTop: {
     display: 'flex',

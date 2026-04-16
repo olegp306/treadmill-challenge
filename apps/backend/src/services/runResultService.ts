@@ -1,16 +1,48 @@
 import { randomUUID } from 'node:crypto';
 import { getDb, participants, runs, runSessions } from '../db/index.js';
 import type { RunSessionResultDto } from '@treadmill-challenge/shared';
+import { getRunTypeById, type RunTypeId } from '@treadmill-challenge/shared';
+import { runs as runsDb } from '../db/index.js';
 
 function speedFromTimeDistance(resultTime: number, distance: number): number {
   if (resultTime <= 0) return 0;
   return (distance / 1000 / resultTime) * 3600;
 }
 
+function rankCompetitionEntries(
+  entries: Array<{ resultTime: number; distance: number }>,
+  runTypeId: RunTypeId
+): number[] {
+  const ranks: number[] = [];
+  let prevKey: string | null = null;
+  let prevRank = 0;
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    const key = runTypeId === 0 ? `${e.distance}|${e.resultTime}` : `${e.resultTime}|${e.distance}`;
+    if (i === 0) {
+      prevRank = 1;
+      prevKey = key;
+      ranks.push(1);
+      continue;
+    }
+    if (key === prevKey) {
+      ranks.push(prevRank);
+    } else {
+      prevRank = i + 1;
+      prevKey = key;
+      ranks.push(prevRank);
+    }
+  }
+  return ranks;
+}
+
 export function submitRunSessionResult(dto: RunSessionResultDto): {
   runId: string;
   runSessionId: string;
   participantId: string;
+  competitionId: string;
+  runTypeId: RunTypeId;
+  rank: number | null;
 } {
   const db = getDb();
   const session = runSessions.getRunSessionById(db, dto.runSessionId.trim());
@@ -26,6 +58,10 @@ export function submitRunSessionResult(dto: RunSessionResultDto): {
   const participant = participants.getParticipantById(db, session.participantId);
   if (!participant) {
     throw new Error('Participant not found');
+  }
+  const cfg = getRunTypeById(session.runTypeId);
+  if (!cfg) {
+    throw new Error('Invalid runTypeId');
   }
 
   const speed = speedFromTimeDistance(dto.resultTime, dto.distance);
@@ -43,7 +79,22 @@ export function submitRunSessionResult(dto: RunSessionResultDto): {
   runSessions.updateSessionResults(db, session.id, dto.resultTime, dto.distance);
   runSessions.renumberQueuedSessions(db, session.competitionId);
 
-  return { runId, runSessionId: session.id, participantId: session.participantId };
+  const top = runsDb.getLeaderboardForCompetition(db, session.competitionId, session.runTypeId, 200);
+  const ranks = rankCompetitionEntries(
+    top.map((e) => ({ resultTime: e.run.resultTime, distance: e.run.distance })),
+    session.runTypeId
+  );
+  const idx = top.findIndex((e) => e.run.participantId === session.participantId);
+  const rank = idx >= 0 ? ranks[idx] : null;
+
+  return {
+    runId,
+    runSessionId: session.id,
+    participantId: session.participantId,
+    competitionId: session.competitionId,
+    runTypeId: session.runTypeId,
+    rank,
+  };
 }
 
 export function getExistingResultByRunSessionId(runSessionId: string): {

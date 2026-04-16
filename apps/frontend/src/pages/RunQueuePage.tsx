@@ -19,6 +19,7 @@ export type RunQueueLocationState = {
   position: number;
   participantSex: 'male' | 'female';
   participantFirstName?: string;
+  demoMode?: boolean;
 };
 
 export default function RunQueuePage() {
@@ -31,6 +32,7 @@ export default function RunQueuePage() {
   const runTypeId = state?.runTypeId ?? null;
   const position = state?.position ?? 0;
   const participantSex = state?.participantSex ?? 'male';
+  const demoMode = state?.demoMode ?? false;
 
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
   const [devMsg, setDevMsg] = useState<string | null>(null);
@@ -189,6 +191,8 @@ export default function RunQueuePage() {
 
   const showDevFinish = import.meta.env.DEV;
   const viewMode = liveStatus === 'running' ? 'running' : livePosition === 1 ? 'prepare' : 'queue';
+  const peopleAhead = Math.max(0, livePosition - 1);
+  const approxWaitMin = Math.max(0, peopleAhead * 2);
 
   return (
     <RunQueueScreenShell
@@ -198,9 +202,25 @@ export default function RunQueuePage() {
           <button type="button" style={rq.btnWide} onClick={goLeaveConfirm} disabled={liveStatus !== 'queued'}>
             Сойти с забега
           </button>
-          <button type="button" style={rq.btnWideSolid} onClick={() => navigate('/')}>
-            Ок
-          </button>
+          {demoMode && liveStatus === 'queued' ? (
+            <button
+              type="button"
+              style={rq.btnWideSolid}
+              onClick={() => {
+                logEvent(
+                  'queue_demo_confirm',
+                  { runTypeId, position: livePosition },
+                  { participantId, runSessionId, readableMessage: 'Пользователь подтвердил ожидание очереди (демо)' }
+                );
+              }}
+            >
+              Занять очередь
+            </button>
+          ) : (
+            <button type="button" style={rq.btnWideSolid} onClick={() => navigate('/')}>
+              Ок
+            </button>
+          )}
         </>
       }
     >
@@ -209,10 +229,27 @@ export default function RunQueuePage() {
       ) : viewMode === 'prepare' ? (
         <p style={{ ...rq.titleMain, margin: 0 }}>Приготовься. Пройди на дорожку.</p>
       ) : (
-        <p style={{ ...rq.titleMain, margin: 0 }}>
-          <span>Ваш номер в очереди: </span>
-          <span style={rq.titleAccent}>{livePosition}</span>
-        </p>
+        <>
+          {demoMode ? (
+            <>
+              <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка занята</p>
+              <p style={rq.subtitle}>
+                <span>Перед тобой </span>
+                <span style={rq.subtitleStrong}>
+                  {peopleAhead} {peopleAhead === 1 ? 'человек' : peopleAhead >= 2 && peopleAhead <= 4 ? 'человека' : 'человек'}
+                </span>
+              </p>
+              <p style={rq.subtitle}>
+                Примерное ожидание: <span style={rq.subtitleStrong}>{approxWaitMin} мин</span>
+              </p>
+            </>
+          ) : (
+            <p style={{ ...rq.titleMain, margin: 0 }}>
+              <span>Ваш номер в очереди: </span>
+              <span style={rq.titleAccent}>{livePosition}</span>
+            </p>
+          )}
+        </>
       )}
       {showDevFinish ? (
         <div style={{ marginTop: h(32), width: '100%', maxWidth: w(900), marginLeft: 'auto', marginRight: 'auto' }}>

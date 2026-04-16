@@ -137,16 +137,32 @@ export default function RunSelectionPage() {
         );
       }
       if (res.demoMode) {
-        navigate('/run/demo', {
-          replace: true,
-          state: {
-            participantId: res.participantId,
-            runSessionId: res.runSessionId,
-            runTypeId: res.runTypeId,
-            participantSex,
-            competitionId: res.competitionId,
-          },
-        });
+        if (res.status === 'running') {
+          navigate('/run/prepare', {
+            replace: true,
+            state: {
+              participantId: res.participantId,
+              runSessionId: res.runSessionId,
+              runTypeId: res.runTypeId,
+              participantSex,
+              participantFirstName: state?.participantFirstName,
+              demoMode: true,
+            },
+          });
+        } else {
+          navigate('/run/queue', {
+            replace: true,
+            state: {
+              participantId: res.participantId,
+              runSessionId: res.runSessionId,
+              runTypeId: res.runTypeId,
+              position: res.position,
+              participantSex,
+              participantFirstName: state?.participantFirstName,
+              demoMode: true,
+            },
+          });
+        }
         return;
       }
       navigate('/run/queue', {

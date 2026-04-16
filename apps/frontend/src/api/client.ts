@@ -140,7 +140,14 @@ export const api = {
   },
 
   submitRunResult(body: { runSessionId: string; resultTime: number; distance: number }) {
-    return request<{ runId: string; runSessionId: string; participantId: string }>('/run-result', {
+    return request<{
+      runId: string;
+      runSessionId: string;
+      participantId: string;
+      competitionId: string;
+      runTypeId: RunTypeId;
+      rank: number | null;
+    }>('/run-result', {
       method: 'POST',
       body: JSON.stringify(body),
     });

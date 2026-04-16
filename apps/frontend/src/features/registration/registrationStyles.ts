@@ -669,7 +669,6 @@ export const reg: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: w(24),
-    padding: '0 50px',
     boxSizing: 'border-box',
     width: '100%',
     marginTop: 0,

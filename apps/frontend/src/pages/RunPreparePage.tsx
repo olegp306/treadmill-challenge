@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
+import { generateDemoMetrics } from '@treadmill-challenge/shared';
 import { api } from '../api/client';
 import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
@@ -14,6 +15,7 @@ type RunPrepareLocationState = {
   runTypeId: RunTypeId;
   participantSex: 'male' | 'female';
   participantFirstName?: string;
+  demoMode?: boolean;
 };
 
 export default function RunPreparePage() {
@@ -25,8 +27,17 @@ export default function RunPreparePage() {
   const runSessionId = state?.runSessionId ?? '';
   const runTypeId = state?.runTypeId ?? null;
   const participantSex = state?.participantSex ?? 'male';
+  const demoMode = state?.demoMode ?? false;
 
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
+  const [demoMsg, setDemoMsg] = useState<string | null>(null);
+  const [demoRank, setDemoRank] = useState<number | null>(null);
+  const [demoSubmitting, setDemoSubmitting] = useState(false);
+
+  const demoMetrics = useMemo(() => {
+    if (!runSessionId || runTypeId === null) return null;
+    return generateDemoMetrics(runTypeId, runSessionId);
+  }, [runSessionId, runTypeId]);
 
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) {
@@ -141,6 +152,84 @@ export default function RunPreparePage() {
         <br />
         Пройди на дорожку
       </p>
+      {demoMode && demoMetrics ? (
+        <div style={{ marginTop: 24, width: '100%', maxWidth: 980, marginLeft: 'auto', marginRight: 'auto' }}>
+          <div
+            style={{
+              borderRadius: 24,
+              padding: '18px 20px',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}
+          >
+            <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase' }}>
+              Тестовые данные
+            </p>
+            <p style={{ margin: '10px 0 0', color: 'rgba(255,255,255,0.7)' }}>
+              runSessionId: <span style={{ color: '#fff' }}>{runSessionId}</span>
+            </p>
+            <p style={{ margin: '6px 0 0', color: 'rgba(255,255,255,0.7)' }}>
+              resultTime: <span style={{ color: '#fff' }}>{demoMetrics.resultTime.toFixed(1)} сек</span>
+              {' · '}
+              distance: <span style={{ color: '#fff' }}>{Math.round(demoMetrics.distance)} м</span>
+            </p>
+            {demoRank != null ? (
+              <p style={{ margin: '10px 0 0', color: '#fff' }}>
+                Финиш: место <span style={{ color: '#e6233a' }}>{demoRank}</span> (отправлено в TouchDesigner — эмуляция)
+              </p>
+            ) : null}
+            {demoMsg ? <p style={{ margin: '10px 0 0', color: 'rgba(255,255,255,0.85)' }}>{demoMsg}</p> : null}
+          </div>
+          <button
+            type="button"
+            style={{ ...rq.btnWideSolid, marginTop: 16, width: '100%' }}
+            disabled={demoSubmitting}
+            onClick={async () => {
+              if (demoSubmitting) return;
+              setDemoSubmitting(true);
+              setDemoMsg(null);
+              setDemoRank(null);
+              try {
+                logEvent(
+                  'demo_finish_click',
+                  { runTypeId },
+                  { participantId, runSessionId, readableMessage: 'Пользователь завершает забег тестовыми данными (демо)' }
+                );
+                const res = await api.submitRunResult({
+                  runSessionId,
+                  resultTime: demoMetrics.resultTime,
+                  distance: demoMetrics.distance,
+                });
+                setDemoRank(res.rank ?? null);
+                setDemoMsg(`Результат сохранён. Место: ${res.rank ?? '—'}`);
+                logEvent(
+                  'demo_finish_saved',
+                  { runTypeId, rank: res.rank },
+                  {
+                    participantId: res.participantId,
+                    runSessionId: res.runSessionId,
+                    readableMessage: `Демо-финиш сохранён. Место: ${res.rank ?? 'не определено'}. Данные отправлены в TouchDesigner (эмуляция)`,
+                  }
+                );
+                saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
+                const q = new URLSearchParams({
+                  runTypeId: String(runTypeId),
+                  sex: participantSex,
+                  highlightParticipantId: participantId,
+                });
+                navigate(`/leaderboard?${q.toString()}`, { replace: true });
+              } catch (e) {
+                const msg = e instanceof Error ? e.message : 'Ошибка';
+                setDemoMsg(msg);
+              } finally {
+                setDemoSubmitting(false);
+              }
+            }}
+          >
+            Завершить забег с тестовыми данными
+          </button>
+        </div>
+      ) : null}
     </RunQueueScreenShell>
   );
 }
