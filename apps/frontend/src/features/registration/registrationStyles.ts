@@ -675,6 +675,11 @@ export const reg: Record<string, CSSProperties> = {
     marginTop: 0,
     flexShrink: 0,
   },
+  nameFieldInline: {
+    flex: 1,
+    minWidth: 0,
+    paddingTop: '30px',
+  },
   nameFieldsCluster: {
     display: 'flex',
     flexDirection: 'row',
@@ -723,11 +728,8 @@ export const reg: Record<string, CSSProperties> = {
   },
   nameNextBtn: {
     flex: '0 0 auto',
-    width: w(320),
-    minWidth: w(280),
     padding: `${h(30)} ${w(80)}`,
     borderRadius: w(36),
-    border: 'none',
     backgroundColor: '#262627',
     color: '#808081',
     fontSize: w(48),

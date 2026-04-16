@@ -66,7 +66,7 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
   return (
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод имени">
       <StepBody variant="short">
-        <h2 style={{ ...reg.ageFigmaQuestion, ...reg.stepTitle }}>Как тебя зовут?</h2>
+        <h2 style={{ ...reg.ageFigmaQuestion, ...reg.stepTitle, lineHeight: 2 }}>Как тебя зовут?</h2>
         {stepError ? (
           <p style={{ ...reg.error, ...reg.stepErrorCentered }}>{stepError}</p>
         ) : null}
@@ -77,97 +77,97 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
             tryAdvance();
           }}
         >
-          <div style={reg.nameFieldsCluster}>
-            <UnderlineField
-              ref={firstRef}
-              id={idFirst}
-              placeholder="Имя"
-              hasError={firstErrHighlight}
-              errorText={firstErrText}
-              name="givenName"
-              type="text"
-              inputMode="text"
-              autoComplete="given-name"
-              autoCapitalize="words"
-              autoCorrect="on"
-              spellCheck={false}
-              enterKeyHint="next"
-              lang="ru"
-              autoFocus
-              value={form.firstName}
-              aria-label="Имя"
-              onChange={(e) => {
-                if (e.target.value !== form.firstName) setFirstEdited(true);
-                onChange({ firstName: e.target.value });
+          <UnderlineField
+            ref={firstRef}
+            id={idFirst}
+            placeholder="Имя"
+            hasError={firstErrHighlight}
+            errorText={firstErrText}
+            name="givenName"
+            type="text"
+            inputMode="text"
+            autoComplete="given-name"
+            autoCapitalize="words"
+            autoCorrect="on"
+            spellCheck={false}
+            enterKeyHint="next"
+            lang="ru"
+            autoFocus
+            value={form.firstName}
+            aria-label="Имя"
+            style={reg.nameFieldInline}
+            onChange={(e) => {
+              if (e.target.value !== form.firstName) setFirstEdited(true);
+              onChange({ firstName: e.target.value });
+              setBlurFirstError(null);
+            }}
+            onBlur={(e) => {
+              if (!firstEdited) return;
+              const r = validateNamePart(e.target.value, 'first');
+              if (r.ok) {
+                onChange({ firstName: r.normalized });
                 setBlurFirstError(null);
-              }}
-              onBlur={(e) => {
-                if (!firstEdited) return;
-                const r = validateNamePart(e.target.value, 'first');
-                if (r.ok) {
-                  onChange({ firstName: r.normalized });
-                  setBlurFirstError(null);
-                  logEvent(
-                    'field_name_first_blur',
-                    { length: r.normalized.length },
-                    { readableMessage: `Пользователь ввёл имя: ${r.normalized}` }
-                  );
-                } else {
-                  setBlurFirstError(r.message);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  lastRef.current?.focus();
-                }
-              }}
-            />
-            <UnderlineField
-              ref={lastRef}
-              id={idLast}
-              placeholder="Фамилия"
-              hasError={lastErrHighlight}
-              errorText={lastErrText}
-              name="familyName"
-              type="text"
-              autoComplete="family-name"
-              autoCapitalize="words"
-              autoCorrect="on"
-              spellCheck={false}
-              inputMode="text"
-              enterKeyHint="done"
-              lang="ru"
-              value={form.lastName}
-              aria-label="Фамилия"
-              onChange={(e) => {
-                if (e.target.value !== form.lastName) setLastEdited(true);
-                onChange({ lastName: e.target.value });
+                logEvent(
+                  'field_name_first_blur',
+                  { length: r.normalized.length },
+                  { readableMessage: `Пользователь ввёл имя: ${r.normalized}` }
+                );
+              } else {
+                setBlurFirstError(r.message);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                lastRef.current?.focus();
+              }
+            }}
+          />
+          <UnderlineField
+            ref={lastRef}
+            id={idLast}
+            placeholder="Фамилия"
+            hasError={lastErrHighlight}
+            errorText={lastErrText}
+            name="familyName"
+            type="text"
+            autoComplete="family-name"
+            autoCapitalize="words"
+            autoCorrect="on"
+            spellCheck={false}
+            inputMode="text"
+            enterKeyHint="done"
+            lang="ru"
+            value={form.lastName}
+            aria-label="Фамилия"
+            style={reg.nameFieldInline}
+            onChange={(e) => {
+              if (e.target.value !== form.lastName) setLastEdited(true);
+              onChange({ lastName: e.target.value });
+              setBlurLastError(null);
+            }}
+            onBlur={(e) => {
+              if (!lastEdited) return;
+              const r = validateNamePart(e.target.value, 'last');
+              if (r.ok) {
+                onChange({ lastName: r.normalized });
                 setBlurLastError(null);
-              }}
-              onBlur={(e) => {
-                if (!lastEdited) return;
-                const r = validateNamePart(e.target.value, 'last');
-                if (r.ok) {
-                  onChange({ lastName: r.normalized });
-                  setBlurLastError(null);
-                  logEvent(
-                    'field_name_last_blur',
-                    { length: r.normalized.length },
-                    { readableMessage: `Пользователь ввёл фамилию: ${r.normalized}` }
-                  );
-                } else {
-                  setBlurLastError(r.message);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && filled) {
-                  e.preventDefault();
-                  tryAdvance();
-                }
-              }}
-            />
-          </div>
+                logEvent(
+                  'field_name_last_blur',
+                  { length: r.normalized.length },
+                  { readableMessage: `Пользователь ввёл фамилию: ${r.normalized}` }
+                );
+              } else {
+                setBlurLastError(r.message);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && filled) {
+                e.preventDefault();
+                tryAdvance();
+              }
+            }}
+          />
           <PrimaryButton variant="next" type="submit" active={filled} disabled={!filled}>
             Далее
           </PrimaryButton>

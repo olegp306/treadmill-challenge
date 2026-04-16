@@ -223,7 +223,7 @@ export default function LeaderboardPage() {
               <Link to="/" style={styles.btnHomeFooter}>
                 На главную
               </Link>
-              <Link to="/start" style={styles.btnParticipate}>
+              <Link to="/register" replace style={styles.btnParticipate}>
                 Принять участие
               </Link>
             </nav>
