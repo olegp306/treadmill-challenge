@@ -7,6 +7,7 @@ import ResultPage from '../pages/ResultPage';
 import Main from '../pages/Main';
 import RunSelectionPage from '../pages/RunSelectionPage';
 import RunQueuePage from '../pages/RunQueuePage';
+import RunPreparePage from '../pages/RunPreparePage';
 import RunQueueBusyPage from '../pages/RunQueueBusyPage';
 import RunLeaveQueueConfirmPage from '../pages/RunLeaveQueueConfirmPage';
 import DemoRunPage from '../pages/DemoRunPage';
@@ -28,6 +29,7 @@ export function AppRoutes() {
       <Route path="/result" element={<ResultPage />} />
       <Route path="/run-select" element={<RunSelectionPage />} />
       <Route path="/run/queue" element={<RunQueuePage />} />
+      <Route path="/run/prepare" element={<RunPreparePage />} />
       <Route path="/run/queue-busy" element={<RunQueueBusyPage />} />
       <Route path="/run/leave-queue" element={<RunLeaveQueueConfirmPage />} />
       <Route path="/run/demo" element={<DemoRunPage />} />

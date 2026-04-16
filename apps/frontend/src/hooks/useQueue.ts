@@ -9,7 +9,7 @@ export interface QueueEntry {
   participantName: string;
 }
 
-export function useQueue(runTypeId: RunTypeId | null, gender: Gender) {
+export function useQueue(runTypeId: RunTypeId | null, sex: Gender) {
   const [entries, setEntries] = useState<QueueEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export function useQueue(runTypeId: RunTypeId | null, gender: Gender) {
       setLoading(true);
       setError(null);
       try {
-        const data = await api.getRunQueue(filterRunTypeId, gender);
+        const data = await api.getRunQueue(filterRunTypeId, sex);
         if (!cancelled) {
           setEntries(data.entries);
         }
@@ -47,7 +47,7 @@ export function useQueue(runTypeId: RunTypeId | null, gender: Gender) {
     return () => {
       cancelled = true;
     };
-  }, [runTypeId, gender]);
+  }, [runTypeId, sex]);
 
   return { entries, loading, error };
 }

@@ -1,13 +1,40 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { generateDemoMetrics, type RunSessionResultDto } from '@treadmill-challenge/shared';
 import { adminSettings, getDb, runSessions } from '../db/index.js';
-import { submitRunSessionResult } from '../services/runResultService.js';
+import { getExistingResultByRunSessionId, submitRunSessionResult } from '../services/runResultService.js';
 import { validateRunSessionResultBody } from '../utils/validation.js';
 
+function readTdTokenFromRequest(request: FastifyRequest): string {
+  const fromHeader = request.headers['x-td-token'];
+  if (typeof fromHeader === 'string' && fromHeader.trim()) return fromHeader.trim();
+  const auth = request.headers.authorization;
+  if (typeof auth === 'string' && auth.startsWith('Bearer ')) return auth.slice(7).trim();
+  return '';
+}
+
+function assertTdCallbackAuth(request: FastifyRequest, reply: FastifyReply): boolean {
+  const expected = process.env.TD_CALLBACK_TOKEN?.trim() ?? '';
+  if (!expected) return true;
+  const provided = readTdTokenFromRequest(request);
+  if (!provided || provided !== expected) {
+    void reply.status(401).send({ error: 'Unauthorized TD callback' });
+    return false;
+  }
+  return true;
+}
+
 export default async function runResultRoutes(app: FastifyInstance): Promise<void> {
-  app.post('/api/run-result', async (request: FastifyRequest, reply: FastifyReply) => {
+  const handleRunResult = async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+    opts: { source: 'public' | 'touchdesigner'; requiresTdAuth: boolean }
+  ) => {
+    if (opts.requiresTdAuth && !assertTdCallbackAuth(request, reply)) {
+      return;
+    }
     request.log.info({
       msg: 'run_result_request',
+      source: opts.source,
       contentType: request.headers['content-type'],
       bodyPreview:
         request.body && typeof request.body === 'object'
@@ -62,11 +89,31 @@ export default async function runResultRoutes(app: FastifyInstance): Promise<voi
       return reply.status(201).send(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit run result';
+      if (message === 'Run session already finished') {
+        const existing = getExistingResultByRunSessionId(data.runSessionId);
+        if (existing) {
+          request.log.info({
+            msg: 'run_result_duplicate_finish_accepted',
+            source: opts.source,
+            runSessionId: existing.runSessionId,
+            runId: existing.runId,
+          });
+          return reply.status(200).send({ ...existing, duplicate: true });
+        }
+      }
       if (message === 'Run session not found' || message === 'Participant not found') {
         return reply.status(404).send({ error: message });
       }
       request.log.error(err);
       return reply.status(500).send({ error: 'Failed to submit run result' });
     }
-  });
+  };
+
+  app.post('/api/run-result', async (request: FastifyRequest, reply: FastifyReply) =>
+    handleRunResult(request, reply, { source: 'public', requiresTdAuth: false })
+  );
+
+  app.post('/api/touchdesigner/run-result', async (request: FastifyRequest, reply: FastifyReply) =>
+    handleRunResult(request, reply, { source: 'touchdesigner', requiresTdAuth: true })
+  );
 }

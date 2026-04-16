@@ -3,7 +3,6 @@ const PARTICIPANT_KEY = 'participantId';
 const RUN_SESSION_KEY = 'runSessionId';
 
 const SENSITIVE_KEYS = new Set([
-  'phone',
   'password',
   'token',
   'pin',
@@ -59,7 +58,7 @@ function sanitizePayload(payload: Record<string, unknown>): Record<string, unkno
   for (const [k, v] of Object.entries(payload)) {
     if (k === 'readableMessage') continue;
     const keyLower = k.toLowerCase();
-    if (SENSITIVE_KEYS.has(keyLower) || keyLower.includes('phone')) {
+    if (SENSITIVE_KEYS.has(keyLower)) {
       out[k] = '[redacted]';
       continue;
     }

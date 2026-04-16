@@ -112,7 +112,7 @@ export default function AdminCompetitionPage() {
       </p>
       {comp && (
         <p style={{ color: '#888', margin: '0 0 16px', fontSize: 14 }}>
-          {getRunTypeName(comp.runTypeId)} · {comp.gender === 'male' ? 'Мужчины' : 'Женщины'} · {comp.status}
+          {getRunTypeName(comp.runTypeId)} · {comp.sex === 'male' ? 'Мужчины' : 'Женщины'} · {comp.status}
         </p>
       )}
       {loading && <p style={{ color: '#888' }}>Загрузка…</p>}

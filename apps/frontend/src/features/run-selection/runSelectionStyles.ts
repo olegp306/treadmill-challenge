@@ -149,6 +149,19 @@ export const rs: Record<string, CSSProperties> = {
     textAlign: 'center',
     transition: 'background-color 0.2s ease, color 0.2s ease',
     WebkitTapHighlightColor: 'transparent',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: h(4),
+  },
+  tabBtnIndex: {
+    fontSize: w(24),
+    lineHeight: 1,
+    opacity: 0.8,
+  },
+  tabBtnTitle: {
+    lineHeight: 1.2,
   },
   tabBtnIdle: {
     backgroundColor: 'transparent',

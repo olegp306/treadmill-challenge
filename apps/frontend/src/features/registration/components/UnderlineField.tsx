@@ -4,7 +4,6 @@ import { reg } from '../registrationStyles';
 
 export type UnderlineFieldProps = {
   id: string;
-  label: string;
   /** Show error color on label + underline. */
   hasError?: boolean;
   /** Optional validation hint (blur / submit); does not change layout when empty. */
@@ -15,19 +14,9 @@ export type UnderlineFieldProps = {
 
 /** Name step: label + underline-only text input (Figma). */
 export const UnderlineField = forwardRef<HTMLInputElement, UnderlineFieldProps>(
-  function UnderlineField({ id, label, hasError, errorText, style, ...inputProps }, ref) {
+  function UnderlineField({ id, hasError, errorText, style, ...inputProps }, ref) {
     return (
       <div style={reg.nameFieldCol}>
-        <label
-          htmlFor={id}
-          style={{
-            ...reg.nameFieldLabel,
-            cursor: 'pointer',
-            ...(hasError ? { color: '#f85149' } : {}),
-          }}
-        >
-          {label}
-        </label>
         <input
           ref={ref}
           id={id}
@@ -39,7 +28,9 @@ export const UnderlineField = forwardRef<HTMLInputElement, UnderlineFieldProps>(
           }}
           {...inputProps}
         />
-        {errorText ? <p style={reg.nameFieldInlineError}>{errorText}</p> : null}
+        <p style={{ ...reg.nameFieldInlineError, visibility: errorText ? 'visible' : 'hidden' }}>
+          {errorText ?? ' '}
+        </p>
       </div>
     );
   }

@@ -5,6 +5,7 @@ import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
 import { ScreenContainer } from '../arOzio/ScreenContainer';
 import { h, w } from '../arOzio/dimensions';
+import { readLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
 import { useLeaderboard, type LeaderboardEntry, type LeaderboardScope } from '../hooks/useLeaderboard';
 import { getRunOption } from '../features/run-selection/runOptions';
 
@@ -12,12 +13,12 @@ const RUN_TYPE_ORDER: RunTypeId[] = [0, 1, 2];
 
 function parseLeaderboardScope(searchParams: URLSearchParams): LeaderboardScope | null {
   const rt = searchParams.get('runTypeId');
-  const g = searchParams.get('gender');
+  const g = searchParams.get('sex') ?? searchParams.get('gender');
   if (rt === null || rt === '' || g === null || g === '') return null;
   const n = Number(rt);
   if (n !== 0 && n !== 1 && n !== 2) return null;
   if (g !== 'male' && g !== 'female') return null;
-  return { runTypeId: n as RunTypeId, gender: g };
+  return { runTypeId: n as RunTypeId, sex: g };
 }
 
 /** Match Figma: MM:SS */
@@ -40,11 +41,25 @@ function globalMetric(entry: LeaderboardEntry): string {
 export default function LeaderboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const scope = useMemo(() => parseLeaderboardScope(searchParams), [searchParams]);
-  const highlightId = searchParams.get('highlightParticipantId') ?? undefined;
-  const { entries, meta, loading, error } = useLeaderboard(scope);
+  const [fallbackScope] = useState(() => readLastFinishedRunScope());
+  const effectiveScope = scope ?? (fallbackScope ? { runTypeId: fallbackScope.runTypeId, sex: fallbackScope.sex } : null);
+  const highlightId = searchParams.get('highlightParticipantId') ?? fallbackScope?.participantId;
+  const { entries, meta, loading, error } = useLeaderboard(effectiveScope);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const effectiveRunTypeId: RunTypeId = scope?.runTypeId ?? 2;
+  const effectiveRunTypeId: RunTypeId = effectiveScope?.runTypeId ?? 2;
+
+  useEffect(() => {
+    if (scope || !fallbackScope) return;
+    setSearchParams(
+      {
+        runTypeId: String(fallbackScope.runTypeId),
+        sex: fallbackScope.sex,
+        ...(fallbackScope.participantId ? { highlightParticipantId: fallbackScope.participantId } : {}),
+      },
+      { replace: true }
+    );
+  }, [scope, fallbackScope, setSearchParams]);
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -61,26 +76,26 @@ export default function LeaderboardPage() {
     return () => clearTimeout(t);
   }, [highlightId, filtered, loading]);
 
-  const subtitle = scope
+  const subtitle = effectiveScope
     ? meta?.competitionTitle ?? 'Текущее соревнование'
     : 'Все активные соревнования · общий рейтинг';
 
   const setGender = (g: Gender) => {
-    if (scope) {
-      setSearchParams({ runTypeId: String(scope.runTypeId), gender: g });
+    if (effectiveScope) {
+      setSearchParams({ runTypeId: String(effectiveScope.runTypeId), sex: g });
     } else {
-      setSearchParams({ runTypeId: '2', gender: g });
+      setSearchParams({ runTypeId: '2', sex: g });
     }
   };
 
   const shiftRunType = (delta: -1 | 1) => {
     const idx = RUN_TYPE_ORDER.indexOf(effectiveRunTypeId);
     const next = RUN_TYPE_ORDER[(idx + delta + RUN_TYPE_ORDER.length) % RUN_TYPE_ORDER.length];
-    const g = scope?.gender ?? 'male';
-    setSearchParams({ runTypeId: String(next), gender: g });
+    const g = effectiveScope?.sex ?? 'male';
+    setSearchParams({ runTypeId: String(next), sex: g });
   };
 
-  const showSideColumns = Boolean(scope) && !loading;
+  const showSideColumns = Boolean(effectiveScope) && !loading;
 
   return (
     <ArOzioViewport>
@@ -117,7 +132,7 @@ export default function LeaderboardPage() {
                 type="button"
                 style={{
                   ...styles.genderTab,
-                  ...(scope?.gender === 'female' ? styles.genderTabActive : styles.genderTabIdle),
+                  ...(effectiveScope?.sex === 'female' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
                 onClick={() => setGender('female')}
               >
@@ -127,7 +142,7 @@ export default function LeaderboardPage() {
                 type="button"
                 style={{
                   ...styles.genderTab,
-                  ...(scope?.gender === 'male' ? styles.genderTabActive : styles.genderTabIdle),
+                  ...(effectiveScope?.sex === 'male' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
                 onClick={() => setGender('male')}
               >
@@ -135,7 +150,7 @@ export default function LeaderboardPage() {
               </button>
             </div>
 
-            {!scope ? (
+            {!effectiveScope ? (
               <>
                 <p style={styles.pageTitle}>Лидерборд</p>
                 <p style={styles.pageSubtitle}>{subtitle}</p>
@@ -158,7 +173,7 @@ export default function LeaderboardPage() {
                 <aside style={{ ...styles.sideCol, pointerEvents: 'none' }} aria-hidden>
                   <LeaderboardStack
                     entries={filtered}
-                    runTypeId={scope!.runTypeId}
+                    runTypeId={effectiveScope!.runTypeId}
                     scoped
                     highlightId={undefined}
                     highlightRef={null}
@@ -170,14 +185,14 @@ export default function LeaderboardPage() {
               <section style={styles.mainCol}>
                 <LeaderboardStack
                   entries={filtered}
-                  runTypeId={scope?.runTypeId ?? 2}
-                  scoped={Boolean(scope)}
+                  runTypeId={effectiveScope?.runTypeId ?? 2}
+                  scoped={Boolean(effectiveScope)}
                   highlightId={highlightId}
                   highlightRef={highlightRef}
                   dim={false}
                   loading={loading}
                   error={error}
-                  emptyHint={!scope ? 'Пока нет заездов.' : 'Пока нет результатов в этом зачёте.'}
+                  emptyHint={!effectiveScope ? 'Пока нет заездов.' : 'Пока нет результатов в этом зачёте.'}
                 />
               </section>
 
@@ -185,7 +200,7 @@ export default function LeaderboardPage() {
                 <aside style={{ ...styles.sideCol, pointerEvents: 'none' }} aria-hidden>
                   <LeaderboardStack
                     entries={filtered}
-                    runTypeId={scope!.runTypeId}
+                    runTypeId={effectiveScope!.runTypeId}
                     scoped
                     highlightId={undefined}
                     highlightRef={null}
@@ -276,8 +291,9 @@ function LeaderboardStack({
                   }}
                 >
                   <div style={styles.lbRowLeft}>
-                    <span style={styles.lbRank}>{i + 1}</span>
+                    <span style={styles.lbRank}>{e.rank ?? i + 1}</span>
                     <span style={styles.lbName}>{e.participantName}</span>
+                    {isHighlight ? <span style={styles.lbYouBadge}>это ты</span> : null}
                   </div>
                   <span style={styles.lbResult}>{resultStr}</span>
                 </div>
@@ -459,7 +475,7 @@ const styles: Record<string, CSSProperties> = {
   arrowBtn: {
     position: 'absolute' as const,
     top: '50%',
-    transform: 'translateY(-50%)',
+    transform: 'translateY(calc(-50% - 10px))',
     width: w(100),
     height: w(100),
     borderRadius: w(48),
@@ -571,6 +587,17 @@ const styles: Record<string, CSSProperties> = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
+  lbYouBadge: {
+    flexShrink: 0,
+    marginLeft: w(12),
+    padding: `${h(4)} ${w(12)}`,
+    borderRadius: w(20),
+    fontSize: w(16),
+    lineHeight: 1,
+    color: '#fff',
+    background: '#e6233a',
+    textTransform: 'uppercase',
+  },
   lbResult: {
     fontWeight: 500,
     fontSize: w(28),
@@ -609,14 +636,14 @@ const styles: Record<string, CSSProperties> = {
   btnHomeFooter: {
     flex: '1 1 0',
     minWidth: 0,
-    minHeight: h(100),
+    minHeight: h(132),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     background: '#000',
     color: '#fff',
     fontWeight: 400,
-    fontSize: w(36),
+    fontSize: w(42),
     lineHeight: 1,
     textTransform: 'uppercase',
     textDecoration: 'none',
@@ -627,14 +654,14 @@ const styles: Record<string, CSSProperties> = {
   btnParticipate: {
     flex: '1 1 0',
     minWidth: 0,
-    minHeight: h(100),
+    minHeight: h(132),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     background: '#e6233a',
     color: '#fff',
     fontWeight: 400,
-    fontSize: w(36),
+    fontSize: w(42),
     lineHeight: 1,
     textTransform: 'uppercase',
     textDecoration: 'none',

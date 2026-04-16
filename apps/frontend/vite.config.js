@@ -2,9 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'node:url';
+import { lanQrPlugin } from './vite-plugin-lan-qr';
 var __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
-    plugins: [react()],
+    plugins: [react(), lanQrPlugin()],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
@@ -13,6 +14,8 @@ export default defineConfig({
         },
     },
     server: {
+        /** Listen on all interfaces so the app is reachable at http://<local-ip>:5173 on the LAN. */
+        host: true,
         port: 5173,
         proxy: {
             '/api': {

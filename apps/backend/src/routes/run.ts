@@ -1,6 +1,12 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { devFinishLatestQueuedRun, getQueue, leaveRunSession, startRunSession } from '../services/runService.js';
-import { parseGenderQuery, parseRunQueueFilterQuery, validateRunStartBody } from '../utils/validation.js';
+import {
+  devFinishLatestQueuedRun,
+  getQueue,
+  getRunSessionState,
+  leaveRunSession,
+  startRunSession,
+} from '../services/runService.js';
+import { parseRunQueueFilterQuery, parseSexQuery, validateRunStartBody } from '../utils/validation.js';
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 
 function allowDevFinish(): boolean {
@@ -66,16 +72,40 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
         error: 'Invalid queue filter: use runTypeId (0|1|2) or runType (max_5_min, golden_km, stayer_sprint_5km)',
       });
     }
-    const gender = parseGenderQuery(q);
-    if (gender === 'INVALID') {
-      return reply.status(400).send({ error: 'Invalid gender: use male or female' });
+    const sex = parseSexQuery(q);
+    if (sex === 'INVALID') {
+      return reply.status(400).send({ error: 'Invalid sex: use male or female' });
     }
     try {
-      const data = getQueue(runType, gender);
+      const data = getQueue(runType, sex);
       return reply.status(200).send(data);
     } catch (err) {
       request.log.error(err);
       return reply.status(500).send({ error: 'Failed to load queue' });
+    }
+  });
+
+  app.get('/api/run/session/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const participantId = typeof (request.query as { participantId?: unknown } | undefined)?.participantId === 'string'
+      ? String((request.query as { participantId?: unknown }).participantId).trim()
+      : '';
+    if (!id?.trim()) {
+      return reply.status(400).send({ error: 'runSessionId is required' });
+    }
+    try {
+      const state = getRunSessionState(id);
+      if (participantId && participantId !== state.participantId) {
+        return reply.status(403).send({ error: 'Forbidden' });
+      }
+      return reply.status(200).send(state);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load run session';
+      if (message === 'Run session not found') {
+        return reply.status(404).send({ error: message });
+      }
+      request.log.error(err);
+      return reply.status(500).send({ error: 'Failed to load run session' });
     }
   });
 

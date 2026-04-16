@@ -234,6 +234,58 @@ For local verification without TouchDesigner, set `TD_ADAPTER=mock` and check ba
 
 If you replace mock adapter with OSC sender, keep the same payload fields to validate protocol mapping on TouchDesigner side.
 
+### TouchDesigner finish callback (recommended)
+
+When TouchDesigner finishes a run, post result data to backend:
+
+- **Primary endpoint:** `POST /api/touchdesigner/run-result`
+- **Body (JSON):**
+  - `runSessionId` (string, required)
+  - `resultTime` (number, seconds, required)
+  - `distance` (number, meters, required)
+
+If `TD_CALLBACK_TOKEN` is configured on backend, send one of:
+
+- `X-TD-Token: <token>`
+- `Authorization: Bearer <token>`
+
+Idempotency behavior:
+
+- If the same `runSessionId` finish callback is sent twice, backend returns existing saved result for the already finished session instead of failing.
+
+Quick curl example:
+
+```bash
+curl -X POST "http://localhost:3001/api/touchdesigner/run-result" \
+  -H "Content-Type: application/json" \
+  -H "X-TD-Token: <TD_CALLBACK_TOKEN>" \
+  -d "{\"runSessionId\":\"<RUN_SESSION_ID>\",\"resultTime\":312.5,\"distance\":1000}"
+```
+
+Optional local smoke script:
+
+```bash
+npm run td:callback:smoke -- --runSessionId <RUN_SESSION_ID> --resultTime 312.5 --distance 1000
+```
+
+If token is enabled:
+
+```bash
+npm run td:callback:smoke -- --runSessionId <RUN_SESSION_ID> --resultTime 312.5 --distance 1000 --token <TD_CALLBACK_TOKEN>
+```
+
+Auto-pick a real queue session (prefers `running`, then first `queued`):
+
+```bash
+npm run td:callback:smoke -- --autoFromQueue --resultTime 312.5 --distance 1000
+```
+
+Optional filters:
+
+```bash
+npm run td:callback:smoke -- --autoFromQueue --runTypeId 1 --sex female --resultTime 312.5 --distance 1000 --token <TD_CALLBACK_TOKEN>
+```
+
 ## NPM scripts (from root)
 
 | Script | Description |

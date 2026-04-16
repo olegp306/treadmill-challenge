@@ -70,10 +70,15 @@ export function startRunSession(
     dto.runTypeId,
     queueNumber
   );
-  const position = runSessions.positionInQueue(db, comp.id, session.queueNumber);
+  const running = runSessions.getCurrentRunningSessionForCompetition(db, comp.id);
+  if (!running) {
+    runSessions.setSessionStatus(db, session.id, 'running', { startedAt: new Date().toISOString() });
+    session.status = 'running';
+  }
+  const position = session.status === 'queued' ? runSessions.positionInQueue(db, comp.id, session.queueNumber) : 0;
 
   const demoMode = adminSettings.getTdDemoMode(db);
-  if (!demoMode) {
+  if (!demoMode && session.status === 'running') {
     touchDesigner.sendRunSessionStarted({
       runSessionId: session.id,
       participantId: participant.id,
@@ -131,22 +136,23 @@ export function leaveRunSession(runSessionId: string, participantId: string): vo
   if (session.participantId !== participantId.trim()) {
     throw new Error('Forbidden');
   }
-  if (session.status !== 'queued' && session.status !== 'running') {
+  if (session.status !== 'queued') {
     throw new Error('Run session cannot be left');
   }
   runSessions.setSessionStatus(db, session.id, 'cancelled');
+  runSessions.renumberQueuedSessions(db, session.competitionId);
 }
 
 export function getQueue(
   runTypeId?: RunTypeId,
-  gender?: Gender
+  sex?: Gender
 ): {
   entries: Array<{
     runSessionId: string;
     queueNumber: number;
     participantId: string;
     participantName: string;
-    gender: Gender;
+    sex: Gender;
     competitionId: string;
     runTypeId: RunTypeId;
     runType: string;
@@ -155,20 +161,47 @@ export function getQueue(
   }>;
 } {
   const db = getDb();
-  const rows = runSessions.listActiveQueue(db, runTypeId, gender);
+  const rows = runSessions.listActiveQueue(db, runTypeId, sex);
   return {
     entries: rows.map((r) => ({
       runSessionId: r.runSession.id,
       queueNumber: r.runSession.queueNumber,
       participantId: r.runSession.participantId,
       participantName: r.participantName,
-      gender: r.gender,
+      sex: r.sex,
       competitionId: r.runSession.competitionId,
       runTypeId: r.runSession.runTypeId,
       runType: r.runSession.runType,
       runName: getRunTypeName(r.runSession.runTypeId),
       status: r.runSession.status,
     })),
+  };
+}
+
+export function getRunSessionState(runSessionId: string): {
+  runSessionId: string;
+  participantId: string;
+  competitionId: string;
+  runTypeId: RunTypeId;
+  status: 'queued' | 'running' | 'finished' | 'cancelled';
+  queueNumber: number;
+  queuePosition: number | null;
+} {
+  const db = getDb();
+  const session = runSessions.getRunSessionById(db, runSessionId.trim());
+  if (!session) {
+    throw new Error('Run session not found');
+  }
+  const queuePosition =
+    session.status === 'queued' ? runSessions.positionInQueue(db, session.competitionId, session.queueNumber) : null;
+  return {
+    runSessionId: session.id,
+    participantId: session.participantId,
+    competitionId: session.competitionId,
+    runTypeId: session.runTypeId,
+    status: session.status,
+    queueNumber: session.queueNumber,
+    queuePosition,
   };
 }
 

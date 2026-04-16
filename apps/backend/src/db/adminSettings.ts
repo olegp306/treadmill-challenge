@@ -32,3 +32,19 @@ export function getMaxQueueSizePerRun(db: Db): number {
   if (!Number.isFinite(n)) return 3;
   return Math.min(500, Math.max(1, n));
 }
+
+const HEARTBEAT_INTERVAL_MIN_OPTIONS = new Set([5, 10, 30, 60]);
+
+/** Public telemetry heartbeat interval in minutes. Default 5. */
+export function getHeartbeatIntervalMin(db: Db): number {
+  const raw = getSetting(db, 'heartbeatIntervalMin');
+  const n = Number(raw);
+  if (!Number.isFinite(n) || !HEARTBEAT_INTERVAL_MIN_OPTIONS.has(n)) return 5;
+  return n;
+}
+
+export function normalizeHeartbeatIntervalMin(value: unknown): number {
+  const n = Number(value);
+  if (!Number.isFinite(n) || !HEARTBEAT_INTERVAL_MIN_OPTIONS.has(n)) return 5;
+  return n;
+}

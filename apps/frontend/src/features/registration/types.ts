@@ -1,7 +1,7 @@
 /** Wizard + API payload shape */
 export type RegistrationFormData = {
   isAdult: boolean;
-  gender: 'male' | 'female' | null;
+  sex: 'male' | 'female' | null;
   /** Combined «Имя Фамилия» for API (filled when leaving name step / submit). */
   name: string;
   firstName: string;
@@ -14,7 +14,7 @@ export type RegistrationFormData = {
 
 export const INITIAL_FORM: RegistrationFormData = {
   isAdult: false,
-  gender: null,
+  sex: null,
   name: '',
   firstName: '',
   lastName: '',

@@ -17,8 +17,8 @@ import {
   restartCompetitionSlot,
   setCompetitionQueuePaused,
   startCompetition,
+  stopAndStartCompetitionById,
   stopAndStartNewCompetition,
-  stopCompetition,
 } from '../services/competitionService.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const x = request.headers['x-admin-pin'];
@@ -53,6 +53,13 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     return reply.send({ ok: true });
   });
 
+  app.get('/api/public/settings', async () => {
+    const db = getDb();
+    return {
+      heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
+    };
+  });
+
   await app.register(async (scoped) => {
     scoped.addHook('preHandler', assertAdmin);
 
@@ -61,7 +68,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const db = getDb();
       const slots: Array<{
         runTypeId: RunTypeId;
-        gender: Gender;
+        sex: Gender;
         competition: ReturnType<typeof competitions.getCompetitionById>;
         queuePaused: boolean;
         queuedCount: number;
@@ -74,8 +81,8 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       }> = [];
       for (let rt = 0; rt <= 2; rt++) {
         const runTypeId = rt as RunTypeId;
-        for (const gender of ['male', 'female'] as const) {
-          const active = competitions.getActiveCompetition(db, runTypeId, gender);
+        for (const sex of ['male', 'female'] as const) {
+          const active = competitions.getActiveCompetition(db, runTypeId, sex);
           const comp = active;
           const counts = comp
             ? competitions.competitionRowCount(db, comp.id)
@@ -83,7 +90,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
           const lb = comp ? runs.getTopLeaderboardEntryForCompetition(db, comp.id, runTypeId) : null;
           slots.push({
             runTypeId,
-            gender,
+            sex,
             competition: comp,
             queuePaused: comp?.queuePaused ?? false,
             queuedCount: counts.queued + counts.running,
@@ -102,14 +109,15 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     });
 
     scoped.post('/api/admin/competitions/start', async (request, reply) => {
-      const body = request.body as { runTypeId?: unknown; gender?: unknown };
+      const body = request.body as { runTypeId?: unknown; sex?: unknown; gender?: unknown };
       const runTypeId = parseRunTypeId(body.runTypeId);
-      const gender = typeof body.gender === 'string' ? normalizeGender(body.gender) : null;
-      if (runTypeId === null || gender === null) {
-        return reply.status(400).send({ error: 'runTypeId and gender required' });
+      const sex =
+        typeof body.sex === 'string' ? normalizeGender(body.sex) : typeof body.gender === 'string' ? normalizeGender(body.gender) : null;
+      if (runTypeId === null || sex === null) {
+        return reply.status(400).send({ error: 'runTypeId and sex required' });
       }
       try {
-        const c = startCompetition(runTypeId, gender);
+        const c = startCompetition(runTypeId, sex);
         return reply.send({ competition: c });
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Failed';
@@ -122,8 +130,11 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const id = body.competitionId?.trim();
       if (!id) return reply.status(400).send({ error: 'competitionId required' });
       try {
-        const c = stopCompetition(id);
-        return reply.send({ competition: c });
+        const result = stopAndStartCompetitionById(id);
+        return reply.send({
+          previous: result.previous,
+          next: result.next,
+        });
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Failed';
         return reply.status(400).send({ error: msg });
@@ -131,14 +142,15 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     });
 
     scoped.post('/api/admin/competitions/restart', async (request, reply) => {
-      const body = request.body as { runTypeId?: unknown; gender?: unknown };
+      const body = request.body as { runTypeId?: unknown; sex?: unknown; gender?: unknown };
       const runTypeId = parseRunTypeId(body.runTypeId);
-      const gender = typeof body.gender === 'string' ? normalizeGender(body.gender) : null;
-      if (runTypeId === null || gender === null) {
-        return reply.status(400).send({ error: 'runTypeId and gender required' });
+      const sex =
+        typeof body.sex === 'string' ? normalizeGender(body.sex) : typeof body.gender === 'string' ? normalizeGender(body.gender) : null;
+      if (runTypeId === null || sex === null) {
+        return reply.status(400).send({ error: 'runTypeId and sex required' });
       }
       try {
-        const c = restartCompetitionSlot(runTypeId, gender);
+        const c = restartCompetitionSlot(runTypeId, sex);
         return reply.send({ competition: c });
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Failed';
@@ -147,16 +159,20 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     });
 
     scoped.post('/api/admin/competitions/stop-and-start', async (request, reply) => {
-      const body = request.body as { runTypeId?: unknown; gender?: unknown };
+      const body = request.body as { runTypeId?: unknown; sex?: unknown; gender?: unknown };
       const runTypeId = parseRunTypeId(body.runTypeId);
-      const gender = typeof body.gender === 'string' ? normalizeGender(body.gender) : null;
-      if (runTypeId === null || gender === null) {
-        return reply.status(400).send({ error: 'runTypeId and gender required' });
+      const sex =
+        typeof body.sex === 'string' ? normalizeGender(body.sex) : typeof body.gender === 'string' ? normalizeGender(body.gender) : null;
+      if (runTypeId === null || sex === null) {
+        return reply.status(400).send({ error: 'runTypeId and sex required' });
       }
       try {
         ensureActiveCompetitionsForAllSlots();
-        const result = stopAndStartNewCompetition(runTypeId, gender);
-        return reply.send({ previous: result.previous, next: result.next });
+        const result = stopAndStartNewCompetition(runTypeId, sex);
+        return reply.send({
+          previous: result.previous,
+          next: result.next,
+        });
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Failed';
         return reply.status(400).send({ error: msg });
@@ -504,6 +520,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         tdDemoMode: adminSettings.getTdDemoMode(db),
         maxQueueSizePerRun: adminSettings.getMaxQueueSizePerRun(db),
         eventTitle: adminSettings.getSetting(db, 'eventTitle') ?? 'Amazing Red',
+        heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
       };
     });
 
@@ -517,6 +534,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         tdDemoMode?: boolean;
         maxQueueSizePerRun?: number;
         eventTitle?: string;
+        heartbeatIntervalMin?: number;
       };
       if (body.adminPin !== undefined) adminSettings.setSetting(db, 'adminPin', body.adminPin.trim());
       if (body.tdHost !== undefined) adminSettings.setSetting(db, 'tdHost', body.tdHost.trim());
@@ -528,7 +546,11 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         adminSettings.setSetting(db, 'maxQueueSizePerRun', String(n));
       }
       if (body.eventTitle !== undefined) adminSettings.setSetting(db, 'eventTitle', body.eventTitle.trim());
-        return reply.send({ ok: true });
+      if (body.heartbeatIntervalMin !== undefined) {
+        const min = adminSettings.normalizeHeartbeatIntervalMin(body.heartbeatIntervalMin);
+        adminSettings.setSetting(db, 'heartbeatIntervalMin', String(min));
+      }
+      return reply.send({ ok: true });
     });
 
     scoped.post('/api/admin/test-data/reset', async (_request, reply) => {
@@ -544,7 +566,8 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     scoped.get('/api/admin/archive', async (request) => {
       const db = getDb();
       const q = (request.query ?? {}) as Record<string, unknown>;
-      const gender = q.gender ? normalizeGender(String(q.gender)) : undefined;
+      const sexRaw = q.sex ?? q.gender;
+      const sex = sexRaw ? normalizeGender(String(sexRaw)) : undefined;
       const runTypeRaw = q.runTypeId;
       const runTypeId = runTypeRaw !== undefined && runTypeRaw !== '' ? parseRunTypeId(runTypeRaw) : null;
       const from = q.from ? String(q.from) : null;
@@ -552,9 +575,9 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
 
       let sql = `SELECT * FROM competitions WHERE status IN ('stopped','archived')`;
       const params: unknown[] = [];
-      if (gender) {
+      if (sex) {
         sql += ` AND gender = ?`;
-        params.push(gender);
+        params.push(sex);
       }
       if (runTypeId !== null) {
         sql += ` AND runTypeId = ?`;
@@ -575,7 +598,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
           id: row.id,
           runTypeId: row.runTypeId,
           runTypeKey: row.runTypeKey,
-          gender: row.gender,
+          sex: row.gender,
           title: row.title,
           status: row.status,
           startedAt: row.startedAt,

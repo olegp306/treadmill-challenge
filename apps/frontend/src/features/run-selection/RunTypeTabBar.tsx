@@ -10,9 +10,10 @@ type Props = {
 
 /** Three-segment selector (Figma hero tabs). */
 export function RunTypeTabBar({ options, selected, onSelect }: Props) {
+  const orderedOptions = [...options].sort((a, b) => a.runTypeId - b.runTypeId);
   return (
     <div style={rs.tabBar} role="tablist" aria-label="Формат забега">
-      {options.map((opt) => {
+      {orderedOptions.map((opt, idx) => {
         const isSel = opt.runTypeId === selected;
         return (
           <button
@@ -27,7 +28,8 @@ export function RunTypeTabBar({ options, selected, onSelect }: Props) {
             }}
             onClick={() => onSelect(opt.runTypeId)}
           >
-            {opt.title}
+            <span style={rs.tabBtnIndex}>{idx + 1}</span>
+            <span style={rs.tabBtnTitle}>{opt.title}</span>
           </button>
         );
       })}

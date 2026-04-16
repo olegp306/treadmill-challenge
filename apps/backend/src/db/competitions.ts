@@ -7,7 +7,7 @@ function rowToCompetition(row: Record<string, unknown>): Competition {
     id: row.id as string,
     runTypeId: Number(row.runTypeId) as RunTypeId,
     runTypeKey: row.runTypeKey as RunTypeKey,
-    gender: row.gender as Gender,
+    sex: row.gender as Gender,
     title: String(row.title ?? ''),
     status: row.status as CompetitionStatus,
     startedAt: String(row.startedAt ?? ''),
@@ -27,11 +27,11 @@ export function getCompetitionById(db: Db, id: string): Competition | null {
 export function getActiveCompetition(
   db: Db,
   runTypeId: RunTypeId,
-  gender: Gender
+  sex: Gender
 ): Competition | null {
   const row = db
     .prepare(`SELECT * FROM competitions WHERE runTypeId = ? AND gender = ? AND status = 'active'`)
-    .get(runTypeId, gender) as Record<string, unknown> | undefined;
+    .get(runTypeId, sex) as Record<string, unknown> | undefined;
   if (!row) return null;
   return rowToCompetition(row);
 }
@@ -40,13 +40,13 @@ export function getActiveCompetition(
 export function getLatestStoppedCompetition(
   db: Db,
   runTypeId: RunTypeId,
-  gender: Gender
+  sex: Gender
 ): Competition | null {
   const row = db
     .prepare(
       `SELECT * FROM competitions WHERE runTypeId = ? AND gender = ? AND status = 'stopped' ORDER BY startedAt DESC LIMIT 1`
     )
-    .get(runTypeId, gender) as Record<string, unknown> | undefined;
+    .get(runTypeId, sex) as Record<string, unknown> | undefined;
   if (!row) return null;
   return rowToCompetition(row);
 }
@@ -54,11 +54,11 @@ export function getLatestStoppedCompetition(
 export function getCompetitionForRestart(
   db: Db,
   runTypeId: RunTypeId,
-  gender: Gender
+  sex: Gender
 ): Competition | null {
-  const active = getActiveCompetition(db, runTypeId, gender);
+  const active = getActiveCompetition(db, runTypeId, sex);
   if (active) return active;
-  return getLatestStoppedCompetition(db, runTypeId, gender);
+  return getLatestStoppedCompetition(db, runTypeId, sex);
 }
 
 export function listCompetitions(db: Db, opts?: { status?: CompetitionStatus }): Competition[] {
@@ -83,7 +83,7 @@ export function insertCompetition(db: Db, c: Competition): void {
     c.id,
     c.runTypeId,
     c.runTypeKey,
-    c.gender,
+    c.sex,
     c.title,
     c.status,
     c.startedAt,
@@ -152,9 +152,9 @@ export function competitionRowCount(db: Db, id: string): { queued: number; runni
 }
 
 /** Build default title for a new competition. */
-export function defaultCompetitionTitle(runTypeId: RunTypeId, gender: Gender): string {
+export function defaultCompetitionTitle(runTypeId: RunTypeId, sex: Gender): string {
   const cfg = getRunTypeById(runTypeId);
   const name = cfg?.name ?? 'Забег';
-  const g = gender === 'male' ? 'Мужчины' : 'Женщины';
+  const g = sex === 'male' ? 'Мужчины' : 'Женщины';
   return `${name} — ${g}`;
 }

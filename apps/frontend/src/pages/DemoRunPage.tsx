@@ -10,6 +10,7 @@ import { PrimaryButton } from '../features/registration/components';
 import { RunSelectionShell } from '../features/run-selection/RunSelectionShell';
 import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
+import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
 import { logEvent } from '../logging/logEvent';
 
 export type DemoRunLocationState = {
@@ -131,9 +132,10 @@ export default function DemoRunPage() {
           readableMessage: `Пользователь завершил забег (демо). Результат: ${Math.round(metrics.distance)} м за ${Math.round(metrics.resultTime)} сек`,
         }
       );
+      saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
       const q = new URLSearchParams({
         runTypeId: String(runTypeId),
-        gender: participantSex,
+        sex: participantSex,
         highlightParticipantId: participantId,
       });
       navigate(`/leaderboard?${q.toString()}`, { replace: true });

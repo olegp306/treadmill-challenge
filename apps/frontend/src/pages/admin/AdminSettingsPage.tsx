@@ -38,6 +38,7 @@ export default function AdminSettingsPage() {
         tdDemoMode: settings.tdDemoMode,
         maxQueueSizePerRun: settings.maxQueueSizePerRun,
         eventTitle: settings.eventTitle,
+        heartbeatIntervalMin: settings.heartbeatIntervalMin,
       });
       sessionStorage.setItem('adminPin', settings.adminPin);
     } catch (e) {
@@ -108,6 +109,21 @@ export default function AdminSettingsPage() {
               }
               style={inp}
             />
+          </label>
+          <label style={lab}>
+            Интервал heartbeat (минуты)
+            <select
+              value={settings.heartbeatIntervalMin}
+              onChange={(e) =>
+                setSettings({ ...settings, heartbeatIntervalMin: Number(e.target.value) as 5 | 10 | 30 | 60 })
+              }
+              style={inp}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={30}>30</option>
+              <option value={60}>60</option>
+            </select>
           </label>
           <label style={lab}>
             Название события

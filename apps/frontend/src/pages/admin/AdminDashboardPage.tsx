@@ -22,7 +22,7 @@ function CompetitionCard({
   const hasComp = !!comp;
   const paused = slot.queuePaused;
   const title = getRunTypeName(slot.runTypeId);
-  const genderLabel = slot.gender === 'male' ? 'Мужчины' : 'Женщины';
+  const genderLabel = slot.sex === 'male' ? 'Мужчины' : 'Женщины';
 
   return (
     <article
@@ -129,14 +129,14 @@ export default function AdminDashboardPage() {
   const maleSlots = useMemo(
     () =>
       slots
-        .filter((s) => s.gender === 'male')
+        .filter((s) => s.sex === 'male')
         .sort((a, b) => a.runTypeId - b.runTypeId),
     [slots]
   );
   const femaleSlots = useMemo(
     () =>
       slots
-        .filter((s) => s.gender === 'female')
+        .filter((s) => s.sex === 'female')
         .sort((a, b) => a.runTypeId - b.runTypeId),
     [slots]
   );
@@ -174,7 +174,7 @@ export default function AdminDashboardPage() {
         }}
       >
         {rowSlots.map((slot) => {
-          const id = `${slot.runTypeId}-${slot.gender}`;
+          const id = `${slot.runTypeId}-${slot.sex}`;
           const compId = slot.competition?.id;
           return (
             <CompetitionCard
@@ -190,7 +190,7 @@ export default function AdminDashboardPage() {
                 void runAction(`stopstart-${id}`, () =>
                   api.adminStopAndStartCompetition({
                     runTypeId: slot.runTypeId as RunTypeId,
-                    gender: slot.gender as Gender,
+                    sex: slot.sex as Gender,
                   })
                 )
               }

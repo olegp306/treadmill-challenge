@@ -7,7 +7,7 @@ export interface Competition {
   id: string;
   runTypeId: RunTypeId;
   runTypeKey: RunTypeKey;
-  gender: Gender;
+  sex: Gender;
   title: string;
   status: CompetitionStatus;
   startedAt: string;

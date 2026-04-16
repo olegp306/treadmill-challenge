@@ -17,7 +17,8 @@
     "build:frontend": "npm run build -w apps/frontend",
     "start:backend": "npm run start -w apps/backend",
     "preview:frontend": "npm run preview -w apps/frontend",
-    "print-dev-qr": "node scripts/print-dev-qr.mjs"
+    "print-dev-qr": "node scripts/print-dev-qr.mjs",
+    "td:callback:smoke": "node scripts/td-callback-smoke.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

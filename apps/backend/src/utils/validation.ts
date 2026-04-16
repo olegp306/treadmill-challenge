@@ -113,18 +113,18 @@ export function validateRunStartBody(body: unknown): Validation<RunStartDto> {
   };
 }
 
-/** Optional `gender` / `sex` query: male | female (public queue filter). */
-export function parseGenderQuery(query: Record<string, unknown>): Gender | undefined | 'INVALID' {
+/** Optional `sex` query (also accepts legacy `gender`): male | female (public queue filter). */
+export function parseSexQuery(query: Record<string, unknown>): Gender | undefined | 'INVALID' {
   const raw = query.gender ?? query.sex;
   if (raw === undefined || raw === '') return undefined;
   if (raw === 'male' || raw === 'female') return raw;
   return 'INVALID';
 }
 
-/** Both `runTypeId` and `gender`/`sex` required for competition-scoped leaderboard. */
+/** Both `runTypeId` and `sex` (legacy: `gender`) required for competition-scoped leaderboard. */
 export function parseLeaderboardScopeQuery(
   query: Record<string, unknown>
-): { runTypeId: RunTypeId; gender: Gender } | undefined | 'INVALID' {
+): { runTypeId: RunTypeId; sex: Gender } | undefined | 'INVALID' {
   const hasRt = query.runTypeId !== undefined && query.runTypeId !== '';
   const rawG = query.gender ?? query.sex;
   const hasG = rawG !== undefined && rawG !== '';
@@ -139,8 +139,11 @@ export function parseLeaderboardScopeQuery(
     return 'INVALID';
   }
   const g = normalizeGender(String(rawG));
-  return { runTypeId: n as RunTypeId, gender: g };
+  return { runTypeId: n as RunTypeId, sex: g };
 }
+
+/** @deprecated Use parseSexQuery. */
+export const parseGenderQuery = parseSexQuery;
 
 /** Parse optional queue filter: `runTypeId` (number) or legacy `runType` (key string). */
 export function parseRunQueueFilterQuery(query: Record<string, unknown>): RunTypeId | undefined | 'INVALID' {

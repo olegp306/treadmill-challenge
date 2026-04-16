@@ -74,7 +74,7 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод номера телефона">
       <StepBody variant="short">
         <h2 style={{ ...reg.ageFigmaQuestion, ...reg.stepTitle }}>
-          Введите свой номер телефона
+          Введите свой номер 
         </h2>
         {stepError ? (
           <p style={{ ...reg.error, ...reg.stepErrorCentered }}>{stepError}</p>

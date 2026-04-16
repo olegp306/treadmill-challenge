@@ -1,14 +1,33 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { api } from '../api/client';
 import { logEvent } from './logEvent';
 import { getScreenReadableMessage } from './screenPathLabels';
 
-const HEARTBEAT_MS = 30_000;
+const DEFAULT_HEARTBEAT_INTERVAL_MIN = 5;
 
-/** Logs screen_view on route change and heartbeat every 30s. */
+/** Logs screen_view on route change and heartbeat using server-configured interval. */
 export function EventTelemetry() {
   const location = useLocation();
   const pathRef = useRef<string>('');
+  const [heartbeatIntervalMin, setHeartbeatIntervalMin] = useState(DEFAULT_HEARTBEAT_INTERVAL_MIN);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api
+      .getPublicSettings()
+      .then((s) => {
+        if (cancelled) return;
+        setHeartbeatIntervalMin(s.heartbeatIntervalMin ?? DEFAULT_HEARTBEAT_INTERVAL_MIN);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setHeartbeatIntervalMin(DEFAULT_HEARTBEAT_INTERVAL_MIN);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const path = `${location.pathname}${location.search || ''}`;
@@ -23,11 +42,12 @@ export function EventTelemetry() {
   }, [location.pathname, location.search]);
 
   useEffect(() => {
+    const heartbeatMs = heartbeatIntervalMin * 60_000;
     const id = window.setInterval(() => {
       logEvent('heartbeat', {}, { readableMessage: 'Сессия активна (пульс)' });
-    }, HEARTBEAT_MS);
+    }, heartbeatMs);
     return () => window.clearInterval(id);
-  }, []);
+  }, [heartbeatIntervalMin]);
 
   return null;
 }

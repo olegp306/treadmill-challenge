@@ -8,6 +8,7 @@ import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
 import { AdminPinModal } from '../features/admin/AdminPinModal';
 import { logEvent } from '../logging/logEvent';
+import { pluralizePeople } from '../utils/russianPlural';
 
 /** Figma hero — local assets (WebP + JPEG fallback, tiny LQIP blur). */
 const HERO_BG_WEBP = '/assets/hero/hero-bg.webp';
@@ -21,7 +22,7 @@ type QueueCardItem = {
   runTypeId: RunTypeId;
   runType: string;
   status: string;
-  gender: Gender;
+  sex: Gender;
 };
 
 function splitNameLines(fullName: string): { nameLine1: string; nameLine2?: string } {
@@ -86,6 +87,7 @@ export default function Main() {
   }, []);
 
   const queuePeopleCount = queueCards.length;
+  const queueSummary = pluralizePeople(queuePeopleCount);
   const activeRunningId = useMemo(
     () => queueCards.find((card) => card.status === 'running')?.runSessionId ?? null,
     [queueCards]
@@ -170,20 +172,17 @@ export default function Main() {
                   <span style={styles.queueTitleWhite}>Очередь забега</span>
                   <span style={styles.queueTitleWhite}>:</span>
                   <span> </span>
-                  <span style={styles.queueAccent}>{queuePeopleCount} человек</span>
+                  <span style={styles.queueAccent}>{queueSummary}</span>
                 </p>
 
-                <div className="ar-ozio-cards-scroll" style={styles.cardsRow}>
-                  {!loadingQueue && queueCards.length === 0 ? (
-                    <article style={{ ...styles.card, ...styles.cardInactive }}>
-                      <div style={styles.cardTop}>
-                        <span style={styles.cardOrder}>--</span>
-                        <span style={{ ...styles.tagPill, ...styles.tagPillInactive }}>Очередь</span>
-                      </div>
-                      <div style={styles.cardName}>Пока нет участников</div>
-                    </article>
-                  ) : (
-                    queueCards.map((card, i) => {
+                {!loadingQueue && queueCards.length === 0 ? (
+                  <article style={styles.emptyQueueState}>
+                    <p style={styles.emptyQueueTitle}>Очереди нет</p>
+                    <p style={styles.emptyQueueText}>Стань первым участником этого забега</p>
+                  </article>
+                ) : (
+                  <div className="ar-ozio-cards-scroll" style={styles.cardsRow}>
+                    {queueCards.map((card, i) => {
                       const isActive = activeRunningId
                         ? card.runSessionId === activeRunningId
                         : i === 0;
@@ -197,7 +196,7 @@ export default function Main() {
                           }}
                         >
                           <div style={styles.cardTop}>
-                            <span style={styles.cardOrder}>{String(card.queueNumber).padStart(2, '0')}</span>
+                            <span style={styles.cardOrder}>{String(i + 1)}</span>
                             <span
                               style={{
                                 ...styles.tagPill,
@@ -213,7 +212,7 @@ export default function Main() {
                                 marginLeft: w(8),
                               }}
                             >
-                              {card.gender === 'female' ? 'Ж' : 'М'}
+                              {card.sex === 'female' ? 'Ж' : 'М'}
                             </span>
                           </div>
                           <div style={styles.cardName}>
@@ -227,9 +226,9 @@ export default function Main() {
                           </div>
                         </article>
                       );
-                    })
-                  )}
-                </div>
+                    })}
+                  </div>
+                )}
               </div>
             </div>
             </div>
@@ -418,6 +417,33 @@ const styles: Record<string, React.CSSProperties> = {
     gap: w(29),
     overflowX: 'auto',
     WebkitOverflowScrolling: 'touch',
+  },
+  emptyQueueState: {
+    minHeight: h(220),
+    borderRadius: w(40),
+    border: '1px solid rgba(255,255,255,0.14)',
+    background: 'rgba(255,255,255,0.04)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: h(12),
+    padding: `${h(22)} ${w(24)}`,
+  },
+  emptyQueueTitle: {
+    margin: 0,
+    fontSize: w(56),
+    lineHeight: 1.05,
+    textTransform: 'uppercase',
+    color: '#fff',
+  },
+  emptyQueueText: {
+    margin: 0,
+    fontSize: w(30),
+    lineHeight: 1.2,
+    color: 'rgba(255,255,255,0.72)',
+    textTransform: 'uppercase',
+    textAlign: 'center',
   },
   card: {
     flex: '0 0 auto',

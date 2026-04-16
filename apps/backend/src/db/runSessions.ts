@@ -144,23 +144,23 @@ export function listQueuedByRunTypeId(db: Db, runTypeId: RunTypeId): QueuedRow[]
 export interface ActiveQueueRow {
   runSession: RunSession;
   participantName: string;
-  gender: Gender;
+  sex: Gender;
 }
 
-export function listActiveQueue(db: Db, runTypeId?: RunTypeId, gender?: Gender): ActiveQueueRow[] {
+export function listActiveQueue(db: Db, runTypeId?: RunTypeId, sex?: Gender): ActiveQueueRow[] {
   const conditions = [`c.status = 'active'`, `s.status IN ('queued', 'running')`];
   const params: unknown[] = [];
   if (runTypeId !== undefined) {
     conditions.push(`s.runTypeId = ?`);
     params.push(runTypeId);
   }
-  if (gender !== undefined) {
+  if (sex !== undefined) {
     conditions.push(`c.gender = ?`);
-    params.push(gender);
+    params.push(sex);
   }
   const whereSql = conditions.join(' AND ');
   const orderSql =
-    runTypeId !== undefined && gender !== undefined
+    runTypeId !== undefined && sex !== undefined
       ? 'ORDER BY s.queueNumber ASC, s.createdAt ASC'
       : 'ORDER BY s.createdAt ASC';
   const rows = db
@@ -188,7 +188,7 @@ export function listActiveQueue(db: Db, runTypeId?: RunTypeId, gender?: Gender):
     return {
       runSession: rowToSession(sessionRow),
       participantName: `${String(pf ?? '')} ${String(pl ?? '')}`.trim(),
-      gender: String(cg ?? 'male') as Gender,
+      sex: String(cg ?? 'male') as Gender,
     };
   });
 }

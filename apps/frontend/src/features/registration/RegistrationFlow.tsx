@@ -90,19 +90,19 @@ export function RegistrationFlow() {
     [patchForm]
   );
 
-  const handleGenderSelect = useCallback(
-    (gender: 'male' | 'female') => {
+  const handleSexSelect = useCallback(
+    (sex: 'male' | 'female') => {
       logEvent(
-        'gender_select',
-        { gender },
+        'sex_select',
+        { sex },
         {
           readableMessage:
-            gender === 'male'
+            sex === 'male'
               ? 'Пользователь выбрал пол: Мужской'
               : 'Пользователь выбрал пол: Женский',
         }
       );
-      patchForm({ gender });
+      patchForm({ sex });
       clearErrors();
       setStep(RegistrationStep.Name);
     },
@@ -227,7 +227,7 @@ export function RegistrationFlow() {
     }
     const name = `${nameFirst.normalized} ${nameLast.normalized}`.trim();
 
-    if (!form.isAdult || form.gender === null) {
+    if (!form.isAdult || form.sex === null) {
       logEvent(
         'validation_error',
         { step: 'consent' },
@@ -242,14 +242,14 @@ export function RegistrationFlow() {
       const created = await api.register({
         name,
         phone: phoneResult.normalized,
-        sex: form.gender,
+        sex: form.sex,
         runMode: 'time',
         runName: 'Регистрация',
       });
       setLoggedParticipantId(created.id);
       logEvent(
         'registration_completed',
-        { participantId: created.id, sex: form.gender },
+        { participantId: created.id, sex: form.sex },
         {
           participantId: created.id,
           readableMessage: 'Регистрация успешно завершена, пользователь переходит к выбору забега',
@@ -260,7 +260,7 @@ export function RegistrationFlow() {
         state: {
           participantId: created.id,
           participantFirstName: created.firstName,
-          participantSex: form.gender,
+          participantSex: form.sex,
         },
       });
     } catch (e) {
@@ -283,7 +283,7 @@ export function RegistrationFlow() {
       )}
 
       {step === RegistrationStep.Gender && (
-        <GenderStep onSelectGender={handleGenderSelect} onBack={handleBack} />
+        <GenderStep onSelectSex={handleSexSelect} onBack={handleBack} />
       )}
 
       {step === RegistrationStep.Name && (

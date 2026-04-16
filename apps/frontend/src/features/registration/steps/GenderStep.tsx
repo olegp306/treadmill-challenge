@@ -3,12 +3,12 @@ import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 
 type Props = {
-  onSelectGender: (gender: 'male' | 'female') => void;
+  onSelectSex: (sex: 'male' | 'female') => void;
   onBack: () => void;
 };
 
 /** Figma 691:2010 — Выбор пола. */
-export function GenderStep({ onSelectGender, onBack }: Props) {
+export function GenderStep({ onSelectSex, onBack }: Props) {
   return (
     <WizardStepShell
       variant="tall"
@@ -16,8 +16,8 @@ export function GenderStep({ onSelectGender, onBack }: Props) {
       aria-label="Выбор пола"
       footer={
         <div style={reg.ageFigmaButtonRow}>
-          <OptionButton onClick={() => onSelectGender('male')}>Мужской</OptionButton>
-          <OptionButton onClick={() => onSelectGender('female')}>Женский</OptionButton>
+          <OptionButton onClick={() => onSelectSex('male')}>Мужской</OptionButton>
+          <OptionButton onClick={() => onSelectSex('female')}>Женский</OptionButton>
         </div>
       }
     >

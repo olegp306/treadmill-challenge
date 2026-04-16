@@ -41,6 +41,22 @@ export function submitRunSessionResult(dto: RunSessionResultDto): {
     speed
   );
   runSessions.updateSessionResults(db, session.id, dto.resultTime, dto.distance);
+  runSessions.renumberQueuedSessions(db, session.competitionId);
 
   return { runId, runSessionId: session.id, participantId: session.participantId };
+}
+
+export function getExistingResultByRunSessionId(runSessionId: string): {
+  runId: string;
+  runSessionId: string;
+  participantId: string;
+} | null {
+  const db = getDb();
+  const run = runs.getLatestRunBySessionId(db, runSessionId.trim());
+  if (!run) return null;
+  return {
+    runId: run.id,
+    runSessionId: run.runSessionId ?? runSessionId.trim(),
+    participantId: run.participantId,
+  };
 }

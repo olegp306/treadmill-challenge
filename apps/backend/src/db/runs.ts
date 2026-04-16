@@ -91,8 +91,8 @@ export function getLeaderboardRuns(db: Db, limit = 50): LeaderboardEntry[] {
 }
 
 function orderClauseForRunType(runTypeId: RunTypeId): string {
-  if (runTypeId === 0) return 'r.distance DESC, r.resultTime ASC';
-  return 'r.resultTime ASC, r.distance DESC';
+  if (runTypeId === 0) return 'distance DESC, resultTime ASC';
+  return 'resultTime ASC, distance DESC';
 }
 
 export function getLeaderboardForCompetition(db: Db, competitionId: string, runTypeId: RunTypeId, limit = 100): LeaderboardEntry[] {
@@ -100,12 +100,23 @@ export function getLeaderboardForCompetition(db: Db, competitionId: string, runT
   const rows = db
     .prepare(
       `
-    SELECT r.id, r.participantId, r.competitionId, r.runSessionId, r.resultTime, r.distance, r.speed, r.createdAt,
-      TRIM(COALESCE(p.firstName, '') || ' ' || COALESCE(p.lastName, '')) as participantName
-    FROM runs r
-    JOIN participants p ON p.id = r.participantId
-    WHERE r.competitionId = ?
-    ORDER BY ${order}
+    WITH ranked AS (
+      SELECT
+        r.id, r.participantId, r.competitionId, r.runSessionId, r.resultTime, r.distance, r.speed, r.createdAt,
+        TRIM(COALESCE(p.firstName, '') || ' ' || COALESCE(p.lastName, '')) as participantName,
+        p.phone as phone,
+        ROW_NUMBER() OVER (
+          PARTITION BY r.competitionId, p.phone
+          ORDER BY ${order}, r.createdAt ASC, r.id ASC
+        ) as phonePickRank
+      FROM runs r
+      JOIN participants p ON p.id = r.participantId
+      WHERE r.competitionId = ?
+    )
+    SELECT id, participantId, competitionId, runSessionId, resultTime, distance, speed, createdAt, participantName
+    FROM ranked
+    WHERE phonePickRank = 1
+    ORDER BY ${order}, createdAt ASC, id ASC
     LIMIT ?
   `
     )
@@ -121,6 +132,14 @@ export function getLeaderboardForCompetition(db: Db, competitionId: string, runT
 
 export function getRunById(db: Db, id: string): Run | null {
   const row = db.prepare(`SELECT * FROM runs WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return rowToRun(row);
+}
+
+export function getLatestRunBySessionId(db: Db, runSessionId: string): Run | null {
+  const row = db
+    .prepare(`SELECT * FROM runs WHERE runSessionId = ? ORDER BY createdAt DESC, id DESC LIMIT 1`)
+    .get(runSessionId) as Record<string, unknown> | undefined;
   if (!row) return null;
   return rowToRun(row);
 }

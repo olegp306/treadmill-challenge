@@ -58,20 +58,21 @@ export const api = {
     }>('/register', { method: 'POST', body: JSON.stringify(body) });
   },
 
-  getLeaderboard(scope?: { runTypeId: RunTypeId; gender: Gender }) {
+  getLeaderboard(scope?: { runTypeId: RunTypeId; sex: Gender }) {
     const q = new URLSearchParams();
     if (scope) {
       q.set('runTypeId', String(scope.runTypeId));
-      q.set('gender', scope.gender);
+      q.set('sex', scope.sex);
     }
     const qs = q.toString();
     return request<{
       scoped: boolean;
       runTypeId: RunTypeId | null;
-      gender: Gender | null;
+      sex: Gender | null;
       runTypeName: string | null;
       competitionTitle: string | null;
       leaderboard: Array<{
+        rank?: number;
         participantId: string;
         participantName: string;
         resultTime: number;
@@ -83,10 +84,10 @@ export const api = {
     }>(`/leaderboard${qs ? `?${qs}` : ''}`);
   },
 
-  getRunQueue(runTypeId?: RunTypeId, gender?: Gender) {
+  getRunQueue(runTypeId?: RunTypeId, sex?: Gender) {
     const q = new URLSearchParams();
     if (runTypeId !== undefined) q.set('runTypeId', String(runTypeId));
-    if (gender !== undefined) q.set('gender', gender);
+    if (sex !== undefined) q.set('sex', sex);
     const qs = q.toString();
     return request<{
       entries: Array<{
@@ -94,7 +95,7 @@ export const api = {
         queueNumber: number;
         participantId: string;
         participantName: string;
-        gender: Gender;
+        sex: Gender;
         competitionId: string;
         runTypeId: RunTypeId;
         runType: string;
@@ -102,6 +103,21 @@ export const api = {
         status: string;
       }>;
     }>(`/run/queue${qs ? `?${qs}` : ''}`);
+  },
+
+  getRunSessionState(runSessionId: string, participantId?: string) {
+    const q = new URLSearchParams();
+    if (participantId) q.set('participantId', participantId);
+    const qs = q.toString();
+    return request<{
+      runSessionId: string;
+      participantId: string;
+      competitionId: string;
+      runTypeId: RunTypeId;
+      status: 'queued' | 'running' | 'finished' | 'cancelled';
+      queueNumber: number;
+      queuePosition: number | null;
+    }>(`/run/session/${encodeURIComponent(runSessionId)}${qs ? `?${qs}` : ''}`);
   },
 
   getParticipant(id: string) {
@@ -186,12 +202,12 @@ export const api = {
     return adminRequest<{
       slots: Array<{
         runTypeId: RunTypeId;
-        gender: Gender;
+        sex: Gender;
         competition: {
           id: string;
           runTypeId: RunTypeId;
           runTypeKey: string;
-          gender: Gender;
+          sex: Gender;
           title: string;
           status: string;
           startedAt: string;
@@ -212,7 +228,7 @@ export const api = {
     }>('/admin/dashboard');
   },
 
-  adminStartCompetition(body: { runTypeId: RunTypeId; gender: Gender }) {
+  adminStartCompetition(body: { runTypeId: RunTypeId; sex: Gender }) {
     return adminRequest<{ competition: unknown }>('/admin/competitions/start', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -220,20 +236,20 @@ export const api = {
   },
 
   adminStopCompetition(competitionId: string) {
-    return adminRequest<{ competition: unknown }>('/admin/competitions/stop', {
+    return adminRequest<{ previous: unknown; next: unknown }>('/admin/competitions/stop', {
       method: 'POST',
       body: JSON.stringify({ competitionId }),
     });
   },
 
-  adminRestartCompetition(body: { runTypeId: RunTypeId; gender: Gender }) {
+  adminRestartCompetition(body: { runTypeId: RunTypeId; sex: Gender }) {
     return adminRequest<{ competition: unknown }>('/admin/competitions/restart', {
       method: 'POST',
       body: JSON.stringify(body),
     });
   },
 
-  adminStopAndStartCompetition(body: { runTypeId: RunTypeId; gender: Gender }) {
+  adminStopAndStartCompetition(body: { runTypeId: RunTypeId; sex: Gender }) {
     return adminRequest<{ previous: unknown; next: unknown }>('/admin/competitions/stop-and-start', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -253,7 +269,7 @@ export const api = {
         id: string;
         runTypeId: RunTypeId;
         runTypeKey: string;
-        gender: Gender;
+        sex: Gender;
         title: string;
         status: string;
         startedAt: string;
@@ -388,6 +404,7 @@ export const api = {
       tdDemoMode: boolean;
       maxQueueSizePerRun: number;
       eventTitle: string;
+      heartbeatIntervalMin: 5 | 10 | 30 | 60;
     }>('/admin/settings');
   },
 
@@ -399,19 +416,24 @@ export const api = {
     tdDemoMode: boolean;
     maxQueueSizePerRun: number;
     eventTitle: string;
+    heartbeatIntervalMin: 5 | 10 | 30 | 60;
   }>) {
     return adminRequest<{ ok: boolean }>('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
+  },
+
+  getPublicSettings() {
+    return request<{ heartbeatIntervalMin: 5 | 10 | 30 | 60 }>('/public/settings');
   },
 
   adminResetTestData() {
     return adminRequest<{ ok: boolean }>('/admin/test-data/reset', { method: 'POST' });
   },
 
-  adminArchive(params: { from?: string; to?: string; gender?: Gender; runTypeId?: RunTypeId }) {
+  adminArchive(params: { from?: string; to?: string; sex?: Gender; runTypeId?: RunTypeId }) {
     const q = new URLSearchParams();
     if (params.from) q.set('from', params.from);
     if (params.to) q.set('to', params.to);
-    if (params.gender) q.set('gender', params.gender);
+    if (params.sex) q.set('sex', params.sex);
     if (params.runTypeId !== undefined) q.set('runTypeId', String(params.runTypeId));
     const qs = q.toString();
     return adminRequest<{
@@ -419,7 +441,7 @@ export const api = {
         id: string;
         runTypeId: number;
         runTypeKey: string;
-        gender: Gender;
+        sex: Gender;
         title: string;
         status: string;
         startedAt: string;

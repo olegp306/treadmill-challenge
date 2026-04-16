@@ -24,14 +24,16 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
   const lastRef = useRef<HTMLInputElement>(null);
   const [blurFirstError, setBlurFirstError] = useState<string | null>(null);
   const [blurLastError, setBlurLastError] = useState<string | null>(null);
+  const [firstEdited, setFirstEdited] = useState(false);
+  const [lastEdited, setLastEdited] = useState(false);
 
   const firstResult = useMemo(() => validateNamePart(form.firstName, 'first'), [form.firstName]);
   const lastResult = useMemo(() => validateNamePart(form.lastName, 'last'), [form.lastName]);
 
-  const firstErrHighlight = Boolean(blurFirstError || (fieldError && !firstResult.ok));
-  const lastErrHighlight = Boolean(blurLastError || (fieldError && !lastResult.ok));
-  const firstErrText = blurFirstError ?? (fieldError && !firstResult.ok ? firstResult.message : null);
-  const lastErrText = blurLastError ?? (fieldError && !lastResult.ok ? lastResult.message : null);
+  const firstErrHighlight = Boolean(blurFirstError || (fieldError && firstEdited && !firstResult.ok));
+  const lastErrHighlight = Boolean(blurLastError || (fieldError && lastEdited && !lastResult.ok));
+  const firstErrText = blurFirstError ?? (fieldError && firstEdited && !firstResult.ok ? firstResult.message : null);
+  const lastErrText = blurLastError ?? (fieldError && lastEdited && !lastResult.ok ? lastResult.message : null);
 
   const first = form.firstName.trim();
   const last = form.lastName.trim();
@@ -79,7 +81,7 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
             <UnderlineField
               ref={firstRef}
               id={idFirst}
-              label="Имя"
+              placeholder="Имя"
               hasError={firstErrHighlight}
               errorText={firstErrText}
               name="givenName"
@@ -95,10 +97,12 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               value={form.firstName}
               aria-label="Имя"
               onChange={(e) => {
+                if (e.target.value !== form.firstName) setFirstEdited(true);
                 onChange({ firstName: e.target.value });
                 setBlurFirstError(null);
               }}
               onBlur={(e) => {
+                if (!firstEdited) return;
                 const r = validateNamePart(e.target.value, 'first');
                 if (r.ok) {
                   onChange({ firstName: r.normalized });
@@ -122,7 +126,7 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
             <UnderlineField
               ref={lastRef}
               id={idLast}
-              label="Фамилия"
+              placeholder="Фамилия"
               hasError={lastErrHighlight}
               errorText={lastErrText}
               name="familyName"
@@ -137,10 +141,12 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               value={form.lastName}
               aria-label="Фамилия"
               onChange={(e) => {
+                if (e.target.value !== form.lastName) setLastEdited(true);
                 onChange({ lastName: e.target.value });
                 setBlurLastError(null);
               }}
               onBlur={(e) => {
+                if (!lastEdited) return;
                 const r = validateNamePart(e.target.value, 'last');
                 if (r.ok) {
                   onChange({ lastName: r.normalized });

@@ -193,6 +193,7 @@ function seedAdminSettings(db: Db): void {
   ins.run('tdDemoMode', 'false');
   ins.run('eventTitle', 'Amazing Red');
   ins.run('maxQueueSizePerRun', '3');
+  ins.run('heartbeatIntervalMin', '5');
   ins.run('lastTdSyncOk', '');
   ins.run('lastTdSyncError', '');
 }

@@ -9,6 +9,7 @@ import { formatParticipantDisplayName } from '../features/run-queue/participantD
 import { PrimaryButton } from '../features/registration/components';
 import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
+import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
 import { logEvent } from '../logging/logEvent';
 
 export type RunQueueLocationState = {
@@ -34,6 +35,8 @@ export default function RunQueuePage() {
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
   const [devMsg, setDevMsg] = useState<string | null>(null);
   const [devLoading, setDevLoading] = useState(false);
+  const [liveStatus, setLiveStatus] = useState<'queued' | 'running' | null>('queued');
+  const [livePosition, setLivePosition] = useState<number>(position);
 
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) {
@@ -57,6 +60,60 @@ export default function RunQueuePage() {
       cancelled = true;
     };
   }, [participantId, runSessionId, runTypeId, navigate, state?.participantFirstName]);
+
+  useEffect(() => {
+    if (!participantId || !runSessionId || runTypeId === null) return;
+    let cancelled = false;
+    const POLL_MS = 2500;
+
+    const load = async () => {
+      try {
+        const s = await api.getRunSessionState(runSessionId, participantId);
+        if (cancelled) return;
+        setLiveStatus(s.status === 'running' ? 'running' : s.status === 'queued' ? 'queued' : null);
+        setLivePosition(s.queuePosition ?? 0);
+        if (s.status === 'queued' && s.queuePosition === 1) {
+          navigate('/run/prepare', {
+            replace: true,
+            state: {
+              participantId,
+              runSessionId,
+              runTypeId,
+              participantSex,
+              participantFirstName: state?.participantFirstName,
+            },
+          });
+          return;
+        }
+        if (s.status === 'finished') {
+          saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
+          const q = new URLSearchParams({
+            runTypeId: String(runTypeId),
+            sex: participantSex,
+            highlightParticipantId: participantId,
+          });
+          navigate(`/leaderboard?${q.toString()}`, { replace: true });
+          return;
+        }
+        if (s.status === 'cancelled') {
+          navigate('/', { replace: true });
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '';
+        if (msg.includes('Run session not found')) {
+          setLiveStatus(null);
+          navigate('/', { replace: true });
+        }
+      }
+    };
+
+    void load();
+    const t = window.setInterval(() => void load(), POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+    };
+  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName]);
 
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) return;
@@ -104,6 +161,7 @@ export default function RunQueuePage() {
   };
 
   const goLeaveConfirm = () => {
+    if (liveStatus !== 'queued') return;
     if (!runSessionId || runTypeId === null) return;
     logEvent(
       'queue_leave_confirm_open',
@@ -120,7 +178,7 @@ export default function RunQueuePage() {
         participantId,
         participantSex,
         runTypeId,
-        position,
+        position: livePosition,
       },
     });
   };
@@ -130,13 +188,14 @@ export default function RunQueuePage() {
   }
 
   const showDevFinish = import.meta.env.DEV;
+  const viewMode = liveStatus === 'running' ? 'running' : livePosition === 1 ? 'prepare' : 'queue';
 
   return (
     <RunQueueScreenShell
       participantDisplayName={displayName}
       footer={
         <>
-          <button type="button" style={rq.btnWide} onClick={goLeaveConfirm}>
+          <button type="button" style={rq.btnWide} onClick={goLeaveConfirm} disabled={liveStatus !== 'queued'}>
             Сойти с забега
           </button>
           <button type="button" style={rq.btnWideSolid} onClick={() => navigate('/')}>
@@ -145,10 +204,16 @@ export default function RunQueuePage() {
         </>
       }
     >
-      <p style={{ ...rq.titleMain, margin: 0 }}>
-        <span>Ваш номер в очереди: </span>
-        <span style={rq.titleAccent}>{position}</span>
-      </p>
+      {viewMode === 'running' ? (
+        <p style={{ ...rq.titleMain, margin: 0 }}>Вы на дорожке. Забег идет.</p>
+      ) : viewMode === 'prepare' ? (
+        <p style={{ ...rq.titleMain, margin: 0 }}>Приготовься. Пройди на дорожку.</p>
+      ) : (
+        <p style={{ ...rq.titleMain, margin: 0 }}>
+          <span>Ваш номер в очереди: </span>
+          <span style={rq.titleAccent}>{livePosition}</span>
+        </p>
+      )}
       {showDevFinish ? (
         <div style={{ marginTop: h(32), width: '100%', maxWidth: w(900), marginLeft: 'auto', marginRight: 'auto' }}>
           <PrimaryButton

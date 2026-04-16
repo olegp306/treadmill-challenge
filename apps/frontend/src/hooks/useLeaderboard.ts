@@ -3,6 +3,7 @@ import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { api } from '../api/client';
 
 export interface LeaderboardEntry {
+  rank?: number;
   participantId: string;
   participantName: string;
   resultTime: number;
@@ -15,12 +16,12 @@ export interface LeaderboardEntry {
 export interface LeaderboardMeta {
   scoped: boolean;
   runTypeId: RunTypeId | null;
-  gender: Gender | null;
+  sex: Gender | null;
   runTypeName: string | null;
   competitionTitle: string | null;
 }
 
-export type LeaderboardScope = { runTypeId: RunTypeId; gender: Gender };
+export type LeaderboardScope = { runTypeId: RunTypeId; sex: Gender };
 
 /** Simulated network delay (ms) when using fake data */
 const FAKE_FETCH_MS = 1000;
@@ -95,7 +96,7 @@ export function useLeaderboard(scope: LeaderboardScope | null) {
   const [meta, setMeta] = useState<LeaderboardMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const scopeKey = scope ? `${scope.runTypeId}-${scope.gender}` : 'global';
+  const scopeKey = scope ? `${scope.runTypeId}-${scope.sex}` : 'global';
 
   useEffect(() => {
     let cancelled = false;
@@ -111,7 +112,7 @@ export function useLeaderboard(scope: LeaderboardScope | null) {
             setMeta({
               scoped: false,
               runTypeId: null,
-              gender: null,
+              sex: null,
               runTypeName: null,
               competitionTitle: null,
             });
@@ -125,7 +126,7 @@ export function useLeaderboard(scope: LeaderboardScope | null) {
           setMeta({
             scoped: data.scoped,
             runTypeId: data.runTypeId,
-            gender: data.gender,
+            sex: data.sex,
             runTypeName: data.runTypeName,
             competitionTitle: data.competitionTitle,
           });

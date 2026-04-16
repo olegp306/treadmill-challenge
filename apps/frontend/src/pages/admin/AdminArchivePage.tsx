@@ -8,7 +8,7 @@ import { AdminLayout } from '../../features/admin/AdminLayout';
 export default function AdminArchivePage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  const [gender, setGender] = useState<'' | Gender>('');
+  const [sex, setSex] = useState<'' | Gender>('');
   const [runTypeId, setRunTypeId] = useState<'' | RunTypeId>('');
   const [rows, setRows] = useState<Awaited<ReturnType<typeof api.adminArchive>>['competitions']>([]);
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ export default function AdminArchivePage() {
       const data = await api.adminArchive({
         from: from || undefined,
         to: to || undefined,
-        gender: gender || undefined,
+        sex: sex || undefined,
         runTypeId: runTypeId === '' ? undefined : runTypeId,
       });
       setRows(data.competitions);
@@ -30,7 +30,7 @@ export default function AdminArchivePage() {
     } finally {
       setLoading(false);
     }
-  }, [from, to, gender, runTypeId]);
+  }, [from, to, sex, runTypeId]);
 
   useEffect(() => {
     void load();
@@ -52,8 +52,8 @@ export default function AdminArchivePage() {
         <label style={lab}>
           Пол
           <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value as '' | Gender)}
+            value={sex}
+            onChange={(e) => setSex(e.target.value as '' | Gender)}
             style={inp}
           >
             <option value="">Все</option>
@@ -98,7 +98,7 @@ export default function AdminArchivePage() {
               <div>
                 <strong>{c.title}</strong>
                 <div style={{ color: '#888', fontSize: 14, marginTop: 4 }}>
-                  {getRunTypeName(c.runTypeId as RunTypeId)} · {c.gender === 'male' ? 'М' : 'Ж'} · {c.status}
+                  {getRunTypeName(c.runTypeId as RunTypeId)} · {c.sex === 'male' ? 'М' : 'Ж'} · {c.status}
                 </div>
                 <div style={{ color: '#666', fontSize: 13, marginTop: 4 }}>
                   {c.startedAt}
