@@ -429,7 +429,7 @@ export const api = {
   },
 
   getPublicSettings() {
-    return request<{ heartbeatIntervalMin: 5 | 10 | 30 | 60 }>('/public/settings');
+    return request<{ heartbeatIntervalMin: 5 | 10 | 30 | 60; tdDemoMode: boolean }>('/public/settings');
   },
 
   adminResetTestData() {

@@ -35,10 +35,29 @@ export default function RunQueuePage() {
   const demoMode = state?.demoMode ?? false;
 
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
+  const [tdDemoMode, setTdDemoMode] = useState(false);
   const [devMsg, setDevMsg] = useState<string | null>(null);
   const [devLoading, setDevLoading] = useState(false);
   const [liveStatus, setLiveStatus] = useState<'queued' | 'running' | null>('queued');
   const [livePosition, setLivePosition] = useState<number>(position);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api
+      .getPublicSettings()
+      .then((s) => {
+        if (cancelled) return;
+        setTdDemoMode(Boolean(s.tdDemoMode));
+        logEvent('td_mode_loaded', { tdDemoMode: Boolean(s.tdDemoMode), source: 'public_settings' }, { readableMessage: 'Загружены публичные настройки TouchDesigner режима' });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setTdDemoMode(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) {
@@ -189,7 +208,8 @@ export default function RunQueuePage() {
     return null;
   }
 
-  const showDevFinish = import.meta.env.DEV;
+  const demoEnabled = demoMode && tdDemoMode;
+  const showDevFinish = import.meta.env.DEV && tdDemoMode;
   const viewMode = liveStatus === 'running' ? 'running' : livePosition === 1 ? 'prepare' : 'queue';
   const peopleAhead = Math.max(0, livePosition - 1);
   const approxWaitMin = Math.max(0, peopleAhead * 2);
@@ -202,7 +222,7 @@ export default function RunQueuePage() {
           <button type="button" style={rq.btnWide} onClick={goLeaveConfirm} disabled={liveStatus !== 'queued'}>
             Сойти с забега
           </button>
-          {demoMode && liveStatus === 'queued' ? (
+          {demoEnabled && liveStatus === 'queued' ? (
             <button
               type="button"
               style={rq.btnWideSolid}
@@ -230,7 +250,7 @@ export default function RunQueuePage() {
         <p style={{ ...rq.titleMain, margin: 0 }}>Приготовься. Пройди на дорожку.</p>
       ) : (
         <>
-          {demoMode ? (
+          {demoEnabled ? (
             <>
               <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка занята</p>
               <p style={rq.subtitle}>

@@ -30,14 +30,39 @@ export default function RunPreparePage() {
   const demoMode = state?.demoMode ?? false;
 
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
+  const [tdDemoMode, setTdDemoMode] = useState(false);
   const [demoMsg, setDemoMsg] = useState<string | null>(null);
   const [demoRank, setDemoRank] = useState<number | null>(null);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api
+      .getPublicSettings()
+      .then((s) => {
+        if (cancelled) return;
+        setTdDemoMode(Boolean(s.tdDemoMode));
+        logEvent(
+          'td_mode_loaded',
+          { tdDemoMode: Boolean(s.tdDemoMode), source: 'public_settings' },
+          { readableMessage: 'Загружены публичные настройки TouchDesigner режима' }
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setTdDemoMode(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const demoMetrics = useMemo(() => {
     if (!runSessionId || runTypeId === null) return null;
     return generateDemoMetrics(runTypeId, runSessionId);
   }, [runSessionId, runTypeId]);
+
+  const demoEnabled = demoMode && tdDemoMode;
 
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) {
@@ -152,7 +177,7 @@ export default function RunPreparePage() {
         <br />
         Пройди на дорожку
       </p>
-      {demoMode && demoMetrics ? (
+      {demoEnabled && demoMetrics ? (
         <div style={{ marginTop: 24, width: '100%', maxWidth: 980, marginLeft: 'auto', marginRight: 'auto' }}>
           <div
             style={{

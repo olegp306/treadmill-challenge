@@ -57,6 +57,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     const db = getDb();
     return {
       heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
+      tdDemoMode: adminSettings.getTdDemoMode(db),
     };
   });
 
