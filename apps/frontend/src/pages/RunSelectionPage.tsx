@@ -217,7 +217,7 @@ export default function RunSelectionPage() {
         >
           <div style={rs.runSelectTopBlock}>
             <p style={rs.greeting}>
-              Привет, <span style={reg.logoRed}>{greetingName}</span>!
+              Привет, <span style={reg.logoRed}>{greetingName}!</span>
             </p>
             <p style={rs.subtitle}>Выбери свой формат забега</p>
             {error ? <p style={{ ...reg.error, ...rs.subtitle, color: '#f85149' }}>{error}</p> : null}
