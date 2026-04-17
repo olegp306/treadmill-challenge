@@ -153,3 +153,45 @@ export async function promoteNextQueuedSessionAfterFinish(
     });
   }
 }
+
+/**
+ * Re-send the current running session to TouchDesigner and refresh startedAt (same RunSession, no new row).
+ * Used for dev/testing when OSC must be triggered again without duplicating the queue.
+ */
+export async function resendCurrentRunningSessionToTouchDesigner(
+  touchDesigner: TouchDesignerIntegration,
+  log?: PromotionLog
+): Promise<{ runSessionId: string }> {
+  const db = getDb();
+  const session = runSessions.getCurrentRunningSessionGlobal(db);
+  if (!session) {
+    throw new Error('No running session');
+  }
+  const participant = participants.getParticipantById(db, session.participantId);
+  if (!participant) {
+    throw new Error('Participant not found');
+  }
+  const demoMode = adminSettings.getTdDemoMode(db);
+  const tdPayload = payloadForSession(session, participant);
+
+  if (!demoMode) {
+    try {
+      await touchDesigner.sendRunSessionStarted(tdPayload);
+    } catch (e) {
+      log?.error?.({
+        msg: 'resend_running_session_td_failed',
+        runSessionId: session.id,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      throw new Error(TD_UNAVAILABLE);
+    }
+  }
+
+  runSessions.setSessionStatus(db, session.id, 'running', { startedAt: new Date().toISOString() });
+  log?.info?.({
+    msg: 'running_session_resent',
+    runSessionId: session.id,
+    demoMode,
+  });
+  return { runSessionId: session.id };
+}

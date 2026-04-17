@@ -42,10 +42,27 @@ export default function AdminSettingsPage() {
         showIntegrationInfoMessages: settings.showIntegrationInfoMessages,
       });
       sessionStorage.setItem('adminPin', settings.adminPin);
+      await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка');
     } finally {
       setSaving(false);
+    }
+  };
+
+  /** Persist immediately — toggles used to require «Сохранить», which confused operators. */
+  const persistToggle = async (key: 'tdDemoMode' | 'showIntegrationInfoMessages', value: boolean) => {
+    if (!settings) return;
+    const prev = settings[key];
+    setSettings({ ...settings, [key]: value });
+    try {
+      await api.adminPutSettings(
+        key === 'tdDemoMode' ? { tdDemoMode: value } : { showIntegrationInfoMessages: value }
+      );
+      setError(null);
+    } catch (e) {
+      setSettings({ ...settings, [key]: prev });
+      setError(e instanceof Error ? e.message : 'Ошибка');
     }
   };
 
@@ -93,20 +110,27 @@ export default function AdminSettingsPage() {
             <input
               type="checkbox"
               checked={settings.tdDemoMode ?? false}
-              onChange={(e) => setSettings({ ...settings, tdDemoMode: e.target.checked })}
+              onChange={(e) => void persistToggle('tdDemoMode', e.target.checked)}
               style={{ width: 24, height: 24 }}
             />
             TouchDesigner demo mode
           </label>
+          <p style={{ margin: '-6px 0 0', fontSize: 13, color: '#888', lineHeight: 1.4 }}>
+            Сохраняется сразу при переключении (на сервер). Без этого режима бэкенд шлёт OSC на старт забега; в demo
+            режиме старт/очередь идут без TouchDesigner.
+          </p>
           <label style={{ ...lab, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <input
               type="checkbox"
               checked={settings.showIntegrationInfoMessages ?? false}
-              onChange={(e) => setSettings({ ...settings, showIntegrationInfoMessages: e.target.checked })}
+              onChange={(e) => void persistToggle('showIntegrationInfoMessages', e.target.checked)}
               style={{ width: 24, height: 24 }}
             />
             Показывать информационные сообщения
           </label>
+          <p style={{ margin: '-6px 0 0', fontSize: 13, color: '#888' }}>
+            Эта галочка тоже сохраняется сразу. Остальные поля ниже — кнопка «Сохранить».
+          </p>
           <label style={lab}>
             Макс. размер глобальной очереди (в очереди + на дорожке, всего)
             <input

@@ -19,6 +19,7 @@ import AdminEventsPage from '../pages/admin/AdminEventsPage';
 import { RequireAdmin } from '../features/admin/RequireAdmin';
 import TdWaitingLeaderboardPage from '../pages/td/TdWaitingLeaderboardPage';
 import TdResultLeaderboardPage from '../pages/td/TdResultLeaderboardPage';
+import QueueControlPage from '../pages/dev/QueueControlPage';
 
 export function AppRoutes() {
   return (
@@ -38,6 +39,7 @@ export function AppRoutes() {
       <Route path="/run/waiting" element={<Navigate to="/run/queue" replace />} />
       <Route path="/td/leaderboard/waiting" element={<TdWaitingLeaderboardPage />} />
       <Route path="/td/leaderboard/result" element={<TdResultLeaderboardPage />} />
+      <Route path="/dev/queue-control" element={<QueueControlPage />} />
       <Route
         path="/admin"
         element={

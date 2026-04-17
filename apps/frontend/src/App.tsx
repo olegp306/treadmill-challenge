@@ -7,13 +7,13 @@ import { IntegrationInfoBanner } from './integrationInfo/IntegrationInfoBanner';
 
 export default function App() {
   const location = useLocation();
-  const tdRoute = location.pathname.startsWith('/td');
+  const hideIntegrationChrome = location.pathname.startsWith('/td') || location.pathname.startsWith('/dev');
 
   return (
     <AppErrorBoundary>
       <IntegrationInfoProvider>
-        {!tdRoute && <IntegrationInfoBanner />}
-        {!tdRoute && <EventTelemetry />}
+        {!hideIntegrationChrome && <IntegrationInfoBanner />}
+        {!hideIntegrationChrome && <EventTelemetry />}
         <AppRoutes />
       </IntegrationInfoProvider>
     </AppErrorBoundary>

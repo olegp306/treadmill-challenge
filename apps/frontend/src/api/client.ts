@@ -208,6 +208,72 @@ export const api = {
     });
   },
 
+  /** Hidden dev tool: global queue + treadmill simulation (non-production or ALLOW_DEV_QUEUE_CONTROL). */
+  getDevQueueControlState() {
+    return request<{
+      running: {
+        runSessionId: string;
+        participantId: string;
+        firstName: string;
+        lastName: string;
+        phone: string;
+        runTypeId: RunTypeId;
+        runTypeName: string;
+        runTypeKey: string;
+        gender: Gender;
+        status: string;
+        queueNumber: number;
+        startedAt: string | null;
+      } | null;
+      queued: Array<{
+        position: number;
+        runSessionId: string;
+        participantId: string;
+        participantName: string;
+        phone: string;
+        runTypeId: RunTypeId;
+        runTypeName: string;
+        runTypeKey: string;
+        gender: Gender;
+        queueNumber: number;
+      }>;
+    }>('/dev/queue-control/state');
+  },
+
+  devQueueControlPromoteNext() {
+    return request<{ runSessionId: string; treadmillStatus: string }>('/dev/queue-control/promote-next', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+
+  devQueueControlFinishCurrent() {
+    return request<{
+      runId: string;
+      runSessionId: string;
+      participantId: string;
+      competitionId: string;
+      runTypeId: RunTypeId;
+      rank: number | null;
+      resultTime: number;
+      distance: number;
+    }>('/dev/queue-control/finish-current', { method: 'POST', body: JSON.stringify({}) });
+  },
+
+  devQueueControlCancelCurrent() {
+    return request<{ cancelledRunSessionId: string }>('/dev/queue-control/cancel-current', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+
+  devQueueControlRestartCurrent() {
+    return request<{ runSessionId: string }>('/dev/queue-control/restart-current', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+
   adminLogin(pin: string) {
     return request<{ ok: boolean }>('/admin/login', { method: 'POST', body: JSON.stringify({ pin }) });
   },

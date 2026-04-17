@@ -516,6 +516,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         tdPort: adminSettings.getSetting(db, 'tdPort') ?? '7000',
         tdAdapter: adminSettings.getSetting(db, 'tdAdapter') ?? 'mock',
         tdDemoMode: adminSettings.getTdDemoMode(db),
+        showIntegrationInfoMessages: adminSettings.getIntegrationInfoMessages(db),
         maxGlobalQueueSize: adminSettings.getMaxGlobalQueueSize(db),
         maxQueueSizePerRun: adminSettings.getMaxGlobalQueueSize(db),
         eventTitle: adminSettings.getSetting(db, 'eventTitle') ?? 'Amazing Red',

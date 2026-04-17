@@ -10,6 +10,7 @@ import touchdesignerRoutes from './routes/touchdesigner.js';
 import runRoutes from './routes/run.js';
 import adminRoutes from './routes/admin.js';
 import eventsRoutes from './routes/events.js';
+import devQueueControlRoutes from './routes/devQueueControl.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -51,6 +52,7 @@ async function main() {
   await app.register(runRoutes);
   await app.register(eventsRoutes);
   await app.register(adminRoutes);
+  await app.register(devQueueControlRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
 

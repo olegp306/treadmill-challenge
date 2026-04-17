@@ -327,6 +327,91 @@ export function renumberQueuedSessions(db: Db, _competitionId: string): void {
   renumberGlobalQueuedSessions(db);
 }
 
+export interface RunningSessionDetailGlobal {
+  runSession: RunSession;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  gender: Gender;
+}
+
+/** Current global running session with participant + competition gender (at most one). */
+export function getRunningSessionDetailGlobal(db: Db): RunningSessionDetailGlobal | null {
+  const row = db
+    .prepare(
+      `
+    SELECT s.id, s.participantId, s.competitionId, s.runTypeId, s.runType, s.status, s.queueNumber, s.resultTime, s.resultDistance,
+           s.createdAt, s.startedAt, s.finishedAt, p.firstName as pf, p.lastName as pl, p.phone as pphone, c.gender as cg
+    FROM run_sessions s
+    JOIN participants p ON p.id = s.participantId
+    JOIN competitions c ON c.id = s.competitionId
+    WHERE s.status = 'running'
+    ORDER BY s.startedAt ASC, s.id ASC
+    LIMIT 1
+  `
+    )
+    .get() as Record<string, unknown> | undefined;
+  if (!row) return null;
+  const pf = row.pf;
+  const pl = row.pl;
+  const phone = String(row.pphone ?? '');
+  const cg = row.cg;
+  const sessionRow = { ...row };
+  delete sessionRow.pf;
+  delete sessionRow.pl;
+  delete sessionRow.pphone;
+  delete sessionRow.cg;
+  return {
+    runSession: rowToSession(sessionRow as Record<string, unknown>),
+    firstName: String(pf ?? ''),
+    lastName: String(pl ?? ''),
+    phone,
+    gender: String(cg ?? 'male') as Gender,
+  };
+}
+
+export interface GlobalQueuedSessionRow {
+  runSession: RunSession;
+  participantName: string;
+  phone: string;
+  gender: Gender;
+}
+
+/** Global FIFO: all queued sessions with names (for dev queue control). */
+export function listGlobalQueuedSessionsOrdered(db: Db): GlobalQueuedSessionRow[] {
+  const rows = db
+    .prepare(
+      `
+    SELECT s.id, s.participantId, s.competitionId, s.runTypeId, s.runType, s.status, s.queueNumber, s.resultTime, s.resultDistance,
+           s.createdAt, s.startedAt, s.finishedAt, p.firstName as pf, p.lastName as pl, p.phone as pphone, c.gender as cg
+    FROM run_sessions s
+    JOIN participants p ON p.id = s.participantId
+    JOIN competitions c ON c.id = s.competitionId
+    WHERE s.status = 'queued'
+    ORDER BY s.createdAt ASC, s.id ASC
+  `
+    )
+    .all() as Record<string, unknown>[];
+
+  return rows.map((row) => {
+    const pf = row.pf;
+    const pl = row.pl;
+    const phone = String(row.pphone ?? '');
+    const cg = row.cg;
+    const sessionRow = { ...row };
+    delete sessionRow.pf;
+    delete sessionRow.pl;
+    delete sessionRow.pphone;
+    delete sessionRow.cg;
+    return {
+      runSession: rowToSession(sessionRow as Record<string, unknown>),
+      participantName: `${String(pf ?? '')} ${String(pl ?? '')}`.trim(),
+      phone,
+      gender: String(cg ?? 'male') as Gender,
+    };
+  });
+}
+
 export function getSessionForDevFinish(db: Db): RunSession | null {
   const running = db
     .prepare(
