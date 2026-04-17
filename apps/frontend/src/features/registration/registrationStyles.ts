@@ -571,7 +571,8 @@ export const reg: Record<string, CSSProperties> = {
   },
   /** Name / phone steps: fit frame without inner scroll (Figma iPad). */
   wizardBodyShort: {
-    overflow: 'hidden',
+    overflow: 'auto',
+    WebkitOverflowScrolling: 'touch' as const,
   },
   /** Short steps: outer + inner centering (name, phone). */
   stepBodyOuter: {
@@ -579,8 +580,9 @@ export const reg: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
-    overflow: 'hidden',
+    overflow: 'auto',
     boxSizing: 'border-box',
+    WebkitOverflowScrolling: 'touch' as const,
   },
   stepBodyInner: {
     flex: 1,
@@ -588,13 +590,14 @@ export const reg: Record<string, CSSProperties> = {
     flexDirection: 'column',
     justifyContent: 'center',
     minHeight: 0,
-    overflow: 'hidden',
+    overflow: 'auto',
     boxSizing: 'border-box',
     gap: h(24),
     alignItems: 'stretch',
     width: '100%',
     maxWidth: w(1760),
     alignSelf: 'center',
+    WebkitOverflowScrolling: 'touch' as const,
   },
   /** Tall steps: single centered column (age unanswered, gender). */
   stepBodyTall: {

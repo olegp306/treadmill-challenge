@@ -12,18 +12,44 @@ function setupKioskViewport(): void {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
+  let baseHeight = 0;
 
-  const setAppHeight = () => {
+  const setAppMetrics = () => {
     const vv = window.visualViewport;
-    // Prefer visualViewport height to avoid 100vh issues on iOS (keyboard, toolbars).
-    const h = Math.round((vv?.height ?? window.innerHeight) * 100) / 100;
-    root.style.setProperty('--app-height', `${h}px`);
+    const vvHeight = vv?.height ?? 0;
+    const innerHeight = window.innerHeight;
+
+    // Use the largest observed viewport height as stable app height.
+    // This prevents full-canvas shrinking when iOS keyboard appears.
+    const observed = Math.max(innerHeight, vvHeight);
+    if (observed > baseHeight) {
+      baseHeight = observed;
+    }
+    if (baseHeight <= 0) {
+      baseHeight = observed || innerHeight || 0;
+    }
+
+    const keyboardHeight = Math.max(0, Math.round(baseHeight - vvHeight));
+    root.style.setProperty('--app-height', `${Math.round(baseHeight * 100) / 100}px`);
+    root.style.setProperty('--keyboard-inset', `${keyboardHeight}px`);
+    root.classList.toggle('vk-open', keyboardHeight > 80);
   };
 
-  setAppHeight();
-  window.addEventListener('resize', setAppHeight, { passive: true });
-  window.visualViewport?.addEventListener('resize', setAppHeight, { passive: true });
-  window.visualViewport?.addEventListener('scroll', setAppHeight, { passive: true });
+  setAppMetrics();
+  window.addEventListener('resize', setAppMetrics, { passive: true });
+  window.visualViewport?.addEventListener('resize', setAppMetrics, { passive: true });
+  window.visualViewport?.addEventListener('scroll', setAppMetrics, { passive: true });
+  window.addEventListener(
+    'orientationchange',
+    () => {
+      // Re-capture baseline after rotation settles.
+      window.setTimeout(() => {
+        baseHeight = 0;
+        setAppMetrics();
+      }, 220);
+    },
+    { passive: true }
+  );
 
   // iOS Safari: prevent pinch zoom (gesture events exist only on iOS).
   const prevent = (e: Event) => {
