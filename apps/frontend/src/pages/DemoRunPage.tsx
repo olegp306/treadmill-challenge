@@ -33,6 +33,8 @@ export default function DemoRunPage() {
   const location = useLocation();
   const state = location.state as DemoRunLocationState | null;
 
+  const [tdDemoMode, setTdDemoMode] = useState(false);
+  const [tdDemoModeLoaded, setTdDemoModeLoaded] = useState(false);
   const [participantName, setParticipantName] = useState<string>('');
   const [loadingName, setLoadingName] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -44,10 +46,43 @@ export default function DemoRunPage() {
   const participantId = state?.participantId ?? '';
   const participantSex = state?.participantSex ?? 'male';
 
+  useEffect(() => {
+    let cancelled = false;
+    void api
+      .getPublicSettings()
+      .then((s) => {
+        if (cancelled) return;
+        const enabled = Boolean(s.tdDemoMode);
+        setTdDemoMode(enabled);
+        setTdDemoModeLoaded(true);
+        logEvent(
+          'td_mode_loaded',
+          { tdDemoMode: enabled, source: 'public_settings' },
+          { readableMessage: 'Загружены публичные настройки TouchDesigner режима' }
+        );
+        if (!enabled) {
+          navigate('/', { replace: true });
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setTdDemoMode(false);
+        setTdDemoModeLoaded(true);
+        navigate('/', { replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
   const metrics = useMemo(
     () => (runSessionId ? generateDemoMetrics(runTypeId, runSessionId) : { resultTime: 0, distance: 0 }),
     [runSessionId, runTypeId]
   );
+
+  if (tdDemoModeLoaded && !tdDemoMode) {
+    return null;
+  }
 
   useEffect(() => {
     if (!runSessionId || loggedDemoGen.current) return;

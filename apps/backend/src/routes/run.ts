@@ -6,6 +6,7 @@ import {
   leaveRunSession,
   startRunSession,
 } from '../services/runService.js';
+import { adminSettings, getDb } from '../db/index.js';
 import { parseRunQueueFilterQuery, parseSexQuery, validateRunStartBody } from '../utils/validation.js';
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 
@@ -21,6 +22,17 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
     }
     try {
       const outcome = startRunSession(validation.data, touchDesignerAdapter);
+      request.log.info({
+        msg: 'run_start_outcome',
+        ok: outcome.ok,
+        reason: outcome.ok ? 'ok' : outcome.reason,
+        runSessionId: outcome.ok ? outcome.data.runSessionId : undefined,
+        participantId: validation.data.participantId,
+        runTypeId: validation.data.runTypeId,
+        tdDemoMode: outcome.ok ? outcome.data.demoMode : undefined,
+        status: outcome.ok ? outcome.data.status : undefined,
+        position: outcome.ok ? outcome.data.position : undefined,
+      });
       if (!outcome.ok) {
         return reply.status(409).send({ success: false, reason: outcome.reason });
       }
@@ -111,6 +123,10 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/api/run/dev-finish', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!allowDevFinish()) {
+      return reply.status(404).send({ error: 'Not found' });
+    }
+    const db = getDb();
+    if (!adminSettings.getTdDemoMode(db)) {
       return reply.status(404).send({ error: 'Not found' });
     }
     request.log.info({ msg: 'dev_finish_request', body: request.body ?? null });

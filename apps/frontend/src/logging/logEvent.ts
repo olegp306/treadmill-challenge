@@ -18,11 +18,36 @@ export type LogEventOptions = {
   readableMessage?: string;
 };
 
+function uuidv4Fallback(): string {
+  // Prefer Web Crypto when available.
+  const cryptoObj = (globalThis as unknown as { crypto?: Crypto }).crypto;
+  const getRandomValues = cryptoObj?.getRandomValues?.bind(cryptoObj);
+  if (getRandomValues) {
+    const bytes = new Uint8Array(16);
+    getRandomValues(bytes);
+    // RFC 4122 variant and version bits.
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+  // Last resort (should be rare): non-crypto UUID-ish string.
+  const rnd = () => Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
+  return `${rnd()}-${rnd().slice(0, 4)}-4${rnd().slice(0, 3)}-8${rnd().slice(0, 3)}-${rnd()}${rnd()}`.slice(0, 36);
+}
+
+function safeRandomUUID(): string {
+  const cryptoObj = (globalThis as unknown as { crypto?: Crypto }).crypto;
+  const ru = (cryptoObj as unknown as { randomUUID?: () => string } | undefined)?.randomUUID;
+  if (typeof ru === 'function') return ru.call(cryptoObj);
+  return uuidv4Fallback();
+}
+
 export function getOrCreateLogSessionId(): string {
   if (typeof sessionStorage === 'undefined') return 'ssr-unknown';
   let id = sessionStorage.getItem(SESSION_KEY);
   if (!id) {
-    id = crypto.randomUUID();
+    id = safeRandomUUID();
     sessionStorage.setItem(SESSION_KEY, id);
   }
   return id;

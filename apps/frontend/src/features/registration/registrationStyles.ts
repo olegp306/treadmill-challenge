@@ -695,7 +695,8 @@ export const reg: Record<string, CSSProperties> = {
     paddingRight: w(40),
     width: '100%',
     color: '#ffffff',
-    fontSize: w(48),
+    // iOS Safari auto-zooms inputs with font-size < 16px.
+    fontSize: `max(16px, ${w(48)})`,
     fontWeight: 400,
     textTransform: 'uppercase',
   },
@@ -819,7 +820,8 @@ export const reg: Record<string, CSSProperties> = {
   phoneDigitsInput: {
     flex: 1,
     minWidth: 0,
-    fontSize: w(64),
+    // iOS Safari auto-zooms inputs with font-size < 16px.
+    fontSize: `max(16px, ${w(64)})`,
     fontWeight: 400,
     color: '#ffffff',
     textAlign: 'left',
