@@ -11,6 +11,7 @@ import { RunSelectionShell } from '../features/run-selection/RunSelectionShell';
 import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
+import { tdLeaderboardResultPath } from '../features/td/tdLeaderboardRoutes';
 import { logEvent } from '../logging/logEvent';
 
 export type DemoRunLocationState = {
@@ -168,12 +169,7 @@ export default function DemoRunPage() {
         }
       );
       saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
-      const q = new URLSearchParams({
-        runTypeId: String(runTypeId),
-        sex: participantSex,
-        highlightParticipantId: participantId,
-      });
-      navigate(`/leaderboard?${q.toString()}`, { replace: true });
+      navigate(tdLeaderboardResultPath(runSessionId), { replace: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Не удалось сохранить результат';
       logEvent(

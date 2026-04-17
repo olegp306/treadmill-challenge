@@ -11,6 +11,7 @@ import { logEvent } from '../logging/logEvent';
 import { pluralizePeople } from '../utils/russianPlural';
 import { LogoMark } from '../ui/components/LogoMark';
 import { ui } from '../ui/tokens';
+import { TD_LEADERBOARD_WAITING_PATH } from '../features/td/tdLeaderboardRoutes';
 
 /** Figma hero — local assets (WebP + JPEG fallback, tiny LQIP blur). */
 const HERO_BG_WEBP = '/assets/hero/hero-bg.webp';
@@ -237,7 +238,7 @@ export default function Main() {
             }}
             aria-label="Основные действия"
           >
-            <Link to="/leaderboard" style={styles.btnLeaderboard}>
+            <Link to={TD_LEADERBOARD_WAITING_PATH} style={styles.btnLeaderboard}>
               Лидерборд
             </Link>
             <Link

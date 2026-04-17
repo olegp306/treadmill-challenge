@@ -10,6 +10,7 @@ import { PrimaryButton } from '../features/registration/components';
 import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
+import { tdLeaderboardResultPath } from '../features/td/tdLeaderboardRoutes';
 import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
 import { logEvent } from '../logging/logEvent';
 
@@ -155,13 +156,8 @@ export default function RunQueuePage() {
             finishNavigateScheduledRef.current = true;
             report('result_received', { autoHideMs: 4500 });
             saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
-            const q = new URLSearchParams({
-              runTypeId: String(runTypeId),
-              sex: participantSex,
-              highlightParticipantId: participantId,
-            });
             window.setTimeout(() => {
-              navigate(`/leaderboard?${q.toString()}`, { replace: true });
+              navigate(tdLeaderboardResultPath(runSessionId), { replace: true });
             }, 480);
           }
           return;
