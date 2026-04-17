@@ -8,6 +8,10 @@ import { h, w } from '../arOzio/dimensions';
 import { readLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
 import { useLeaderboard, type LeaderboardEntry, type LeaderboardScope } from '../hooks/useLeaderboard';
 import { getRunOption } from '../features/run-selection/runOptions';
+import { FooterActionsRow } from '../ui/components/FooterActionsRow';
+import { HeaderChrome } from '../ui/components/HeaderChrome';
+import { Sheet } from '../ui/components/Sheet';
+import { ui } from '../ui/tokens';
 
 const RUN_TYPE_ORDER: RunTypeId[] = [0, 1, 2];
 
@@ -100,32 +104,32 @@ export default function LeaderboardPage() {
   return (
     <ArOzioViewport>
       <ScreenContainer style={styles.page}>
-        <div style={styles.sheet}>
+        <Sheet style={styles.sheet}>
           <div style={styles.sheetInner}>
-            <header style={styles.headerRow}>
-              <p style={styles.logoMark} aria-label="AMAZING RED">
-                <span style={styles.logoAmazing}>AMAZING</span>
-                <span style={styles.logoRed}>RED</span>
-              </p>
-              <div style={styles.headerRight}>
-                <label style={styles.searchBar}>
-                  <span style={styles.searchIcon} aria-hidden>
-                    ⌕
-                  </span>
-                  <input
-                    type="search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Поиск"
-                    style={styles.searchInput}
-                    autoComplete="off"
-                  />
-                </label>
-                <Link to="/" style={styles.btnHome}>
-                  На главную
-                </Link>
-              </div>
-            </header>
+            <HeaderChrome
+              style={styles.headerRow}
+              logoStyle={styles.logoMark}
+              right={
+                <div style={styles.headerRight}>
+                  <label style={styles.searchBar}>
+                    <span style={styles.searchIcon} aria-hidden>
+                      ⌕
+                    </span>
+                    <input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Поиск"
+                      style={styles.searchInput}
+                      autoComplete="off"
+                    />
+                  </label>
+                  <Link to="/" style={styles.btnHome}>
+                    На главную
+                  </Link>
+                </div>
+              }
+            />
 
             <div style={styles.genderTabs}>
               <button
@@ -219,16 +223,16 @@ export default function LeaderboardPage() {
               </button>
             </div>
 
-            <nav style={styles.footerNav} aria-label="Действия">
+            <FooterActionsRow style={styles.footerNav}>
               <Link to="/" style={styles.btnHomeFooter}>
                 На главную
               </Link>
               <Link to="/register" replace style={styles.btnParticipate}>
                 Принять участие
               </Link>
-            </nav>
+            </FooterActionsRow>
           </div>
-        </div>
+        </Sheet>
       </ScreenContainer>
     </ArOzioViewport>
   );
@@ -319,11 +323,7 @@ const styles: Record<string, CSSProperties> = {
     minHeight: 0,
     width: '100%',
     borderRadius: w(48),
-    background: '#080809',
-    border: '1px solid #1e1e1e',
     boxSizing: 'border-box',
-    overflow: 'hidden',
-    position: 'relative',
   },
   sheetInner: {
     position: 'relative',
@@ -355,8 +355,6 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     fontWeight: 400,
   },
-  logoAmazing: { color: '#ffffff' },
-  logoRed: { color: '#e6233a' },
   headerRight: {
     display: 'flex',
     flexDirection: 'row',
@@ -480,7 +478,7 @@ const styles: Record<string, CSSProperties> = {
     height: w(100),
     borderRadius: w(48),
     border: 'none',
-    background: '#e6233a',
+    background: ui.color.red,
     color: '#fff',
     fontSize: w(56),
     lineHeight: 1,
@@ -524,7 +522,7 @@ const styles: Record<string, CSSProperties> = {
     maxHeight: h(820),
   },
   stackHeaderBar: {
-    background: '#e6233a',
+    background: ui.color.red,
     padding: `${h(18)} ${w(16)}`,
     flexShrink: 0,
   },
@@ -563,7 +561,7 @@ const styles: Record<string, CSSProperties> = {
   },
   lbRowHighlight: {
     background: 'rgba(230, 35, 58, 0.35)',
-    outline: '2px solid #e6233a',
+    outline: `2px solid ${ui.color.red}`,
     outlineOffset: 0,
   },
   lbRowLeft: {
@@ -595,7 +593,7 @@ const styles: Record<string, CSSProperties> = {
     fontSize: w(16),
     lineHeight: 1,
     color: '#fff',
-    background: '#e6233a',
+    background: ui.color.red,
     textTransform: 'uppercase',
   },
   lbResult: {
@@ -648,7 +646,7 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     textDecoration: 'none',
     borderRadius: w(36),
-    border: '1px solid #1e1e1e',
+    border: `1px solid ${ui.color.panelBorder}`,
     boxSizing: 'border-box',
   },
   btnParticipate: {
@@ -658,7 +656,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#e6233a',
+    background: ui.color.red,
     color: '#fff',
     fontWeight: 400,
     fontSize: w(42),

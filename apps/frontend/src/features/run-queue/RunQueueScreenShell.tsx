@@ -2,6 +2,9 @@ import type { ReactNode } from 'react';
 import { h, w } from '../../arOzio/dimensions';
 import { RegistrationLayout } from '../registration/RegistrationLayout';
 import { rq } from './runQueueScreensStyles';
+import { HeaderChrome } from '../../ui/components/HeaderChrome';
+import { Sheet } from '../../ui/components/Sheet';
+import { FooterActionsRow } from '../../ui/components/FooterActionsRow';
 
 type Props = {
   participantDisplayName: string;
@@ -27,28 +30,13 @@ export function RunQueueScreenShell({ participantDisplayName, children, footer }
           boxSizing: 'border-box',
         }}
       >
-        <div style={rq.sheet}>
-          <div style={rq.sheetGlow} aria-hidden />
-          <header style={rq.headerRow}>
-            <p style={rq.logoMark} aria-label="AMAZING RED">
-              <span style={rq.logoAmazing}>AMAZING</span>
-              <span style={rq.logoRed}>RED</span>
-            </p>
-            <p style={rq.namePill}>{participantDisplayName}</p>
-          </header>
+        <Sheet style={rq.sheet} overlay={<div style={rq.sheetGlow} aria-hidden />}>
+          <HeaderChrome right={<p style={rq.namePill}>{participantDisplayName}</p>} style={rq.headerRow} logoStyle={rq.logoMark} />
           <div style={rq.centerWrap}>{children}</div>
-        </div>
-        <div
-          style={{
-            ...rq.footerRow,
-            maxWidth: w(2120),
-            marginLeft: 'auto',
-            marginRight: 'auto',
-            marginTop: h(24),
-          }}
-        >
+        </Sheet>
+        <FooterActionsRow style={{ ...rq.footerRow, marginTop: h(24) }} maxWidth={w(2120)}>
           {footer}
-        </div>
+        </FooterActionsRow>
       </div>
     </RegistrationLayout>
   );

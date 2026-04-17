@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { ui } from '../../ui/tokens';
 
 type Props = {
   open: boolean;
@@ -86,7 +87,7 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
               fontSize: 'clamp(28px, 2.2vw, 48px)',
               fontWeight: 400,
               lineHeight: 1.5,
-              color: '#ffffff',
+              color: ui.color.text,
               textTransform: 'uppercase',
               flex: 1,
               minWidth: 0,
@@ -109,7 +110,7 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
               maxHeight: 'min(80px, 12vw)',
               borderRadius: 31,
               border: 'none',
-              backgroundColor: '#e6233a',
+              backgroundColor: ui.color.red,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -127,7 +128,7 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
             >
               <path
                 d="M6 6L18 18M18 6L6 18"
-                stroke="#ffffff"
+                stroke={ui.color.text}
                 strokeWidth={2.2}
                 strokeLinecap="round"
               />

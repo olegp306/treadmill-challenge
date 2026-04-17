@@ -4,6 +4,7 @@ import { ScreenContainer } from '../../arOzio/ScreenContainer';
 import { h } from '../../arOzio/dimensions';
 import { reg } from './registrationStyles';
 import type { ReactNode } from 'react';
+import { LogoMark } from '../../ui/components/LogoMark';
 
 type Props = {
   children: ReactNode;
@@ -43,10 +44,7 @@ export function RegistrationLayout({
                   ← Назад
                 </Link>
               )}
-              <p style={reg.logoMark} aria-label="AMAZING RED">
-                <span style={reg.logoAmazing}>AMAZING</span>
-                <span style={reg.logoRed}>RED</span>
-              </p>
+              <LogoMark aria-label="AMAZING RED" style={reg.logoMark} />
               <div style={reg.headerSpacer} aria-hidden />
             </header>
 
