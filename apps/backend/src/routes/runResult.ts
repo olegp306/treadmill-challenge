@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { generateDemoMetrics, type RunSessionResultDto } from '@treadmill-challenge/shared';
 import { adminSettings, getDb, runSessions } from '../db/index.js';
+import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 import { getExistingResultByRunSessionId, submitRunSessionResult } from '../services/runResultService.js';
 import { validateRunSessionResultBody } from '../utils/validation.js';
 
@@ -79,7 +80,11 @@ export default async function runResultRoutes(app: FastifyInstance): Promise<voi
     }
 
     try {
-      const result = submitRunSessionResult(data);
+      const result = await submitRunSessionResult(data, touchDesignerAdapter, {
+        info: (o) => request.log.info(o),
+        warn: (o) => request.log.warn(o),
+        error: (o) => request.log.error(o),
+      });
       request.log.info({
         msg: 'run_result_saved',
         runId: result.runId,

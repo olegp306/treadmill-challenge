@@ -9,19 +9,11 @@ import {
 import { adminSettings, getDb, competitions, participants, runs, runSessions } from '../db/index.js';
 import type { TouchDesignerIntegration, TreadmillStatus } from '../integrations/touchdesigner/types.js';
 import type { RunStartDto } from '@treadmill-challenge/shared';
-
-function fakeMetrics(runTypeId: RunTypeId): { resultTime: number; distance: number; speed: number } {
-  switch (runTypeId) {
-    case 0:
-      return { resultTime: 300, distance: 1250, speed: 15 };
-    case 1:
-      return { resultTime: 268, distance: 1000, speed: 13.4 };
-    case 2:
-      return { resultTime: 1180, distance: 5000, speed: 15.25 };
-    default:
-      return { resultTime: 300, distance: 1000, speed: 12 };
-  }
-}
+import {
+  TD_UNAVAILABLE,
+  tryActivateQueuedSessionForStart,
+  type PromotionLog,
+} from './runSessionPromotion.js';
 
 export type StartRunOutcome =
   | { ok: true; data: RunSessionStartResponse }
@@ -29,7 +21,8 @@ export type StartRunOutcome =
 
 export async function startRunSession(
   dto: RunStartDto,
-  touchDesigner: TouchDesignerIntegration
+  touchDesigner: TouchDesignerIntegration,
+  log?: PromotionLog
 ): Promise<StartRunOutcome> {
   const db = getDb();
   const participant = participants.getParticipantById(db, dto.participantId.trim());
@@ -53,66 +46,33 @@ export async function startRunSession(
     return { ok: false, reason: 'queue_paused' };
   }
 
-  const maxQueue = adminSettings.getMaxQueueSizePerRun(db);
-  const occupancy = runSessions.countQueueOccupancyForCompetition(db, comp.id);
-  if (occupancy >= maxQueue) {
+  const maxQueue = adminSettings.getMaxGlobalQueueSize(db);
+  if (runSessions.countGlobalQueueOccupancy(db) >= maxQueue) {
     return { ok: false, reason: 'queue_full' };
   }
 
-  const maxQ = runSessions.getMaxQueueNumberForCompetition(db, comp.id);
-  const queueNumber = maxQ + 1;
   const sessionId = randomUUID();
-  const session = runSessions.createRunSession(
-    db,
-    sessionId,
-    dto.participantId.trim(),
-    comp.id,
-    dto.runTypeId,
-    queueNumber
-  );
-  const running = runSessions.getCurrentRunningSessionForCompetition(db, comp.id);
-  let treadmillStatus: TreadmillStatus = 'unknown';
+  runSessions.createRunSession(db, sessionId, dto.participantId.trim(), comp.id, dto.runTypeId, 0);
+  runSessions.renumberGlobalQueuedSessions(db);
 
   const demoMode = adminSettings.getTdDemoMode(db);
 
-  const tdPayload = {
-    runSessionId: session.id,
-    participantId: participant.id,
-    firstName: participant.firstName,
-    lastName: participant.lastName,
-    phone: participant.phone,
-    runTypeId: dto.runTypeId,
-    runTypeName: getRunTypeName(dto.runTypeId),
-    runTypeKey: cfg.key,
-  } as const;
+  let session = runSessions.getRunSessionById(db, sessionId)!;
+  let treadmillStatus: TreadmillStatus = 'unknown';
 
-  if (!running) {
-    if (demoMode) {
-      runSessions.setSessionStatus(db, session.id, 'running', { startedAt: new Date().toISOString() });
-      session.status = 'running';
-      treadmillStatus = 'free';
-    } else {
-      try {
-        // Register OSC ack waiter before send so a fast TouchDesigner reply is not missed.
-        const ackPromise = touchDesigner.getTreadmillStatusAfterStart
-          ? Promise.resolve(touchDesigner.getTreadmillStatusAfterStart(tdPayload))
-          : Promise.resolve('free' as TreadmillStatus);
-        await touchDesigner.sendRunSessionStarted(tdPayload);
-        const ack = await ackPromise;
-        treadmillStatus = ack;
-        if (ack !== 'busy') {
-          runSessions.setSessionStatus(db, session.id, 'running', { startedAt: new Date().toISOString() });
-          session.status = 'running';
-        }
-      } catch {
-        return { ok: false, reason: 'td_unavailable' };
-      }
+  try {
+    const activated = await tryActivateQueuedSessionForStart(sessionId, touchDesigner, demoMode, log);
+    session = activated.session;
+    treadmillStatus = activated.treadmillStatus;
+  } catch (e) {
+    if (e instanceof Error && e.message === TD_UNAVAILABLE) {
+      return { ok: false, reason: 'td_unavailable' };
     }
-  } else {
-    treadmillStatus = 'busy';
+    throw e;
   }
 
-  const position = session.status === 'queued' ? runSessions.positionInQueue(db, comp.id, session.queueNumber) : 0;
+  const position =
+    session.status === 'queued' ? runSessions.positionInGlobalQueue(db, session.id) : 0;
 
   return {
     ok: true,
@@ -166,7 +126,7 @@ export function leaveRunSession(runSessionId: string, participantId: string): vo
     throw new Error('Run session cannot be left');
   }
   runSessions.setSessionStatus(db, session.id, 'cancelled');
-  runSessions.renumberQueuedSessions(db, session.competitionId);
+  runSessions.renumberGlobalQueuedSessions(db);
 }
 
 export function getQueue(
@@ -221,7 +181,7 @@ export function getRunSessionState(runSessionId: string): {
     throw new Error('Run session not found');
   }
   const queuePosition =
-    session.status === 'queued' ? runSessions.positionInQueue(db, session.competitionId, session.queueNumber) : null;
+    session.status === 'queued' ? runSessions.positionInGlobalQueue(db, session.id) : null;
   return {
     runSessionId: session.id,
     participantId: session.participantId,
@@ -251,6 +211,7 @@ export function devFinishLatestQueuedRun(): {
   const runId = randomUUID();
   runs.createRun(db, runId, session.participantId, session.competitionId, session.id, resultTime, distance, speed);
   runSessions.updateSessionResults(db, session.id, resultTime, distance);
+  runSessions.renumberGlobalQueuedSessions(db);
 
   return {
     runSessionId: session.id,

@@ -37,38 +37,51 @@ function rowToSession(row: Record<string, unknown>): RunSession {
   };
 }
 
-/** Counts sessions occupying the treadmill queue (queued + running) for capacity checks. */
-export function countQueueOccupancyForCompetition(db: Db, competitionId: string): number {
+/** Single treadmill: count all sessions in the global active pool (queued + running). */
+export function countGlobalQueueOccupancy(db: Db): number {
   const row = db
-    .prepare(
-      `SELECT COUNT(*) as c FROM run_sessions WHERE competitionId = ? AND status IN ('queued', 'running')`
-    )
-    .get(competitionId) as { c: number } | undefined;
+    .prepare(`SELECT COUNT(*) as c FROM run_sessions WHERE status IN ('queued', 'running')`)
+    .get() as { c: number } | undefined;
   return row ? Number(row.c) : 0;
 }
 
-export function getMaxQueueNumberForCompetition(db: Db, competitionId: string): number {
+/** At most one row — single physical treadmill. */
+export function getCurrentRunningSessionGlobal(db: Db): RunSession | null {
   const row = db
-    .prepare(`SELECT COALESCE(MAX(queueNumber), 0) as m FROM run_sessions WHERE competitionId = ?`)
-    .get(competitionId) as { m: number } | undefined;
-  return row ? Number(row.m) : 0;
+    .prepare(`SELECT * FROM run_sessions WHERE status = 'running' ORDER BY startedAt ASC, id ASC LIMIT 1`)
+    .get() as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return rowToSession(row);
 }
 
-export function countQueuedAhead(db: Db, competitionId: string, queueNumber: number): number {
+/** Global FIFO: next person waiting for the treadmill. */
+export function getFirstQueuedSessionGlobal(db: Db): RunSession | null {
+  const row = db
+    .prepare(
+      `SELECT * FROM run_sessions WHERE status = 'queued' ORDER BY createdAt ASC, id ASC LIMIT 1`
+    )
+    .get() as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return rowToSession(row);
+}
+
+/** 1-based position among all queued sessions (global FIFO). */
+export function positionInGlobalQueue(db: Db, sessionId: string): number {
+  const s = getRunSessionById(db, sessionId);
+  if (!s || s.status !== 'queued') return 0;
   const row = db
     .prepare(
       `
     SELECT COUNT(*) as c FROM run_sessions
-    WHERE competitionId = ? AND status = 'queued' AND queueNumber < ?
+    WHERE status = 'queued' AND (
+      createdAt < ? OR (createdAt = ? AND id < ?)
+    )
   `
     )
-    .get(competitionId, queueNumber) as { c: number } | undefined;
-  return row ? Number(row.c) : 0;
+    .get(s.createdAt, s.createdAt, sessionId) as { c: number } | undefined;
+  return Number(row?.c ?? 0) + 1;
 }
 
-export function positionInQueue(db: Db, competitionId: string, queueNumber: number): number {
-  return countQueuedAhead(db, competitionId, queueNumber) + 1;
-}
 
 export function createRunSession(
   db: Db,
@@ -123,7 +136,7 @@ export function listQueuedByRunTypeId(db: Db, runTypeId: RunTypeId): QueuedRow[]
     FROM run_sessions s
     JOIN participants p ON p.id = s.participantId
     WHERE s.runTypeId = ? AND s.status = 'queued'
-    ORDER BY s.queueNumber ASC, s.createdAt ASC
+    ORDER BY s.createdAt ASC, s.id ASC
   `
     )
     .all(runTypeId) as Record<string, unknown>[];
@@ -159,10 +172,7 @@ export function listActiveQueue(db: Db, runTypeId?: RunTypeId, sex?: Gender): Ac
     params.push(sex);
   }
   const whereSql = conditions.join(' AND ');
-  const orderSql =
-    runTypeId !== undefined && sex !== undefined
-      ? 'ORDER BY s.queueNumber ASC, s.createdAt ASC'
-      : 'ORDER BY s.createdAt ASC';
+  const orderSql = 'ORDER BY s.createdAt ASC, s.id ASC';
   const rows = db
     .prepare(
       `
@@ -290,23 +300,31 @@ export function swapQueueNumbers(db: Db, sessionIdA: string, sessionIdB: string)
   const upd = db.prepare(`UPDATE run_sessions SET queueNumber = ? WHERE id = ?`);
   upd.run(tb, sessionIdA);
   upd.run(ta, sessionIdB);
+  renumberGlobalQueuedSessions(db);
 }
 
-export function renumberQueuedSessions(db: Db, competitionId: string): void {
+/** Renumber queueNumber 1..n for all queued+running sessions (global FIFO order). */
+export function renumberGlobalQueuedSessions(db: Db): void {
   const rows = db
     .prepare(
       `
     SELECT id FROM run_sessions
-    WHERE competitionId = ? AND status IN ('queued', 'running')
-    ORDER BY queueNumber ASC, createdAt ASC, id ASC
+    WHERE status IN ('queued', 'running')
+    ORDER BY createdAt ASC, id ASC
   `
     )
-    .all(competitionId) as { id: string }[];
+    .all() as { id: string }[];
   const upd = db.prepare(`UPDATE run_sessions SET queueNumber = ? WHERE id = ?`);
   let n = 1;
   for (const r of rows) {
     upd.run(n++, r.id);
   }
+}
+
+/** @deprecated Use renumberGlobalQueuedSessions — competition id is ignored. */
+export function renumberQueuedSessions(db: Db, _competitionId: string): void {
+  void _competitionId;
+  renumberGlobalQueuedSessions(db);
 }
 
 export function getSessionForDevFinish(db: Db): RunSession | null {
@@ -328,23 +346,13 @@ export function getSessionForDevFinish(db: Db): RunSession | null {
     SELECT s.* FROM run_sessions s
     JOIN competitions c ON c.id = s.competitionId
     WHERE c.status = 'active' AND s.status = 'queued'
-    ORDER BY s.queueNumber ASC, s.createdAt ASC
+    ORDER BY s.createdAt ASC, s.id ASC
     LIMIT 1
   `
     )
     .get() as Record<string, unknown> | undefined;
   if (!queued) return null;
   return rowToSession(queued);
-}
-
-export function getCurrentRunningSessionForCompetition(db: Db, competitionId: string): RunSession | null {
-  const row = db
-    .prepare(
-      `SELECT * FROM run_sessions WHERE competitionId = ? AND status = 'running' ORDER BY startedAt DESC LIMIT 1`
-    )
-    .get(competitionId) as Record<string, unknown> | undefined;
-  if (!row) return null;
-  return rowToSession(row);
 }
 
 export function cancelQueuedSessionsForCompetition(db: Db, competitionId: string): number {
@@ -355,5 +363,8 @@ export function cancelQueuedSessionsForCompetition(db: Db, competitionId: string
   db.prepare(`UPDATE run_sessions SET status = 'cancelled' WHERE competitionId = ? AND status = 'queued'`).run(
     competitionId
   );
+  if (n > 0) {
+    renumberGlobalQueuedSessions(db);
+  }
   return n;
 }

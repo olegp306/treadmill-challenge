@@ -8,6 +8,7 @@ import {
   normalizeGender,
 } from '@treadmill-challenge/shared';
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
+import { promoteNextQueuedSessionAfterFinish } from '../services/runSessionPromotion.js';
 import { adminSettings, competitions, getDb, participants, runs, runSessions } from '../db/index.js';
 import * as events from '../db/events.js';
 import { resetTestData } from '../services/adminService.js';
@@ -276,7 +277,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       }
       const queued = db
         .prepare(
-          `SELECT id FROM run_sessions WHERE competitionId = ? AND status = 'queued' ORDER BY queueNumber ASC, createdAt ASC`
+          `SELECT id FROM run_sessions WHERE competitionId = ? AND status = 'queued' ORDER BY createdAt ASC, id ASC`
         )
         .all(cid) as { id: string }[];
       const idx = queued.findIndex((q) => q.id === sid);
@@ -294,7 +295,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       }
       const queued = db
         .prepare(
-          `SELECT id FROM run_sessions WHERE competitionId = ? AND status = 'queued' ORDER BY queueNumber ASC, createdAt ASC`
+          `SELECT id FROM run_sessions WHERE competitionId = ? AND status = 'queued' ORDER BY createdAt ASC, id ASC`
         )
         .all(cid) as { id: string }[];
       const idx = queued.findIndex((q) => q.id === sid);
@@ -308,16 +309,11 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const { cid, sid } = request.params as { cid: string; sid: string };
       const s = runSessions.getRunSessionById(db, sid);
       if (!s || s.competitionId !== cid) return reply.status(404).send({ error: 'Not found' });
-      const running = db
-        .prepare(`SELECT id FROM run_sessions WHERE competitionId = ? AND status = 'running'`)
-        .all(cid) as { id: string }[];
-      for (const r of running) {
-        if (r.id !== sid) {
-          runSessions.setSessionStatus(db, r.id, 'queued');
-        }
-      }
+      db.prepare(`UPDATE run_sessions SET status = 'queued', startedAt = NULL WHERE status = 'running' AND id != ?`).run(
+        sid
+      );
       runSessions.setSessionStatus(db, sid, 'running', { startedAt: new Date().toISOString() });
-      runSessions.renumberQueuedSessions(db, cid);
+      runSessions.renumberGlobalQueuedSessions(db);
       return reply.send({ ok: true });
     });
 
@@ -333,7 +329,12 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const runId = randomUUID();
       runs.createRun(db, runId, s.participantId, cid, sid, resultTime, distance, speed);
       runSessions.updateSessionResults(db, sid, resultTime, distance);
-      runSessions.renumberQueuedSessions(db, cid);
+      runSessions.renumberGlobalQueuedSessions(db);
+      await promoteNextQueuedSessionAfterFinish(touchDesignerAdapter, {
+        info: (o) => request.log.info(o),
+        warn: (o) => request.log.warn(o),
+        error: (o) => request.log.error(o),
+      });
       return reply.send({ ok: true, runId });
     });
 
@@ -443,14 +444,9 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const { id } = request.params as { id: string };
       const comp = competitions.getCompetitionById(db, id);
       if (!comp) return reply.status(404).send({ error: 'Not found' });
-      let sess = runSessions.getCurrentRunningSessionForCompetition(db, id);
+      let sess = runSessions.getCurrentRunningSessionGlobal(db);
       if (!sess) {
-        const row = db
-          .prepare(
-            `SELECT id FROM run_sessions WHERE competitionId = ? AND status = 'queued' ORDER BY queueNumber ASC LIMIT 1`
-          )
-          .get(id) as { id: string } | undefined;
-        sess = row ? runSessions.getRunSessionById(db, row.id) : null;
+        sess = runSessions.getFirstQueuedSessionGlobal(db);
       }
       if (!sess) {
         return reply.status(400).send({ error: 'Нет текущего участника в очереди' });
@@ -520,7 +516,8 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         tdPort: adminSettings.getSetting(db, 'tdPort') ?? '7000',
         tdAdapter: adminSettings.getSetting(db, 'tdAdapter') ?? 'mock',
         tdDemoMode: adminSettings.getTdDemoMode(db),
-        maxQueueSizePerRun: adminSettings.getMaxQueueSizePerRun(db),
+        maxGlobalQueueSize: adminSettings.getMaxGlobalQueueSize(db),
+        maxQueueSizePerRun: adminSettings.getMaxGlobalQueueSize(db),
         eventTitle: adminSettings.getSetting(db, 'eventTitle') ?? 'Amazing Red',
         heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
       };
@@ -534,6 +531,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         tdPort?: string;
         tdAdapter?: string;
         tdDemoMode?: boolean;
+        maxGlobalQueueSize?: number;
         maxQueueSizePerRun?: number;
         eventTitle?: string;
         heartbeatIntervalMin?: number;
@@ -544,9 +542,15 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       if (body.tdPort !== undefined) adminSettings.setSetting(db, 'tdPort', String(body.tdPort).trim());
       if (body.tdAdapter !== undefined) adminSettings.setSetting(db, 'tdAdapter', body.tdAdapter.trim());
       if (body.tdDemoMode !== undefined) adminSettings.setSetting(db, 'tdDemoMode', body.tdDemoMode ? 'true' : 'false');
-      if (body.maxQueueSizePerRun !== undefined) {
-        const n = Math.min(500, Math.max(1, Math.floor(Number(body.maxQueueSizePerRun))));
-        adminSettings.setSetting(db, 'maxQueueSizePerRun', String(n));
+      const maxQ =
+        body.maxGlobalQueueSize !== undefined
+          ? body.maxGlobalQueueSize
+          : body.maxQueueSizePerRun !== undefined
+            ? body.maxQueueSizePerRun
+            : undefined;
+      if (maxQ !== undefined) {
+        const n = Math.min(500, Math.max(1, Math.floor(Number(maxQ))));
+        adminSettings.setSetting(db, 'maxGlobalQueueSize', String(n));
       }
       if (body.eventTitle !== undefined) adminSettings.setSetting(db, 'eventTitle', body.eventTitle.trim());
       if (body.heartbeatIntervalMin !== undefined) {

@@ -3,6 +3,8 @@ import { getDb, participants, runs, runSessions } from '../db/index.js';
 import type { RunSessionResultDto } from '@treadmill-challenge/shared';
 import { getRunTypeById, type RunTypeId } from '@treadmill-challenge/shared';
 import { runs as runsDb } from '../db/index.js';
+import type { TouchDesignerIntegration } from '../integrations/touchdesigner/types.js';
+import { promoteNextQueuedSessionAfterFinish, type PromotionLog } from './runSessionPromotion.js';
 
 function speedFromTimeDistance(resultTime: number, distance: number): number {
   if (resultTime <= 0) return 0;
@@ -36,14 +38,18 @@ function rankCompetitionEntries(
   return ranks;
 }
 
-export function submitRunSessionResult(dto: RunSessionResultDto): {
+export async function submitRunSessionResult(
+  dto: RunSessionResultDto,
+  touchDesigner: TouchDesignerIntegration,
+  log?: PromotionLog
+): Promise<{
   runId: string;
   runSessionId: string;
   participantId: string;
   competitionId: string;
   runTypeId: RunTypeId;
   rank: number | null;
-} {
+}> {
   const db = getDb();
   const session = runSessions.getRunSessionById(db, dto.runSessionId.trim());
   if (!session) {
@@ -77,7 +83,7 @@ export function submitRunSessionResult(dto: RunSessionResultDto): {
     speed
   );
   runSessions.updateSessionResults(db, session.id, dto.resultTime, dto.distance);
-  runSessions.renumberQueuedSessions(db, session.competitionId);
+  runSessions.renumberGlobalQueuedSessions(db);
 
   const top = runsDb.getLeaderboardForCompetition(db, session.competitionId, session.runTypeId, 200);
   const ranks = rankCompetitionEntries(
@@ -87,7 +93,7 @@ export function submitRunSessionResult(dto: RunSessionResultDto): {
   const idx = top.findIndex((e) => e.run.participantId === session.participantId);
   const rank = idx >= 0 ? ranks[idx] : null;
 
-  return {
+  const result = {
     runId,
     runSessionId: session.id,
     participantId: session.participantId,
@@ -95,6 +101,16 @@ export function submitRunSessionResult(dto: RunSessionResultDto): {
     runTypeId: session.runTypeId,
     rank,
   };
+
+  try {
+    await promoteNextQueuedSessionAfterFinish(touchDesigner, log);
+  } catch (e) {
+    log?.error?.({
+      msg: 'global_queue_promote_unexpected',
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+  return result;
 }
 
 export function getExistingResultByRunSessionId(runSessionId: string): {

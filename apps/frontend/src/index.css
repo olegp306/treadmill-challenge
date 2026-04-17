@@ -28,6 +28,11 @@ body {
   touch-action: manipulation;
 }
 
+/** TouchDesigner full-screen routes (/td/*) — no page scroll */
+body.td-route {
+  overflow: hidden;
+}
+
 /* Horizontal card strip: scroll without visible scrollbar */
 .ar-ozio-cards-scroll {
   scrollbar-width: none;

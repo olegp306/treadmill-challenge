@@ -36,7 +36,7 @@ export default function AdminSettingsPage() {
         tdPort: settings.tdPort,
         tdAdapter: settings.tdAdapter,
         tdDemoMode: settings.tdDemoMode,
-        maxQueueSizePerRun: settings.maxQueueSizePerRun,
+        maxGlobalQueueSize: settings.maxGlobalQueueSize ?? settings.maxQueueSizePerRun ?? 3,
         eventTitle: settings.eventTitle,
         heartbeatIntervalMin: settings.heartbeatIntervalMin,
         showIntegrationInfoMessages: settings.showIntegrationInfoMessages,
@@ -108,14 +108,17 @@ export default function AdminSettingsPage() {
             Показывать информационные сообщения
           </label>
           <label style={lab}>
-            Макс. размер очереди на забег (на активное соревнование)
+            Макс. размер глобальной очереди (в очереди + на дорожке, всего)
             <input
               type="number"
               min={1}
               max={500}
-              value={settings.maxQueueSizePerRun ?? 3}
+              value={settings.maxGlobalQueueSize ?? settings.maxQueueSizePerRun ?? 3}
               onChange={(e) =>
-                setSettings({ ...settings, maxQueueSizePerRun: Math.max(1, Math.min(500, Number(e.target.value) || 3)) })
+                setSettings({
+                  ...settings,
+                  maxGlobalQueueSize: Math.max(1, Math.min(500, Number(e.target.value) || 3)),
+                })
               }
               style={inp}
             />

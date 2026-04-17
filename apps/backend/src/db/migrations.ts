@@ -21,6 +21,7 @@ export function runMigrations(db: Db): void {
   migrateEvents(db);
   migrateRemoveTestModeSetting(db);
   migrateIntegrationInfoMessagesSetting(db);
+  migrateGlobalQueueV2(db);
 }
 
 function migrateIntegrationInfoMessagesSetting(db: Db): void {
@@ -201,32 +202,60 @@ function seedAdminSettings(db: Db): void {
   ins.run('tdDemoMode', 'false');
   ins.run('eventTitle', 'Amazing Red');
   ins.run('maxQueueSizePerRun', '3');
+  ins.run('maxGlobalQueueSize', '3');
   ins.run('heartbeatIntervalMin', '5');
   ins.run('integrationInfoMessages', 'false');
   ins.run('lastTdSyncOk', '');
   ins.run('lastTdSyncError', '');
 }
 
-function reassignQueueNumbersByCompetition(db: Db): void {
-  const comps = db
-    .prepare(`SELECT DISTINCT competitionId FROM run_sessions WHERE competitionId IS NOT NULL`)
-    .all() as { competitionId: string }[];
+function reassignGlobalQueueNumbersMigration(db: Db): void {
+  const rows = db
+    .prepare(
+      `
+    SELECT id FROM run_sessions
+    WHERE status IN ('queued', 'running')
+    ORDER BY createdAt ASC, id ASC
+  `
+    )
+    .all() as { id: string }[];
   const upd = db.prepare(`UPDATE run_sessions SET queueNumber = ? WHERE id = ?`);
-  for (const { competitionId } of comps) {
-    const rows = db
-      .prepare(
-        `
-      SELECT id FROM run_sessions
-      WHERE competitionId = ? AND status IN ('queued', 'running')
-      ORDER BY queueNumber ASC, createdAt ASC, id ASC
-    `
-      )
-      .all(competitionId) as { id: string }[];
-    let n = 1;
-    for (const r of rows) {
-      upd.run(n++, r.id);
-    }
+  let n = 1;
+  for (const r of rows) {
+    upd.run(n++, r.id);
   }
+}
+
+function dedupeMultipleRunningSessions(db: Db): void {
+  const rows = db
+    .prepare(
+      `SELECT id FROM run_sessions WHERE status = 'running' ORDER BY startedAt ASC, id ASC`
+    )
+    .all() as { id: string }[];
+  if (rows.length <= 1) return;
+  const keep = rows[0].id;
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i].id === keep) continue;
+    db.prepare(`UPDATE run_sessions SET status = 'queued', startedAt = NULL WHERE id = ?`).run(rows[i].id);
+  }
+}
+
+function migrateGlobalQueueV2(db: Db): void {
+  const row = db.prepare(`SELECT 1 FROM admin_settings WHERE key = 'maxGlobalQueueSize'`).get();
+  if (!row) {
+    const old = db.prepare(`SELECT value FROM admin_settings WHERE key = 'maxQueueSizePerRun'`).get() as
+      | { value: string }
+      | undefined;
+    db.prepare(`INSERT OR IGNORE INTO admin_settings (key, value) VALUES ('maxGlobalQueueSize', ?)`).run(
+      old?.value ?? '3'
+    );
+  }
+  dedupeMultipleRunningSessions(db);
+  reassignGlobalQueueNumbersMigration(db);
+}
+
+function reassignQueueNumbersByCompetition(db: Db): void {
+  reassignGlobalQueueNumbersMigration(db);
 }
 
 function migrateCompetitionsAndSessions(db: Db): void {

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
+import type { RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeShortName } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
 import { ScreenContainer } from '../arOzio/ScreenContainer';
@@ -24,7 +24,6 @@ type QueueCardItem = {
   runTypeId: RunTypeId;
   runType: string;
   status: string;
-  sex: Gender;
 };
 
 function splitNameLines(fullName: string): { nameLine1: string; nameLine2?: string } {
@@ -198,7 +197,9 @@ export default function Main() {
                           }}
                         >
                           <div style={styles.cardTop}>
-                            <span style={styles.cardOrder}>{String(i + 1)}</span>
+                            <span style={styles.cardOrder}>
+                              {String(i + 1).padStart(2, '0')}
+                            </span>
                             <span
                               style={{
                                 ...styles.tagPill,
@@ -206,15 +207,6 @@ export default function Main() {
                               }}
                             >
                               {getRunTypeShortName(card.runTypeId)}
-                            </span>
-                            <span
-                              style={{
-                                ...styles.tagPill,
-                                ...(isActive ? styles.tagPillActive : styles.tagPillInactive),
-                                marginLeft: w(8),
-                              }}
-                            >
-                              {card.sex === 'female' ? 'Ж' : 'М'}
                             </span>
                           </div>
                           <div style={styles.cardName}>

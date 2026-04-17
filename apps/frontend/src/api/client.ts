@@ -133,6 +133,7 @@ export const api = {
       runs: Array<{
         id: string;
         participantId: string;
+        runSessionId: string | null;
         resultTime: number;
         distance: number;
         speed: number;
@@ -415,6 +416,7 @@ export const api = {
       tdPort: string;
       tdAdapter: string;
       tdDemoMode: boolean;
+      maxGlobalQueueSize: number;
       maxQueueSizePerRun: number;
       eventTitle: string;
       heartbeatIntervalMin: 5 | 10 | 30 | 60;
@@ -428,7 +430,8 @@ export const api = {
     tdPort: string;
     tdAdapter: string;
     tdDemoMode: boolean;
-    maxQueueSizePerRun: number;
+    maxGlobalQueueSize?: number;
+    maxQueueSizePerRun?: number;
     eventTitle: string;
     heartbeatIntervalMin: 5 | 10 | 30 | 60;
     showIntegrationInfoMessages: boolean;

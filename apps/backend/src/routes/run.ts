@@ -9,6 +9,7 @@ import {
 import { adminSettings, getDb } from '../db/index.js';
 import { parseRunQueueFilterQuery, parseSexQuery, validateRunStartBody } from '../utils/validation.js';
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
+import { promoteNextQueuedSessionAfterFinish } from '../services/runSessionPromotion.js';
 
 function allowDevFinish(): boolean {
   return process.env.NODE_ENV !== 'production' || process.env.ALLOW_RUN_DEV_FINISH === 'true';
@@ -21,7 +22,11 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(400).send({ error: validation.message });
     }
     try {
-      const outcome = await startRunSession(validation.data, touchDesignerAdapter);
+      const outcome = await startRunSession(validation.data, touchDesignerAdapter, {
+        info: (o) => request.log.info(o),
+        warn: (o) => request.log.warn(o),
+        error: (o) => request.log.error(o),
+      });
       request.log.info({
         msg: 'run_start_outcome',
         ok: outcome.ok,
@@ -134,6 +139,11 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
     request.log.info({ msg: 'dev_finish_request', body: request.body ?? null });
     try {
       const result = devFinishLatestQueuedRun();
+      await promoteNextQueuedSessionAfterFinish(touchDesignerAdapter, {
+        info: (o) => request.log.info(o),
+        warn: (o) => request.log.warn(o),
+        error: (o) => request.log.error(o),
+      });
       request.log.info({
         msg: 'dev_finish_saved',
         runSessionId: result.runSessionId,
