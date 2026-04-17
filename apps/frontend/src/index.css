@@ -91,6 +91,23 @@ body {
   padding-left: env(safe-area-inset-left, 0px);
 }
 
+/*
+ * Registration inputs: iPad keeps TS `w()` sizes; narrow viewports (iPhone, short landscape)
+ * cap font size so placeholders fit. Always ≥16px to avoid iOS focus zoom.
+ */
+@media (max-width: 600px), ((max-height: 450px) and (max-width: 932px)) {
+  .ar-ozio-ipad-canvas input.reg-input-name-narrow {
+    font-size: clamp(16px, 4.5cqw, 22px) !important;
+    line-height: 1.2 !important;
+  }
+
+  .ar-ozio-ipad-canvas input.reg-input-phone-narrow {
+    font-size: clamp(16px, 5cqw, 24px) !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0.03em !important;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

@@ -1,5 +1,7 @@
 import osc from 'osc';
 import type { TouchDesignerIntegration } from './types.js';
+import type { TreadmillStatus } from './types.js';
+import { waitForTreadmillAck } from './oscTouchDesignerAck.js';
 import type {
   RunSessionResultDto,
   TouchDesignerParticipantPayload,
@@ -48,7 +50,7 @@ export const oscTouchDesignerAdapter: TouchDesignerIntegration = {
     );
   },
 
-  sendRunSessionStarted(payload: TouchDesignerRunSessionPayload): void {
+  sendRunSessionStarted(payload: TouchDesignerRunSessionPayload): Promise<void> {
     ensureOpened();
 
     udpPort.send({
@@ -68,6 +70,11 @@ export const oscTouchDesignerAdapter: TouchDesignerIntegration = {
     console.log(
       `[TouchDesigner OSC] sent ${runSessionAddress} -> ${remoteAddress}:${remotePort} ${JSON.stringify(payload)}`
     );
+    return Promise.resolve();
+  },
+
+  getTreadmillStatusAfterStart(payload: TouchDesignerRunSessionPayload): Promise<TreadmillStatus> {
+    return waitForTreadmillAck(payload.runSessionId);
   },
 
   async getRunResultFromTouchDesigner(): Promise<RunSessionResultDto | null> {

@@ -7,7 +7,7 @@ import {
   type RunTypeId,
 } from '@treadmill-challenge/shared';
 import { adminSettings, getDb, competitions, participants, runs, runSessions } from '../db/index.js';
-import type { TouchDesignerIntegration } from '../integrations/touchdesigner/types.js';
+import type { TouchDesignerIntegration, TreadmillStatus } from '../integrations/touchdesigner/types.js';
 import type { RunStartDto } from '@treadmill-challenge/shared';
 
 function fakeMetrics(runTypeId: RunTypeId): { resultTime: number; distance: number; speed: number } {
@@ -25,12 +25,12 @@ function fakeMetrics(runTypeId: RunTypeId): { resultTime: number; distance: numb
 
 export type StartRunOutcome =
   | { ok: true; data: RunSessionStartResponse }
-  | { ok: false; reason: 'queue_full' | 'queue_paused' };
+  | { ok: false; reason: 'queue_full' | 'queue_paused' | 'td_unavailable' };
 
-export function startRunSession(
+export async function startRunSession(
   dto: RunStartDto,
   touchDesigner: TouchDesignerIntegration
-): StartRunOutcome {
+): Promise<StartRunOutcome> {
   const db = getDb();
   const participant = participants.getParticipantById(db, dto.participantId.trim());
   if (!participant) {
@@ -71,25 +71,48 @@ export function startRunSession(
     queueNumber
   );
   const running = runSessions.getCurrentRunningSessionForCompetition(db, comp.id);
-  if (!running) {
-    runSessions.setSessionStatus(db, session.id, 'running', { startedAt: new Date().toISOString() });
-    session.status = 'running';
-  }
-  const position = session.status === 'queued' ? runSessions.positionInQueue(db, comp.id, session.queueNumber) : 0;
+  let treadmillStatus: TreadmillStatus = 'unknown';
 
   const demoMode = adminSettings.getTdDemoMode(db);
-  if (!demoMode && session.status === 'running') {
-    touchDesigner.sendRunSessionStarted({
-      runSessionId: session.id,
-      participantId: participant.id,
-      firstName: participant.firstName,
-      lastName: participant.lastName,
-      phone: participant.phone,
-      runTypeId: dto.runTypeId,
-      runTypeName: getRunTypeName(dto.runTypeId),
-      runTypeKey: cfg.key,
-    });
+
+  const tdPayload = {
+    runSessionId: session.id,
+    participantId: participant.id,
+    firstName: participant.firstName,
+    lastName: participant.lastName,
+    phone: participant.phone,
+    runTypeId: dto.runTypeId,
+    runTypeName: getRunTypeName(dto.runTypeId),
+    runTypeKey: cfg.key,
+  } as const;
+
+  if (!running) {
+    if (demoMode) {
+      runSessions.setSessionStatus(db, session.id, 'running', { startedAt: new Date().toISOString() });
+      session.status = 'running';
+      treadmillStatus = 'free';
+    } else {
+      try {
+        // Register OSC ack waiter before send so a fast TouchDesigner reply is not missed.
+        const ackPromise = touchDesigner.getTreadmillStatusAfterStart
+          ? Promise.resolve(touchDesigner.getTreadmillStatusAfterStart(tdPayload))
+          : Promise.resolve('free' as TreadmillStatus);
+        await touchDesigner.sendRunSessionStarted(tdPayload);
+        const ack = await ackPromise;
+        treadmillStatus = ack;
+        if (ack !== 'busy') {
+          runSessions.setSessionStatus(db, session.id, 'running', { startedAt: new Date().toISOString() });
+          session.status = 'running';
+        }
+      } catch {
+        return { ok: false, reason: 'td_unavailable' };
+      }
+    }
+  } else {
+    treadmillStatus = 'busy';
   }
+
+  const position = session.status === 'queued' ? runSessions.positionInQueue(db, comp.id, session.queueNumber) : 0;
 
   return {
     ok: true,
@@ -106,6 +129,7 @@ export function startRunSession(
       queuePosition: position,
       createdAt: session.createdAt,
       demoMode,
+      treadmillStatus,
     },
   };
 }
@@ -125,6 +149,8 @@ export interface RunSessionStartResponse {
   createdAt: string;
   /** True when admin enabled TouchDesigner demo mode (no OSC send; client shows demo finish). */
   demoMode: boolean;
+  /** Treadmill availability after TD start ack (real mode). */
+  treadmillStatus: TreadmillStatus;
 }
 
 export function leaveRunSession(runSessionId: string, participantId: string): void {
@@ -186,6 +212,8 @@ export function getRunSessionState(runSessionId: string): {
   status: 'queued' | 'running' | 'finished' | 'cancelled';
   queueNumber: number;
   queuePosition: number | null;
+  startedAt: string | null;
+  finishedAt: string | null;
 } {
   const db = getDb();
   const session = runSessions.getRunSessionById(db, runSessionId.trim());
@@ -202,6 +230,8 @@ export function getRunSessionState(runSessionId: string): {
     status: session.status,
     queueNumber: session.queueNumber,
     queuePosition,
+    startedAt: session.startedAt,
+    finishedAt: session.finishedAt,
   };
 }
 

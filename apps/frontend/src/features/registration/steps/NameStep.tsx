@@ -78,9 +78,10 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
             tryAdvance();
           }}
         >
-            <InputField
+          <InputField
             ref={firstRef}
-              id={idFirst}
+            id={idFirst}
+            className="reg-input-name-narrow"
             placeholder="Имя"
             hasError={firstErrHighlight}
             errorText={firstErrText}
@@ -127,6 +128,7 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
           <InputField
             ref={lastRef}
             id={idLast}
+            className="reg-input-name-narrow"
             placeholder="Фамилия"
             hasError={lastErrHighlight}
             errorText={lastErrText}

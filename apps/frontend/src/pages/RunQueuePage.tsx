@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
 import { h, w } from '../arOzio/dimensions';
@@ -11,6 +11,9 @@ import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
 import { logEvent } from '../logging/logEvent';
+
+/** After this time running without finish, show “waiting for TD callback” (real mode). */
+const RESULT_CALLBACK_PENDING_MS = 90_000;
 
 export type RunQueueLocationState = {
   participantId: string;
@@ -40,6 +43,13 @@ export default function RunQueuePage() {
   const [devLoading, setDevLoading] = useState(false);
   const [liveStatus, setLiveStatus] = useState<'queued' | 'running' | null>('queued');
   const [livePosition, setLivePosition] = useState<number>(position);
+  const [resultPendingLong, setResultPendingLong] = useState(false);
+  const resultPendingLoggedRef = useRef(false);
+
+  useEffect(() => {
+    resultPendingLoggedRef.current = false;
+    setResultPendingLong(false);
+  }, [runSessionId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +103,25 @@ export default function RunQueuePage() {
         if (cancelled) return;
         setLiveStatus(s.status === 'running' ? 'running' : s.status === 'queued' ? 'queued' : null);
         setLivePosition(s.queuePosition ?? 0);
+        if (s.status === 'running' && s.startedAt && !demoMode) {
+          const elapsed = Date.now() - new Date(s.startedAt).getTime();
+          const long = elapsed >= RESULT_CALLBACK_PENDING_MS;
+          setResultPendingLong(long);
+          if (long && !resultPendingLoggedRef.current) {
+            resultPendingLoggedRef.current = true;
+            logEvent(
+              'td_result_pending_long',
+              { elapsedMs: Math.round(elapsed) },
+              {
+                participantId,
+                runSessionId,
+                readableMessage: 'Долго нет результата от TouchDesigner (ожидание callback)',
+              }
+            );
+          }
+        } else {
+          setResultPendingLong(false);
+        }
         if (s.status === 'queued' && s.queuePosition === 1) {
           navigate('/run/prepare', {
             replace: true,
@@ -245,7 +274,14 @@ export default function RunQueuePage() {
       }
     >
       {viewMode === 'running' ? (
-        <p style={{ ...rq.titleMain, margin: 0 }}>Вы на дорожке. Забег идет.</p>
+        <>
+          <p style={{ ...rq.titleMain, margin: 0 }}>Вы на дорожке. Забег идет.</p>
+          {resultPendingLong ? (
+            <p style={{ ...rq.subtitle, marginTop: h(16), textAlign: 'center', maxWidth: w(900), marginLeft: 'auto', marginRight: 'auto' }}>
+              Результат ещё не получен. Ожидаем ответ TouchDesigner…
+            </p>
+          ) : null}
+        </>
       ) : viewMode === 'prepare' ? (
         <p style={{ ...rq.titleMain, margin: 0 }}>Приготовься. Пройди на дорожку.</p>
       ) : (

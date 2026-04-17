@@ -117,6 +117,8 @@ export const api = {
       status: 'queued' | 'running' | 'finished' | 'cancelled';
       queueNumber: number;
       queuePosition: number | null;
+      startedAt: string | null;
+      finishedAt: string | null;
     }>(`/run/session/${encodeURIComponent(runSessionId)}${qs ? `?${qs}` : ''}`);
   },
 
@@ -166,6 +168,9 @@ export const api = {
     if (res.status === 409 && data.reason === 'queue_paused') {
       return { success: false as const, reason: 'queue_paused' as const };
     }
+    if (res.status === 503 && data.reason === 'td_unavailable') {
+      return { success: false as const, reason: 'td_unavailable' as const };
+    }
     if (!res.ok) {
       throw new Error((data as { error?: string }).error ?? `Request failed: ${res.status}`);
     }
@@ -184,6 +189,7 @@ export const api = {
       queuePosition: (data.queuePosition ?? data.position) as number,
       createdAt: data.createdAt as string,
       demoMode: data.demoMode as boolean,
+      treadmillStatus: (data.treadmillStatus ?? 'unknown') as 'free' | 'busy' | 'unknown',
     };
   },
 

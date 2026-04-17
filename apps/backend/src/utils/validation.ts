@@ -68,9 +68,11 @@ export function validateRunSessionResultBody(body: unknown): Validation<RunSessi
     return { success: false, message: 'Request body must be an object' };
   }
   const o = body as Record<string, unknown>;
+  const resultObj =
+    o.result && typeof o.result === 'object' ? (o.result as Record<string, unknown>) : ({} as Record<string, unknown>);
   const runSessionId = o.runSessionId;
-  const resultTime = o.resultTime;
-  const distance = o.distance;
+  const resultTime = resultObj.resultTime ?? o.resultTime;
+  const distance = resultObj.distance ?? o.distance;
   if (typeof runSessionId !== 'string' || !runSessionId.trim()) {
     return { success: false, message: 'runSessionId is required and must be a non-empty string' };
   }

@@ -110,6 +110,16 @@ export default function RunSelectionPage() {
             }
           );
           setError('Очередь временно на паузе. Попробуйте позже.');
+        } else if (res.reason === 'td_unavailable') {
+          logEvent(
+            'run_start_td_unavailable',
+            { runTypeId: selected },
+            {
+              participantId,
+              readableMessage: 'TouchDesigner недоступен: старт забега не подтвержден',
+            }
+          );
+          setError('Беговая дорожка не отвечает. Попробуйте позже.');
         }
         return;
       }
@@ -127,6 +137,15 @@ export default function RunSelectionPage() {
       );
       if (!res.demoMode) {
         logEvent(
+          'touchdesigner_ack',
+          { runTypeId: res.runTypeId, treadmillStatus: res.treadmillStatus },
+          {
+            participantId: res.participantId,
+            runSessionId: res.runSessionId,
+            readableMessage: `TouchDesigner ack: treadmill=${res.treadmillStatus}`,
+          }
+        );
+        logEvent(
           'added_to_queue',
           { runTypeId: res.runTypeId, queuePosition: res.position },
           {
@@ -135,6 +154,20 @@ export default function RunSelectionPage() {
             readableMessage: `Пользователь добавлен в очередь. Номер в очереди: ${res.position}`,
           }
         );
+      }
+      if (!res.demoMode && res.treadmillStatus === 'busy') {
+        navigate('/run/queue-busy', {
+          replace: true,
+          state: {
+            participantId: res.participantId,
+            participantFirstName: state?.participantFirstName,
+            participantSex,
+            runTypeId: res.runTypeId,
+            reason: 'treadmill_busy',
+            runSessionId: res.runSessionId,
+          },
+        });
+        return;
       }
       if (res.demoMode) {
         if (res.status === 'running') {

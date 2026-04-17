@@ -84,6 +84,9 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
         <div style={reg.phoneFieldButtonRow}>
           <InputField
             {...inputProps}
+            className={['reg-input-phone-narrow', (inputProps as { className?: string }).className]
+              .filter(Boolean)
+              .join(' ')}
             wrapperStyle={reg.phoneInputUnderlineWrap}
             hasError={fieldError}
             errorText={null}

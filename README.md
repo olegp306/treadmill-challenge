@@ -202,6 +202,22 @@ $env:TD_OSC_PORT="7000"
 $env:TD_OSC_START_ADDRESS="/treadmill/start"
 ```
 
+**Старт забега (run session) и OSC-ack «дорожка свободна / занята»**
+
+После `POST /api/run/start` backend шлёт **UDP OSC** на `TD_OSC_HOST`:`TD_OSC_PORT` (по умолчанию `127.0.0.1:7000`):
+
+- **Адрес:** `TD_OSC_RUN_SESSION_ADDRESS` (по умолчанию `/treadmill/runSession`)
+- **Аргументы (по порядку):** `runSessionId`, `participantId`, `firstName`, `lastName`, `phone`, `runTypeId` (int), `runTypeName`, `runTypeKey`
+
+TouchDesigner должен ответить **отдельным UDP OSC** на хост backend-машины, на порт **`TD_OSC_ACK_LOCAL_PORT`** (по умолчанию **7001**):
+
+- **Адрес:** `TD_OSC_ACK_ADDRESS` (по умолчанию `/treadmill/ack`)
+- **Аргументы:** `runSessionId` (string, тот же UUID), `status` (string) — **`free`** или **`busy`** (допускаются `1`/`0`, `true`/`false`)
+
+Таймаут ожидания ack: **`TD_OSC_ACK_TIMEOUT_MS`** (по умолчанию 8000 ms). Если ack не пришёл — статус **`unknown`**; сессия тогда обрабатывается как не **`busy`** (переходит в **running**). Явный **`busy`** оставляет сессию в очереди.
+
+Отключить ожидание ack (локальная отладка): **`TD_OSC_ACK_DISABLED=1`** — сразу **`unknown`** (то же поведение, что после таймаута).
+
 Then open `http://localhost:5173/start`, fill form, choose mode (**time / 1km / 5km**), click **Start**.
 
 Backend sends one OSC message:
@@ -285,6 +301,113 @@ Optional filters:
 ```bash
 npm run td:callback:smoke -- --autoFromQueue --runTypeId 1 --sex female --resultTime 312.5 --distance 1000 --token <TD_CALLBACK_TOKEN>
 ```
+
+## API-контракт: приложение ↔ TouchDesigner
+
+### 1. Краткое описание
+
+- Система запускает забег, отправляет данные участника/забега в TouchDesigner и принимает результат финиша обратно в backend.
+- Взаимодействие с TouchDesigner:
+  - при старте забега (backend -> TD, через адаптер/OSC),
+  - при финише (TD -> backend, HTTP callback).
+- Общий flow: **запуск забега -> отправка данных в TD -> TD возвращает результат -> backend сохраняет и считает место**.
+
+### 2. Base URL / Endpoint
+
+- Callback от TouchDesigner в backend:
+  - **Method:** `POST`
+  - **URL:** `https://<BACKEND_HOST>/api/touchdesigner/run-result`
+- Если включен `TD_CALLBACK_TOKEN`, передать один из заголовков:
+  - `X-TD-Token: <token>`
+  - `Authorization: Bearer <token>`
+
+### 3. Request: что отправляем в TouchDesigner (старт забега)
+
+> Отправка старта идет через интеграционный адаптер (обычно OSC), не через публичный HTTP endpoint.
+
+| Поле | Тип | Обяз. | Описание |
+|---|---|---:|---|
+| `runSessionId` | `string` | да | Уникальный ID забега |
+| `participant.firstName` | `string` | да | Имя участника |
+| `participant.lastName` | `string` | да | Фамилия участника |
+| `participant.phone` | `string` | да | Телефон участника |
+| `run.runTypeId` | `number` (`0/1/2`) | да | Тип забега |
+| `run.runTypeName` | `string` | да | Название типа забега |
+| `timestamp` | `string` | нет | В текущем контракте не передается (опционально на стороне TD) |
+
+Пример payload (логический JSON-эквивалент старт-сообщения):
+
+```json
+{
+  "runSessionId": "b2d2b5da-7b40-4e56-9ab7-4f5df06b5f87",
+  "participant": {
+    "firstName": "Иван",
+    "lastName": "Петров",
+    "phone": "+79991234567"
+  },
+  "run": {
+    "runTypeId": 1,
+    "runTypeName": "Золотой километр"
+  }
+}
+```
+
+### 4. Response: что ожидаем от TouchDesigner (финиш)
+
+| Поле | Тип | Обяз. | Описание |
+|---|---|---:|---|
+| `runSessionId` | `string` | да | ID забега для сопоставления |
+| `participant.firstName` | `string` | да | Имя участника |
+| `participant.lastName` | `string` | да | Фамилия участника |
+| `participant.phone` | `string` | да | Телефон участника |
+| `run.runTypeId` | `number` (`0/1/2`) | да | Тип забега |
+| `run.runTypeName` | `string` | да | Название типа забега |
+| `result.resultTime` | `number` | да | Время в секундах |
+| `result.distance` | `number` | да | Дистанция в метрах |
+| `result.rank` | `number` | да | Место в рейтинге |
+
+Ожидаемый self-contained callback:
+
+```json
+{
+  "runSessionId": "b2d2b5da-7b40-4e56-9ab7-4f5df06b5f87",
+  "participant": {
+    "firstName": "Иван",
+    "lastName": "Петров",
+    "phone": "+79991234567"
+  },
+  "run": {
+    "runTypeId": 1,
+    "runTypeName": "Золотой километр"
+  },
+  "result": {
+    "resultTime": 243.7,
+    "distance": 1000,
+    "rank": 3
+  }
+}
+```
+
+### 5. Важные правила
+
+- `runSessionId` обязателен для связи старта и финиша.
+- Результат должен приходить только для ранее отправленного `runSessionId`.
+- Callback должен быть self-contained: participant + run + result в одном payload.
+- Формат чисел:
+  - `result.resultTime` — секунды (`number`),
+  - `result.distance` — метры (`number`),
+  - `result.rank` — целое место (`number`).
+- Если пришли невалидные данные, backend вернет `400` и результат не сохранится.
+- Повторная отправка того же финиша обрабатывается идемпотентно (`duplicate: true` в ответе).
+
+### 6. Error handling (кратко)
+
+- TouchDesigner не отвечает / callback не пришел:
+  - забег остается без финального результата до получения callback или ручного действия оператора.
+- Некорректный callback:
+  - `400` (ошибка валидации),
+  - `401` (если неверный token при включенной защите),
+  - `404` (если `runSessionId` не найден).
 
 ## NPM scripts (from root)
 

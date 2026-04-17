@@ -21,7 +21,7 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(400).send({ error: validation.message });
     }
     try {
-      const outcome = startRunSession(validation.data, touchDesignerAdapter);
+      const outcome = await startRunSession(validation.data, touchDesignerAdapter);
       request.log.info({
         msg: 'run_start_outcome',
         ok: outcome.ok,
@@ -32,9 +32,11 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
         tdDemoMode: outcome.ok ? outcome.data.demoMode : undefined,
         status: outcome.ok ? outcome.data.status : undefined,
         position: outcome.ok ? outcome.data.position : undefined,
+        treadmillStatus: outcome.ok ? outcome.data.treadmillStatus : undefined,
       });
       if (!outcome.ok) {
-        return reply.status(409).send({ success: false, reason: outcome.reason });
+        const statusCode = outcome.reason === 'td_unavailable' ? 503 : 409;
+        return reply.status(statusCode).send({ success: false, reason: outcome.reason });
       }
       return reply.status(201).send({ success: true, reason: 'ok', ...outcome.data });
     } catch (err) {

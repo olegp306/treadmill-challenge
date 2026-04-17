@@ -42,6 +42,9 @@ export default async function runResultRoutes(app: FastifyInstance): Promise<voi
               runSessionId: (request.body as Record<string, unknown>).runSessionId,
               resultTime: (request.body as Record<string, unknown>).resultTime,
               distance: (request.body as Record<string, unknown>).distance,
+              result: (request.body as Record<string, unknown>).result,
+              participant: (request.body as Record<string, unknown>).participant,
+              run: (request.body as Record<string, unknown>).run,
             }
           : typeof request.body,
     });
@@ -84,6 +87,7 @@ export default async function runResultRoutes(app: FastifyInstance): Promise<voi
         participantId: result.participantId,
         resultTime: data.resultTime,
         distance: data.distance,
+        rank: result.rank,
         tdDemoMode: demoMode,
       });
       return reply.status(201).send(result);

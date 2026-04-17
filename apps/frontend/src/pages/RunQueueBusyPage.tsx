@@ -13,6 +13,8 @@ export type RunQueueBusyLocationState = {
   participantFirstName?: string;
   participantSex: 'male' | 'female';
   runTypeId: RunTypeId;
+  reason?: 'queue_full' | 'treadmill_busy';
+  runSessionId?: string;
 };
 
 export default function RunQueueBusyPage() {
@@ -52,13 +54,16 @@ export default function RunQueueBusyPage() {
     if (!participantId) return;
     logEvent(
       'queue_busy_enter',
-      {},
+      { reason: state?.reason ?? 'queue_full' },
       {
         participantId,
-        readableMessage: 'Пользователь увидел экран «Дорожка занята» (очередь заполнена)',
+        readableMessage:
+          state?.reason === 'treadmill_busy'
+            ? 'Пользователь увидел экран «Дорожка занята» (тренажер временно недоступен)'
+            : 'Пользователь увидел экран «Дорожка занята» (очередь заполнена)',
       }
     );
-  }, [participantId]);
+  }, [participantId, state?.reason]);
 
   if (!participantId || !state) {
     return null;
@@ -69,6 +74,7 @@ export default function RunQueueBusyPage() {
     participantFirstName: state.participantFirstName ?? '',
     participantSex: state.participantSex,
   };
+  const isTreadmillBusy = state?.reason === 'treadmill_busy';
 
   return (
     <RunQueueScreenShell
@@ -98,12 +104,26 @@ export default function RunQueueBusyPage() {
             onClick={() => {
               logEvent(
                 'queue_busy_retry',
-                {},
+                { reason: state.reason ?? 'queue_full' },
                 {
                   participantId,
                   readableMessage: 'Пользователь нажал «Занять очередь» (повторная попытка)',
                 }
               );
+              if (isTreadmillBusy && state.runSessionId) {
+                navigate('/run/queue', {
+                  replace: true,
+                  state: {
+                    participantId,
+                    runSessionId: state.runSessionId,
+                    runTypeId: state.runTypeId,
+                    participantSex: state.participantSex,
+                    participantFirstName: state.participantFirstName,
+                    position: 1,
+                  },
+                });
+                return;
+              }
               navigate('/run-select', { state: retryState, replace: true });
             }}
           >
@@ -114,9 +134,11 @@ export default function RunQueueBusyPage() {
     >
       <p style={rq.titleMain}>Дорожка пока занята</p>
       <p style={rq.subtitle}>
-        Очередь для этого забега заполнена.
+        {isTreadmillBusy ? 'Тренажер сейчас недоступен.' : 'Очередь для этого забега заполнена.'}
         <br />
-        <span style={rq.subtitleStrong}>Попробуйте повторить позже.</span>
+        <span style={rq.subtitleStrong}>
+          {isTreadmillBusy ? 'Вы можете подождать в очереди.' : 'Попробуйте повторить позже.'}
+        </span>
       </p>
     </RunQueueScreenShell>
   );
