@@ -29,7 +29,8 @@ export function AgeStep({ ageChoice, onAgeChoice, onBack }: Props) {
       <StepBody variant="tall">
         {blocked ? (
           <p style={reg.ageFigmaBlockedText}>
-            Участие в забеге доступно только совершеннолетним. Вы можете вернуться на главную.
+            <span style={{ display: 'block' }}>Участие в забеге доступно только совершеннолетним.</span>
+            <span style={{ display: 'block' }}>Вы можете вернуться на главную.</span>
           </p>
         ) : (
           <h2 style={reg.ageFigmaQuestion}>
