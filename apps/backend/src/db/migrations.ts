@@ -20,6 +20,14 @@ export function runMigrations(db: Db): void {
   migrateCompetitionsAndSessions(db);
   migrateEvents(db);
   migrateRemoveTestModeSetting(db);
+  migrateIntegrationInfoMessagesSetting(db);
+}
+
+function migrateIntegrationInfoMessagesSetting(db: Db): void {
+  const row = db.prepare(`SELECT 1 FROM admin_settings WHERE key = 'integrationInfoMessages'`).get();
+  if (!row) {
+    db.prepare(`INSERT INTO admin_settings (key, value) VALUES ('integrationInfoMessages', 'false')`).run();
+  }
 }
 
 function migrateRemoveTestModeSetting(db: Db): void {
@@ -194,6 +202,7 @@ function seedAdminSettings(db: Db): void {
   ins.run('eventTitle', 'Amazing Red');
   ins.run('maxQueueSizePerRun', '3');
   ins.run('heartbeatIntervalMin', '5');
+  ins.run('integrationInfoMessages', 'false');
   ins.run('lastTdSyncOk', '');
   ins.run('lastTdSyncError', '');
 }

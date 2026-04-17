@@ -39,6 +39,7 @@ export default function AdminSettingsPage() {
         maxQueueSizePerRun: settings.maxQueueSizePerRun,
         eventTitle: settings.eventTitle,
         heartbeatIntervalMin: settings.heartbeatIntervalMin,
+        showIntegrationInfoMessages: settings.showIntegrationInfoMessages,
       });
       sessionStorage.setItem('adminPin', settings.adminPin);
     } catch (e) {
@@ -96,6 +97,15 @@ export default function AdminSettingsPage() {
               style={{ width: 24, height: 24 }}
             />
             TouchDesigner demo mode
+          </label>
+          <label style={{ ...lab, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <input
+              type="checkbox"
+              checked={settings.showIntegrationInfoMessages ?? false}
+              onChange={(e) => setSettings({ ...settings, showIntegrationInfoMessages: e.target.checked })}
+              style={{ width: 24, height: 24 }}
+            />
+            Показывать информационные сообщения
           </label>
           <label style={lab}>
             Макс. размер очереди на забег (на активное соревнование)

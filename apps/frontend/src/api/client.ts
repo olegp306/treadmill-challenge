@@ -418,6 +418,7 @@ export const api = {
       maxQueueSizePerRun: number;
       eventTitle: string;
       heartbeatIntervalMin: 5 | 10 | 30 | 60;
+      showIntegrationInfoMessages: boolean;
     }>('/admin/settings');
   },
 
@@ -430,12 +431,17 @@ export const api = {
     maxQueueSizePerRun: number;
     eventTitle: string;
     heartbeatIntervalMin: 5 | 10 | 30 | 60;
+    showIntegrationInfoMessages: boolean;
   }>) {
     return adminRequest<{ ok: boolean }>('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
   },
 
   getPublicSettings() {
-    return request<{ heartbeatIntervalMin: 5 | 10 | 30 | 60; tdDemoMode: boolean }>('/public/settings');
+    return request<{
+      heartbeatIntervalMin: 5 | 10 | 30 | 60;
+      tdDemoMode: boolean;
+      showIntegrationInfoMessages: boolean;
+    }>('/public/settings');
   },
 
   adminResetTestData() {

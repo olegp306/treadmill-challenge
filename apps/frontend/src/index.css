@@ -108,6 +108,58 @@ body {
   }
 }
 
+/* TouchDesigner / integration info (operator): top curtain, non-blocking */
+.integration-info-curtain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10050;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding-top: env(safe-area-inset-top, 0px);
+  animation: integration-info-curtain-in 0.32s ease-out;
+}
+
+@keyframes integration-info-curtain-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.integration-info-curtain__demo {
+  font-family: inherit;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  padding: 8px 14px;
+  background: rgba(184, 120, 0, 0.94);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.integration-info-curtain__line {
+  font-family: inherit;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+  padding: 8px 14px;
+  background: rgba(18, 22, 28, 0.94);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 * {
   box-sizing: border-box;
 }

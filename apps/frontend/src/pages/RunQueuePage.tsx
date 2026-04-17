@@ -10,6 +10,7 @@ import { PrimaryButton } from '../features/registration/components';
 import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
+import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
 import { logEvent } from '../logging/logEvent';
 
 /** After this time running without finish, show “waiting for TD callback” (real mode). */
@@ -45,9 +46,14 @@ export default function RunQueuePage() {
   const [livePosition, setLivePosition] = useState<number>(position);
   const [resultPendingLong, setResultPendingLong] = useState(false);
   const resultPendingLoggedRef = useRef(false);
+  const waitingTdReportedRef = useRef(false);
+  const finishNavigateScheduledRef = useRef(false);
+  const { report } = useIntegrationInfo();
 
   useEffect(() => {
     resultPendingLoggedRef.current = false;
+    waitingTdReportedRef.current = false;
+    finishNavigateScheduledRef.current = false;
     setResultPendingLong(false);
   }, [runSessionId]);
 
@@ -103,7 +109,16 @@ export default function RunQueuePage() {
         if (cancelled) return;
         setLiveStatus(s.status === 'running' ? 'running' : s.status === 'queued' ? 'queued' : null);
         setLivePosition(s.queuePosition ?? 0);
-        if (s.status === 'running' && s.startedAt && !demoMode) {
+        const demoEnabled = demoMode && tdDemoMode;
+        if (s.status === 'running' && !demoEnabled) {
+          if (!waitingTdReportedRef.current) {
+            waitingTdReportedRef.current = true;
+            report('waiting_for_touchdesigner');
+          }
+        } else if (s.status !== 'running') {
+          waitingTdReportedRef.current = false;
+        }
+        if (s.status === 'running' && s.startedAt && !demoEnabled) {
           const elapsed = Date.now() - new Date(s.startedAt).getTime();
           const long = elapsed >= RESULT_CALLBACK_PENDING_MS;
           setResultPendingLong(long);
@@ -136,13 +151,19 @@ export default function RunQueuePage() {
           return;
         }
         if (s.status === 'finished') {
-          saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
-          const q = new URLSearchParams({
-            runTypeId: String(runTypeId),
-            sex: participantSex,
-            highlightParticipantId: participantId,
-          });
-          navigate(`/leaderboard?${q.toString()}`, { replace: true });
+          if (!finishNavigateScheduledRef.current) {
+            finishNavigateScheduledRef.current = true;
+            report('result_received', { autoHideMs: 4500 });
+            saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
+            const q = new URLSearchParams({
+              runTypeId: String(runTypeId),
+              sex: participantSex,
+              highlightParticipantId: participantId,
+            });
+            window.setTimeout(() => {
+              navigate(`/leaderboard?${q.toString()}`, { replace: true });
+            }, 480);
+          }
           return;
         }
         if (s.status === 'cancelled') {
@@ -163,7 +184,7 @@ export default function RunQueuePage() {
       cancelled = true;
       window.clearInterval(t);
     };
-  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName]);
+  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName, demoMode, tdDemoMode, report]);
 
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) return;

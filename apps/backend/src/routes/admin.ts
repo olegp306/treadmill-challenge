@@ -58,6 +58,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     return {
       heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
       tdDemoMode: adminSettings.getTdDemoMode(db),
+      showIntegrationInfoMessages: adminSettings.getIntegrationInfoMessages(db),
     };
   });
 
@@ -536,6 +537,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         maxQueueSizePerRun?: number;
         eventTitle?: string;
         heartbeatIntervalMin?: number;
+        showIntegrationInfoMessages?: boolean;
       };
       if (body.adminPin !== undefined) adminSettings.setSetting(db, 'adminPin', body.adminPin.trim());
       if (body.tdHost !== undefined) adminSettings.setSetting(db, 'tdHost', body.tdHost.trim());
@@ -550,6 +552,9 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       if (body.heartbeatIntervalMin !== undefined) {
         const min = adminSettings.normalizeHeartbeatIntervalMin(body.heartbeatIntervalMin);
         adminSettings.setSetting(db, 'heartbeatIntervalMin', String(min));
+      }
+      if (body.showIntegrationInfoMessages !== undefined) {
+        adminSettings.setSetting(db, 'integrationInfoMessages', body.showIntegrationInfoMessages ? 'true' : 'false');
       }
       return reply.send({ ok: true });
     });

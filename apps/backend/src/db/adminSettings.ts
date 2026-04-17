@@ -25,6 +25,11 @@ export function getTdDemoMode(db: Db): boolean {
   return getSetting(db, 'tdDemoMode') === 'true';
 }
 
+/** When true, public kiosk may show TouchDesigner integration info banners (operator/debug). */
+export function getIntegrationInfoMessages(db: Db): boolean {
+  return getSetting(db, 'integrationInfoMessages') === 'true';
+}
+
 /** Max queue capacity per active competition (queued + running). Default 3. */
 export function getMaxQueueSizePerRun(db: Db): number {
   const raw = getSetting(db, 'maxQueueSizePerRun');

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
 import { generateDemoMetrics } from '@treadmill-challenge/shared';
@@ -7,6 +7,7 @@ import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboar
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
+import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
 import { logEvent } from '../logging/logEvent';
 import { ui } from '../ui/tokens';
 
@@ -35,6 +36,12 @@ export default function RunPreparePage() {
   const [demoMsg, setDemoMsg] = useState<string | null>(null);
   const [demoRank, setDemoRank] = useState<number | null>(null);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const finishNavigateScheduledRef = useRef(false);
+  const { report } = useIntegrationInfo();
+
+  useEffect(() => {
+    finishNavigateScheduledRef.current = false;
+  }, [runSessionId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,13 +145,19 @@ export default function RunPreparePage() {
           return;
         }
         if (s.status === 'finished') {
-          saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
-          const q = new URLSearchParams({
-            runTypeId: String(runTypeId),
-            sex: participantSex,
-            highlightParticipantId: participantId,
-          });
-          navigate(`/leaderboard?${q.toString()}`, { replace: true });
+          if (!finishNavigateScheduledRef.current) {
+            finishNavigateScheduledRef.current = true;
+            report('result_received', { autoHideMs: 4500 });
+            saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
+            const q = new URLSearchParams({
+              runTypeId: String(runTypeId),
+              sex: participantSex,
+              highlightParticipantId: participantId,
+            });
+            window.setTimeout(() => {
+              navigate(`/leaderboard?${q.toString()}`, { replace: true });
+            }, 480);
+          }
           return;
         }
         if (s.status === 'cancelled') {
@@ -160,7 +173,7 @@ export default function RunPreparePage() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName]);
+  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName, report]);
 
   if (!participantId || !runSessionId || runTypeId === null) return null;
 

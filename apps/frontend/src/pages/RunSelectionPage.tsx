@@ -11,6 +11,7 @@ import { RunSelectionShell } from '../features/run-selection/RunSelectionShell';
 import { RunTypeTabBar } from '../features/run-selection/RunTypeTabBar';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { api } from '../api/client';
+import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
 import { logEvent, setLoggedRunSessionId } from '../logging/logEvent';
 
 export type RunSelectLocationState = {
@@ -40,6 +41,7 @@ export default function RunSelectionPage() {
   const [selected, setSelected] = useState<RunTypeId>(2);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { report, clearPhase } = useIntegrationInfo();
 
   useEffect(() => {
     if (!participantId) {
@@ -79,9 +81,22 @@ export default function RunSelectionPage() {
     setError(null);
     setLoading(true);
     logEvent('button_click_start', { runTypeId: selected }, { participantId });
+    let phaseTimer: number | undefined;
+    report('treadmill_check');
+    phaseTimer = window.setTimeout(() => {
+      report('sending_to_touchdesigner');
+    }, 220);
     try {
       const res = await api.startRun({ participantId, runTypeId: selected });
+      if (phaseTimer !== undefined) {
+        window.clearTimeout(phaseTimer);
+        phaseTimer = undefined;
+      }
       if (!res.success) {
+        clearPhase();
+        if (res.reason === 'td_unavailable') {
+          report('integration_error');
+        }
         if (res.reason === 'queue_full') {
           logEvent(
             'queue_rejected',
@@ -135,6 +150,11 @@ export default function RunSelectionPage() {
             : `Забег начат, пользователь в очереди (позиция ${res.position})`,
         }
       );
+      if (res.demoMode) {
+        clearPhase();
+      } else {
+        report('sent_to_touchdesigner');
+      }
       if (!res.demoMode) {
         logEvent(
           'touchdesigner_ack',
@@ -210,6 +230,12 @@ export default function RunSelectionPage() {
         },
       });
     } catch (e) {
+      if (phaseTimer !== undefined) {
+        window.clearTimeout(phaseTimer);
+        phaseTimer = undefined;
+      }
+      clearPhase();
+      report('integration_error');
       const msg = e instanceof Error ? e.message : 'Не удалось начать забег';
       logEvent(
         'error_event',
