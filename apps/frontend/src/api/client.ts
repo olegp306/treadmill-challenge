@@ -119,6 +119,8 @@ export const api = {
       queuePosition: number | null;
       startedAt: string | null;
       finishedAt: string | null;
+      /** Another session is on the treadmill while this one is still queued. */
+      otherSessionRunning: boolean;
     }>(`/run/session/${encodeURIComponent(runSessionId)}${qs ? `?${qs}` : ''}`);
   },
 
@@ -191,6 +193,7 @@ export const api = {
       createdAt: data.createdAt as string,
       demoMode: data.demoMode as boolean,
       treadmillStatus: (data.treadmillStatus ?? 'unknown') as 'free' | 'busy' | 'unknown',
+      otherSessionRunning: Boolean(data.otherSessionRunning),
     };
   },
 

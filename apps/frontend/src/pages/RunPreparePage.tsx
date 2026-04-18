@@ -4,6 +4,7 @@ import type { RunTypeId } from '@treadmill-challenge/shared';
 import { generateDemoMetrics } from '@treadmill-challenge/shared';
 import { api } from '../api/client';
 import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
+import { GoToTreadmillContent } from '../features/run-queue/GoToTreadmillContent';
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
@@ -21,6 +22,8 @@ type RunPrepareLocationState = {
   demoMode?: boolean;
   /** Passed through to `/run/queue` so polling does not re-open this screen after OK. */
   prepareAcknowledged?: boolean;
+  /** Сессия уже `running` при входе (дорожка была свободна) — не уводим на `/run/queue` до «Ок». */
+  immediateRunning?: boolean;
 };
 
 export default function RunPreparePage() {
@@ -33,6 +36,7 @@ export default function RunPreparePage() {
   const runTypeId = state?.runTypeId ?? null;
   const participantSex = state?.participantSex ?? 'male';
   const demoMode = state?.demoMode ?? false;
+  const immediateRunning = Boolean(state?.immediateRunning);
 
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
   const [tdDemoMode, setTdDemoMode] = useState(false);
@@ -106,7 +110,7 @@ export default function RunPreparePage() {
       {
         participantId,
         runSessionId,
-        readableMessage: 'Пользователь на экране «Приготовься / Пройди на дорожку»',
+        readableMessage: 'Пользователь на экране «Пройдите на дорожку»',
       }
     );
   }, [participantId, runSessionId, runTypeId]);
@@ -119,7 +123,7 @@ export default function RunPreparePage() {
       try {
         const s = await api.getRunSessionState(runSessionId, participantId);
         if (cancelled) return;
-        if (s.status === 'running') {
+        if (s.status === 'running' && !immediateRunning) {
           navigate('/run/queue', {
             replace: true,
             state: {
@@ -131,6 +135,25 @@ export default function RunPreparePage() {
               demoMode: state?.demoMode,
               position: 1,
               prepareAcknowledged: true,
+              initialSessionStatus: 'running',
+            },
+          });
+          return;
+        }
+        if (s.status === 'queued' && s.queuePosition === 1 && s.otherSessionRunning) {
+          navigate('/run/queue', {
+            replace: true,
+            state: {
+              participantId,
+              runSessionId,
+              runTypeId,
+              participantSex,
+              participantFirstName: state?.participantFirstName,
+              demoMode: state?.demoMode,
+              position: 1,
+              prepareAcknowledged: false,
+              initialSessionStatus: 'queued',
+              initialOtherSessionRunning: true,
             },
           });
           return;
@@ -175,7 +198,7 @@ export default function RunPreparePage() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName, report]);
+  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName, report, immediateRunning]);
 
   if (!participantId || !runSessionId || runTypeId === null) return null;
 
@@ -193,6 +216,7 @@ export default function RunPreparePage() {
                 ...state,
                 position: 1,
                 prepareAcknowledged: true,
+                initialSessionStatus: immediateRunning ? 'running' : undefined,
               },
             })
           }
@@ -201,11 +225,7 @@ export default function RunPreparePage() {
         </button>
       }
     >
-      <p style={rq.titleMain}>
-        Приготовься
-        <br />
-        Пройди на дорожку
-      </p>
+      <GoToTreadmillContent />
       {demoEnabled && demoMetrics ? (
         <div style={{ marginTop: 24, width: '100%', maxWidth: 980, marginLeft: 'auto', marginRight: 'auto' }}>
           <div

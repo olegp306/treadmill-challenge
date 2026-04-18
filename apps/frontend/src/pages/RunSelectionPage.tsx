@@ -189,6 +189,42 @@ export default function RunSelectionPage() {
         });
         return;
       }
+      /** Другой забег уже идёт — очередь с «Дорожка занята», не экран «Пройдите на дорожку». */
+      if (!res.demoMode && res.otherSessionRunning) {
+        navigate('/run/queue', {
+          replace: true,
+          state: {
+            participantId: res.participantId,
+            runSessionId: res.runSessionId,
+            runTypeId: res.runTypeId,
+            position: res.position,
+            participantSex,
+            participantFirstName: state?.participantFirstName,
+            initialSessionStatus: 'queued',
+            initialOtherSessionRunning: true,
+          },
+        });
+        return;
+      }
+      /**
+       * Свободная дорожка: бэкенд сразу переводит сессию в `running` после TD ack —
+       * показываем «Пройдите на дорожку» (и при `running`, и при `queued` + #1 без чужого running).
+       */
+      if (!res.demoMode && (res.status === 'running' || (res.status === 'queued' && res.position === 1))) {
+        navigate('/run/prepare', {
+          replace: true,
+          state: {
+            participantId: res.participantId,
+            runSessionId: res.runSessionId,
+            runTypeId: res.runTypeId,
+            participantSex,
+            participantFirstName: state?.participantFirstName,
+            demoMode: false,
+            immediateRunning: res.status === 'running',
+          },
+        });
+        return;
+      }
       if (res.demoMode) {
         if (res.status === 'running') {
           navigate('/run/prepare', {
@@ -227,6 +263,8 @@ export default function RunSelectionPage() {
           position: res.position,
           participantSex,
           participantFirstName: state?.participantFirstName,
+          initialSessionStatus: res.status === 'running' ? 'running' : 'queued',
+          initialOtherSessionRunning: res.otherSessionRunning,
         },
       });
     } catch (e) {

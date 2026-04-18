@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
 import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
+import { GoToTreadmillContent } from '../features/run-queue/GoToTreadmillContent';
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
@@ -28,6 +29,10 @@ export type RunQueueLocationState = {
   demoMode?: boolean;
   /** After user taps OK on `/run/prepare`, do not auto-navigate back there while still queued #1 (avoids queue/prepare oscillation). */
   prepareAcknowledged?: boolean;
+  /** From startRun: avoids one frame of wrong UI before first poll (e.g. already running). */
+  initialSessionStatus?: 'queued' | 'running';
+  /** From startRun: someone else is on the treadmill while we are queued #1. */
+  initialOtherSessionRunning?: boolean;
 };
 
 export default function RunQueuePage() {
@@ -46,8 +51,13 @@ export default function RunQueuePage() {
   const [tdDemoMode, setTdDemoMode] = useState(false);
   const [devMsg, setDevMsg] = useState<string | null>(null);
   const [devLoading, setDevLoading] = useState(false);
-  const [liveStatus, setLiveStatus] = useState<'queued' | 'running' | null>('queued');
+  const [liveStatus, setLiveStatus] = useState<'queued' | 'running' | null>(() => {
+    const init = state?.initialSessionStatus;
+    if (init === 'running') return 'running';
+    return 'queued';
+  });
   const [livePosition, setLivePosition] = useState<number>(position);
+  const [liveOtherRunning, setLiveOtherRunning] = useState(() => Boolean(state?.initialOtherSessionRunning));
   const [resultPendingLong, setResultPendingLong] = useState(false);
   const resultPendingLoggedRef = useRef(false);
   const waitingTdReportedRef = useRef(false);
@@ -59,7 +69,8 @@ export default function RunQueuePage() {
     waitingTdReportedRef.current = false;
     finishNavigateScheduledRef.current = false;
     setResultPendingLong(false);
-  }, [runSessionId]);
+    setLiveOtherRunning(Boolean(state?.initialOtherSessionRunning));
+  }, [runSessionId, state?.initialOtherSessionRunning]);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,6 +113,40 @@ export default function RunQueuePage() {
     };
   }, [participantId, runSessionId, runTypeId, navigate, state?.participantFirstName]);
 
+  const prepareAck = Boolean(state?.prepareAcknowledged);
+
+  /** Next in queue (#1) → full «Пройдите на дорожку» on `/run/prepare` (same as poll, without extra delay / duplicate logic). */
+  useLayoutEffect(() => {
+    if (!participantId || !runSessionId || runTypeId === null) return;
+    if (prepareAck) return;
+    if (liveOtherRunning) return;
+    if (liveStatus !== 'queued') return;
+    if (livePosition !== 1) return;
+    navigate('/run/prepare', {
+      replace: true,
+      state: {
+        participantId,
+        runSessionId,
+        runTypeId,
+        participantSex,
+        participantFirstName: state?.participantFirstName,
+        demoMode,
+      },
+    });
+  }, [
+    participantId,
+    runSessionId,
+    runTypeId,
+    participantSex,
+    navigate,
+    state?.participantFirstName,
+    demoMode,
+    prepareAck,
+    livePosition,
+    liveStatus,
+    liveOtherRunning,
+  ]);
+
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) return;
     let cancelled = false;
@@ -113,6 +158,7 @@ export default function RunQueuePage() {
         if (cancelled) return;
         setLiveStatus(s.status === 'running' ? 'running' : s.status === 'queued' ? 'queued' : null);
         setLivePosition(s.queuePosition ?? 0);
+        setLiveOtherRunning(Boolean(s.otherSessionRunning));
         const demoEnabled = demoMode && tdDemoMode;
         if (s.status === 'running' && !demoEnabled) {
           if (!waitingTdReportedRef.current) {
@@ -157,20 +203,6 @@ export default function RunQueuePage() {
               prepareAcknowledged: false,
             },
           });
-        }
-        if (s.status === 'queued' && qp === 1 && !prepareAcknowledged) {
-          navigate('/run/prepare', {
-            replace: true,
-            state: {
-              participantId,
-              runSessionId,
-              runTypeId,
-              participantSex,
-              participantFirstName: state?.participantFirstName,
-              demoMode,
-            },
-          });
-          return;
         }
         if (s.status === 'finished') {
           if (!finishNavigateScheduledRef.current) {
@@ -298,7 +330,14 @@ export default function RunQueuePage() {
 
   const demoEnabled = demoMode && tdDemoMode;
   const showDevFinish = import.meta.env.DEV && tdDemoMode;
-  const viewMode = liveStatus === 'running' ? 'running' : livePosition === 1 ? 'prepare' : 'queue';
+  const viewMode =
+    liveStatus === 'running'
+      ? 'running'
+      : livePosition === 1 && prepareAck
+        ? 'waiting'
+        : livePosition === 1 && !prepareAck && !liveOtherRunning
+          ? 'prepare'
+          : 'queue';
   const peopleAhead = Math.max(0, livePosition - 1);
   const approxWaitMin = Math.max(0, peopleAhead * 2);
 
@@ -342,10 +381,20 @@ export default function RunQueuePage() {
           ) : null}
         </>
       ) : viewMode === 'prepare' ? (
-        <p style={{ ...rq.titleMain, margin: 0 }}>Приготовься. Пройди на дорожку.</p>
+        <GoToTreadmillContent />
+      ) : viewMode === 'waiting' ? (
+        <>
+          <p style={{ ...rq.titleMain, margin: 0 }}>Ожидайте начала</p>
+          <p style={{ ...rq.subtitle, marginTop: h(40) }}>Забег скоро начнётся</p>
+        </>
       ) : (
         <>
-          {demoEnabled ? (
+          {liveOtherRunning && liveStatus === 'queued' ? (
+            <>
+              <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка занята</p>
+              <p style={rq.subtitle}>Дождитесь, когда предыдущий участник закончит</p>
+            </>
+          ) : demoEnabled ? (
             <>
               <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка занята</p>
               <p style={rq.subtitle}>
