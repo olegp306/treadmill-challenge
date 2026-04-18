@@ -11,6 +11,9 @@ import runRoutes from './routes/run.js';
 import adminRoutes from './routes/admin.js';
 import eventsRoutes from './routes/events.js';
 import devQueueControlRoutes from './routes/devQueueControl.js';
+import { registerTouchDesignerOscRunResultHandler } from './integrations/touchdesigner/oscTouchDesignerAck.js';
+import { touchDesignerAdapter } from './integrations/touchdesigner/adapter.js';
+import { submitRunSessionResult } from './services/runResultService.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -30,6 +33,14 @@ function listLanIPv4Addresses(): string[] {
 
 async function main() {
   await ensureDb();
+
+  registerTouchDesignerOscRunResultHandler(async (dto) => {
+    await submitRunSessionResult(dto, touchDesignerAdapter, {
+      info: (o) => console.log(o),
+      warn: (o) => console.warn(o),
+      error: (o) => console.error(o),
+    });
+  });
 
   const app = Fastify({ logger: true });
 

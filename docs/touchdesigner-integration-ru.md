@@ -9,7 +9,7 @@
 Бэкенд (Node.js) не встраивается в TD. Связь такая:
 
 1. **Исходящие OSC (UDP)** — с машины бэкенда **на** процесс TouchDesigner (по умолчанию `127.0.0.1:7000`), когда включён адаптер `osc`.
-2. **Входящие OSC (UDP)** — с TouchDesigner **на** бэкенд: подтверждение готовности дорожки после команды «старт забега» (ack).
+2. **Входящие OSC (UDP)** — с TouchDesigner **на** бэкенд: классическое подтверждение **`/treadmill/ack`** или единый канал **`/treadmill/runState`** (start / busy / stop с метриками).
 3. **HTTP POST** — с TouchDesigner (или скрипта) **на** бэкенд: передача результата забега (`resultTime`, `distance`) по завершении.
 
 Пуллинг результата с бэкенда (`GET /api/touchdesigner/run-result`) в текущей реализации **не используется** — адатер возвращает пусто; основной путь — **POST результата** на бэкенд.
@@ -27,10 +27,13 @@
 | `TD_OSC_PORT` | UDP-порт приёмника OSC в TD | `7000` |
 | `TD_OSC_START_ADDRESS` | OSC-адрес регистрации участника | `/treadmill/start` |
 | `TD_OSC_RUN_SESSION_ADDRESS` | OSC-адрес старта забега (сессии) | `/treadmill/runSession` |
-| `TD_OSC_ACK_ADDRESS` | OSC-адрес ответа TD о дорожке | `/treadmill/ack` |
-| `TD_OSC_ACK_LOCAL_PORT` | UDP-порт **на бэкенде**, куда TD шлёт ack | `7001` |
-| `TD_OSC_ACK_TIMEOUT_MS` | Таймаут ожидания ack после старта (мс) | `8000` |
-| `TD_OSC_ACK_DISABLED` | `1` / `true` — не ждать ack (статус дорожки считается неизвестным) | выкл. |
+| `TD_OSC_ACK_ADDRESS` | OSC-адрес ответа TD о дорожке (legacy) | `/treadmill/ack` |
+| `TD_OSC_RUN_STATE_ADDRESS` | Единый канал состояния: start, busy, stop | `/treadmill/runState` |
+| `TD_OSC_RUN_STATE_DISABLED` | Отключить разбор `runState` | выкл. |
+| `TD_OSC_ACK_LOCAL_PORT` | UDP-порт **на бэкенде**, куда TD шлёт ack и runState | `7001` |
+| `TD_OSC_ACK_TIMEOUT_MS` | Таймаут ожидания ответа после `/treadmill/runSession` (мс) | `30000` |
+| `TD_OSC_ACK_TIMEOUT_RESOLVES_TO` | При таймауте: `busy` (очередь сохраняется), `unknown` (как раньше) или `free` | `busy` |
+| `TD_OSC_ACK_DISABLED` | `1` / `true` — не ждать ответ (сразу `unknown`) | выкл. |
 | `TD_CALLBACK_TOKEN` | Если задан — endpoint `POST /api/touchdesigner/run-result` требует заголовок `X-TD-Token` или `Authorization: Bearer …` | не задан |
 
 Поля **host/port в админке** хранятся в БД для справки; **реальный** адрес OSC для адаптера задаётся **переменными окружения** `TD_OSC_HOST` / `TD_OSC_PORT` при запуске бэкенда.
@@ -102,7 +105,9 @@
 
 Также допускаются варианты вроде `1`/`true`/`f` для free и `0`/`false`/`b` для busy (см. код парсера на бэкенде).
 
-Если ack **не пришёл** в течение таймаута или пришёл с неизвестным статусом, поведение зависит от реализации: сессия может не перейти в `running` как при `busy`.
+**Альтернатива — `/treadmill/runState`:** на тот же UDP-порт можно слать `state=start` (как успешный free), `state=busy` или после финиша `state=stop` с `resultTime` и `distance`. Подробно: [touchdesigner-compat-ru.md](touchdesigner-compat-ru.md).
+
+**Таймаут ответа:** если за время `TD_OSC_ACK_TIMEOUT_MS` (по умолчанию 30 с) не пришло ни `/treadmill/ack`, ни `runState` для этой `runSessionId`, по умолчанию бэкенд считает дорожку **занятой/недоступной** (`busy`), и сессия **остаётся в очереди**. Иначе: переменная `TD_OSC_ACK_TIMEOUT_RESOLVES_TO` (`busy` · `unknown` · `free`).
 
 ---
 
@@ -110,7 +115,12 @@
 
 **Когда:** дорожка/логика TD знает, что забег окончен.
 
-**Что должен сделать TD (или HTTP-нода в TD):** отправить на бэкенд **POST** с JSON:
+**Варианты:**
+
+1. **HTTP POST** на бэкенд (как ниже), или  
+2. **OSC `/treadmill/runState`** с `state=stop` и метриками — эквивалент сохранения результата (сессия должна быть `running`).
+
+**Что должен сделать TD при использовании HTTP:** отправить **POST** с JSON:
 
 **Варианты URL:**
 
@@ -172,6 +182,7 @@ http://localhost:5173/td/leaderboard/result?runSessionId=xxxxxxxx-xxxx-xxxx-xxxx
 
 ## См. также
 
-- Код OSC: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAdapter.ts`
-- Ack: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAck.ts`
+- Кратко про **новый канал `/treadmill/runState`**, таймаут и обратную совместимость: [touchdesigner-compat-ru.md](touchdesigner-compat-ru.md)
+- Код OSC исходящий: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAdapter.ts`
+- Входящий ack/runState: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAck.ts`, разбор runState: `touchDesignerProtocolCompat.ts`
 - Обработка результата: `apps/backend/src/routes/runResult.ts`

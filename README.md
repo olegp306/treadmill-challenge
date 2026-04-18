@@ -4,7 +4,7 @@
 
 Interactive treadmill challenge installation for a retail store. Local-first: React + Vite frontend, Node + Fastify backend, SQLite database. TouchDesigner integration is abstracted behind an adapter (mock implementation included).
 
-**Интеграция TouchDesigner (RU):** полный цикл OSC/HTTP, URL лидербордов ожидания и завершения — см. [docs/touchdesigner-integration-ru.md](docs/touchdesigner-integration-ru.md).
+**Интеграция TouchDesigner (RU):** полный цикл OSC/HTTP, URL лидербордов — [docs/touchdesigner-integration-ru.md](docs/touchdesigner-integration-ru.md). Совместимость **ack / runState / HTTP** и таймауты — [docs/touchdesigner-compat-ru.md](docs/touchdesigner-compat-ru.md).
 
 ---
 

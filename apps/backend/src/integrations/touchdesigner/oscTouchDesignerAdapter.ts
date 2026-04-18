@@ -68,7 +68,7 @@ export const oscTouchDesignerAdapter: TouchDesignerIntegration = {
     });
 
     console.log(
-      `[TouchDesigner OSC] sent ${runSessionAddress} -> ${remoteAddress}:${remotePort} ${JSON.stringify(payload)}`
+      `[TouchDesigner OSC] outgoing runSession -> ${remoteAddress}:${remotePort} ${runSessionAddress} ${JSON.stringify(payload)}`
     );
     return Promise.resolve();
   },
