@@ -25,6 +25,8 @@ export type RunQueueLocationState = {
   participantSex: 'male' | 'female';
   participantFirstName?: string;
   demoMode?: boolean;
+  /** After user taps OK on `/run/prepare`, do not auto-navigate back there while still queued #1 (avoids queue/prepare oscillation). */
+  prepareAcknowledged?: boolean;
 };
 
 export default function RunQueuePage() {
@@ -138,7 +140,24 @@ export default function RunQueuePage() {
         } else {
           setResultPendingLong(false);
         }
-        if (s.status === 'queued' && s.queuePosition === 1) {
+        const prepareAcknowledged = Boolean(state?.prepareAcknowledged);
+        const qp = s.queuePosition ?? 0;
+        if (s.status === 'queued' && qp > 1 && prepareAcknowledged) {
+          navigate('/run/queue', {
+            replace: true,
+            state: {
+              participantId,
+              runSessionId,
+              runTypeId,
+              participantSex,
+              participantFirstName: state?.participantFirstName,
+              demoMode,
+              position: qp,
+              prepareAcknowledged: false,
+            },
+          });
+        }
+        if (s.status === 'queued' && qp === 1 && !prepareAcknowledged) {
           navigate('/run/prepare', {
             replace: true,
             state: {
@@ -147,6 +166,7 @@ export default function RunQueuePage() {
               runTypeId,
               participantSex,
               participantFirstName: state?.participantFirstName,
+              demoMode,
             },
           });
           return;
@@ -180,7 +200,18 @@ export default function RunQueuePage() {
       cancelled = true;
       window.clearInterval(t);
     };
-  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName, demoMode, tdDemoMode, report]);
+  }, [
+    participantId,
+    runSessionId,
+    runTypeId,
+    participantSex,
+    navigate,
+    state?.participantFirstName,
+    state?.prepareAcknowledged,
+    demoMode,
+    tdDemoMode,
+    report,
+  ]);
 
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) return;

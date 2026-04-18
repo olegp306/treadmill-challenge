@@ -19,6 +19,8 @@ type RunPrepareLocationState = {
   participantSex: 'male' | 'female';
   participantFirstName?: string;
   demoMode?: boolean;
+  /** Passed through to `/run/queue` so polling does not re-open this screen after OK. */
+  prepareAcknowledged?: boolean;
 };
 
 export default function RunPreparePage() {
@@ -126,7 +128,9 @@ export default function RunPreparePage() {
               runTypeId,
               participantSex,
               participantFirstName: state?.participantFirstName,
+              demoMode: state?.demoMode,
               position: 1,
+              prepareAcknowledged: true,
             },
           });
           return;
@@ -140,7 +144,9 @@ export default function RunPreparePage() {
               runTypeId,
               participantSex,
               participantFirstName: state?.participantFirstName,
+              demoMode: state?.demoMode,
               position: s.queuePosition,
+              prepareAcknowledged: false,
             },
           });
           return;
@@ -177,7 +183,20 @@ export default function RunPreparePage() {
     <RunQueueScreenShell
       participantDisplayName={displayName}
       footer={
-        <button type="button" style={rq.btnWideSolid} onClick={() => navigate('/run/queue', { replace: true, state })}>
+        <button
+          type="button"
+          style={rq.btnWideSolid}
+          onClick={() =>
+            navigate('/run/queue', {
+              replace: true,
+              state: {
+                ...state,
+                position: 1,
+                prepareAcknowledged: true,
+              },
+            })
+          }
+        >
           Ок
         </button>
       }
