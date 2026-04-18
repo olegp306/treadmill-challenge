@@ -385,6 +385,7 @@ export const api = {
         runId: string;
         runSessionId: string | null;
         createdAt: string;
+        verificationPhotoAvailable: boolean;
       }>;
     }>(`/admin/competitions/${id}/leaderboard`);
   },
@@ -510,7 +511,36 @@ export const api = {
       heartbeatIntervalMin: 5 | 10 | 30 | 60;
       tdDemoMode: boolean;
       showIntegrationInfoMessages: boolean;
+      appVersion: string;
     }>('/public/settings');
+  },
+
+  getApiVersion() {
+    return request<{ name: string; version: string }>('/version');
+  },
+
+  submitRunSessionStartPhoto(body: { runSessionId: string; participantId: string; imageBase64: string }) {
+    return request<{ ok: boolean; path: string }>(
+      `/run-session/${encodeURIComponent(body.runSessionId)}/start-photo`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          participantId: body.participantId,
+          imageBase64: body.imageBase64,
+        }),
+      }
+    );
+  },
+
+  async adminGetRunVerificationPhotoBlob(runId: string): Promise<Blob> {
+    const res = await fetch(`${API_BASE}/admin/runs/${encodeURIComponent(runId)}/verification-photo`, {
+      headers: { ...adminHeaders() },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? `Request failed: ${res.status}`);
+    }
+    return res.blob();
   },
 
   adminResetTestData() {

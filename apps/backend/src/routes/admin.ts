@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { randomUUID } from 'node:crypto';
+import { readFileSync, existsSync } from 'node:fs';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import {
   getRunTypeById,
@@ -21,6 +22,8 @@ import {
   stopAndStartCompetitionById,
   stopAndStartNewCompetition,
 } from '../services/competitionService.js';
+import { absoluteFromRelative } from '../services/runPhotoStorage.js';
+import { getAppVersion } from '../version.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const x = request.headers['x-admin-pin'];
   if (typeof x === 'string' && x.length > 0) return x.trim();
@@ -60,6 +63,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
       tdDemoMode: adminSettings.getTdDemoMode(db),
       showIntegrationInfoMessages: adminSettings.getIntegrationInfoMessages(db),
+      appVersion: getAppVersion(),
     };
   });
 
@@ -240,8 +244,37 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
           runId: e.run.id,
           runSessionId: e.run.runSessionId,
           createdAt: e.run.createdAt,
+          verificationPhotoAvailable: Boolean(e.run.verificationPhotoPath),
         })),
       });
+    });
+
+    scoped.get('/api/admin/runs/:runId/verification-photo', async (request, reply) => {
+      const { runId } = request.params as { runId: string };
+      if (!runId?.trim()) return reply.status(400).send({ error: 'runId required' });
+      const db = getDb();
+      const run = runs.getRunById(db, runId.trim());
+      if (!run?.verificationPhotoPath) {
+        return reply.status(404).send({ error: 'Photo not found' });
+      }
+      const abs = absoluteFromRelative(run.verificationPhotoPath);
+      if (!existsSync(abs)) {
+        request.log.warn({
+          msg: 'admin_verification_photo_file_missing',
+          runId: run.id,
+          path: run.verificationPhotoPath,
+        });
+        return reply.status(404).send({ error: 'Photo file missing' });
+      }
+      const buf = readFileSync(abs);
+      request.log.info({
+        msg: 'admin_verification_photo_served',
+        runId: run.id,
+        runSessionId: run.runSessionId,
+        participantId: run.participantId,
+        bytes: buf.length,
+      });
+      return reply.type('image/jpeg').send(buf);
     });
 
     scoped.get('/api/admin/competitions/:id/participants', async (request, reply) => {

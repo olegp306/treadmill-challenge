@@ -1,4 +1,5 @@
 import type { Db } from './sqlite.js';
+import { unlinkRelative } from '../services/runPhotoStorage.js';
 import type { Gender, RunSession, RunSessionStatus, RunTypeId, RunTypeKey } from '@treadmill-challenge/shared';
 import {
   getRunTypeById,
@@ -249,6 +250,22 @@ export function listParticipantIdsForCompetition(db: Db, competitionId: string):
   return rows.map((r) => r.participantId);
 }
 
+export function getPendingPhotoPath(db: Db, sessionId: string): string | null {
+  const row = db
+    .prepare(`SELECT pending_photo_path FROM run_sessions WHERE id = ?`)
+    .get(sessionId) as { pending_photo_path?: string | null } | undefined;
+  const v = row?.pending_photo_path;
+  return v != null && String(v).trim() ? String(v).trim() : null;
+}
+
+export function setPendingPhotoPath(db: Db, sessionId: string, relativePath: string): void {
+  db.prepare(`UPDATE run_sessions SET pending_photo_path = ? WHERE id = ?`).run(relativePath, sessionId);
+}
+
+export function clearPendingPhotoPath(db: Db, sessionId: string): void {
+  db.prepare(`UPDATE run_sessions SET pending_photo_path = NULL WHERE id = ?`).run(sessionId);
+}
+
 export function updateSessionResults(
   db: Db,
   sessionId: string,
@@ -281,8 +298,12 @@ export function setSessionStatus(
   } else if (status === 'queued') {
     db.prepare(`UPDATE run_sessions SET status = ?, startedAt = NULL WHERE id = ?`).run(status, sessionId);
   } else if (status === 'cancelled') {
+    const pendingRow = db
+      .prepare(`SELECT pending_photo_path FROM run_sessions WHERE id = ?`)
+      .get(sessionId) as { pending_photo_path?: string | null } | undefined;
+    unlinkRelative(pendingRow?.pending_photo_path ?? undefined);
     db.prepare(`
-      UPDATE run_sessions SET status = ?, startedAt = NULL, finishedAt = NULL, resultTime = NULL, resultDistance = NULL
+      UPDATE run_sessions SET status = ?, startedAt = NULL, finishedAt = NULL, resultTime = NULL, resultDistance = NULL, pending_photo_path = NULL
       WHERE id = ?
     `).run(status, sessionId);
   } else {

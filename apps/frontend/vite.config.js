@@ -1,10 +1,25 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { lanQrPlugin } from './vite-plugin-lan-qr';
 var __dirname = path.dirname(fileURLToPath(import.meta.url));
+function readRootVersion() {
+    try {
+        var pkgPath = path.resolve(__dirname, '../../package.json');
+        var pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+        return typeof pkg.version === 'string' ? pkg.version : '0.0.0';
+    }
+    catch (_a) {
+        return '0.0.0';
+    }
+}
+var rootVersion = readRootVersion();
 export default defineConfig({
+    define: {
+        'import.meta.env.VITE_APP_VERSION': JSON.stringify(rootVersion),
+    },
     plugins: [react(), lanQrPlugin()],
     resolve: {
         alias: {

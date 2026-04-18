@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../../api/client';
+import { APP_VERSION } from '../../appVersion';
 
 export function AdminLayout({
   title,
@@ -8,6 +11,22 @@ export function AdminLayout({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const [apiVersion, setApiVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api
+      .getApiVersion()
+      .then((v) => {
+        if (!cancelled) setApiVersion(v.version);
+      })
+      .catch(() => {
+        if (!cancelled) setApiVersion(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const exit = () => {
     sessionStorage.removeItem('adminPin');
@@ -47,6 +66,15 @@ export function AdminLayout({
         </nav>
       </header>
       {children}
+      <footer style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid #2a2a2a', fontSize: 12, color: '#666' }}>
+        Версия киоска (сборка): {APP_VERSION}
+        {apiVersion != null ? (
+          <>
+            {' '}
+            · API: {apiVersion}
+          </>
+        ) : null}
+      </footer>
     </div>
   );
 }

@@ -22,6 +22,7 @@ export function runMigrations(db: Db): void {
   migrateRemoveTestModeSetting(db);
   migrateIntegrationInfoMessagesSetting(db);
   migrateGlobalQueueV2(db);
+  migrateRunVerificationPhotos(db);
 }
 
 function migrateIntegrationInfoMessagesSetting(db: Db): void {
@@ -237,6 +238,17 @@ function dedupeMultipleRunningSessions(db: Db): void {
   for (let i = 1; i < rows.length; i++) {
     if (rows[i].id === keep) continue;
     db.prepare(`UPDATE run_sessions SET status = 'queued', startedAt = NULL WHERE id = ?`).run(rows[i].id);
+  }
+}
+
+function migrateRunVerificationPhotos(db: Db): void {
+  const rsCols = tableColumns(db, 'run_sessions');
+  if (rsCols.size && !rsCols.has('pending_photo_path')) {
+    db.exec(`ALTER TABLE run_sessions ADD COLUMN pending_photo_path TEXT`);
+  }
+  const runCols = tableColumns(db, 'runs');
+  if (runCols.size && !runCols.has('verification_photo_path')) {
+    db.exec(`ALTER TABLE runs ADD COLUMN verification_photo_path TEXT`);
   }
 }
 

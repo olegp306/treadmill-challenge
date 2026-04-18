@@ -11,6 +11,8 @@ import runRoutes from './routes/run.js';
 import adminRoutes from './routes/admin.js';
 import eventsRoutes from './routes/events.js';
 import devQueueControlRoutes from './routes/devQueueControl.js';
+import runPhotoRoutes from './routes/runPhoto.js';
+import { getAppVersion } from './version.js';
 import { registerTouchDesignerOscRunResultHandler } from './integrations/touchdesigner/oscTouchDesignerAck.js';
 import { touchDesignerAdapter } from './integrations/touchdesigner/adapter.js';
 import { submitRunSessionResult } from './services/runResultService.js';
@@ -42,7 +44,11 @@ async function main() {
     });
   });
 
-  const app = Fastify({ logger: true });
+  const app = Fastify({
+    logger: true,
+    /** Base64 JPEG for `/api/run-session/:id/start-photo` can exceed default 1 MiB. */
+    bodyLimit: 10 * 1024 * 1024,
+  });
 
   const corsOrigin =
     process.env.NODE_ENV === 'production'
@@ -61,11 +67,16 @@ async function main() {
   await app.register(runResultRoutes);
   await app.register(touchdesignerRoutes);
   await app.register(runRoutes);
+  await app.register(runPhotoRoutes);
   await app.register(eventsRoutes);
   await app.register(adminRoutes);
   await app.register(devQueueControlRoutes);
 
   app.get('/health', async () => ({ status: 'ok' }));
+  app.get('/api/version', async () => ({
+    name: 'treadmill-challenge',
+    version: getAppVersion(),
+  }));
 
   await app.listen({ port: PORT, host: HOST });
 

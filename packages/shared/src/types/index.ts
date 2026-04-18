@@ -30,6 +30,8 @@ export interface Run {
   distance: number; // meters
   speed: number; // e.g. km/h
   createdAt: string; // ISO date string
+  /** Relative path under server `data/` when a verification photo was saved (admin fraud checks). */
+  verificationPhotoPath?: string | null;
 }
 
 export type { RunSession, RunSessionStatus } from './run.js';

@@ -22,6 +22,7 @@ export default function AdminCompetitionPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [editRun, setEditRun] = useState<{ runId: string; resultTime: string; distance: string } | null>(null);
+  const [verificationPhoto, setVerificationPhoto] = useState<{ runId: string; url: string } | null>(null);
 
   const loadDetail = useCallback(async () => {
     if (!id) return;
@@ -51,6 +52,12 @@ export default function AdminCompetitionPage() {
     const t = await api.adminTdStatus();
     setTd(t);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (verificationPhoto?.url) URL.revokeObjectURL(verificationPhoto.url);
+    };
+  }, [verificationPhoto?.url]);
 
   useEffect(() => {
     if (!id) return;
@@ -246,6 +253,27 @@ export default function AdminCompetitionPage() {
                 <span style={{ color: '#888' }}>
                   {row.resultTime.toFixed(2)} c · {Math.round(row.distance)} м
                 </span>
+                {row.verificationPhotoAvailable ? (
+                  <button
+                    type="button"
+                    style={{ ...smallBtn, borderColor: '#3fb950' }}
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          const blob = await api.adminGetRunVerificationPhotoBlob(row.runId);
+                          setVerificationPhoto((prev) => {
+                            if (prev?.url) URL.revokeObjectURL(prev.url);
+                            return { runId: row.runId, url: URL.createObjectURL(blob) };
+                          });
+                        } catch (e) {
+                          setError(e instanceof Error ? e.message : 'Не удалось загрузить фото');
+                        }
+                      })();
+                    }}
+                  >
+                    Фото
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   style={smallBtn}
@@ -271,6 +299,53 @@ export default function AdminCompetitionPage() {
             </div>
           ))}
           {leaderboard.length === 0 && <p style={{ color: '#666' }}>Нет результатов</p>}
+
+          {verificationPhoto ? (
+            <div
+              role="dialog"
+              aria-modal
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.75)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+                padding: 16,
+              }}
+              onClick={() => {
+                setVerificationPhoto((prev) => {
+                  if (prev?.url) URL.revokeObjectURL(prev.url);
+                  return null;
+                });
+              }}
+            >
+              <div
+                style={{ maxWidth: 'min(920px, 100%)', maxHeight: '90vh' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p style={{ margin: '0 0 8px', color: '#ccc' }}>Фото в начале забега (проверка)</p>
+                <img
+                  src={verificationPhoto.url}
+                  alt="Проверочное фото участника"
+                  style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 8, display: 'block' }}
+                />
+                <button
+                  type="button"
+                  style={{ ...smallBtn, marginTop: 12, minHeight: 48 }}
+                  onClick={() => {
+                    setVerificationPhoto((prev) => {
+                      if (prev?.url) URL.revokeObjectURL(prev.url);
+                      return null;
+                    });
+                  }}
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {editRun && (
             <div style={{ marginTop: 16, padding: 16, background: '#1a1a1a', borderRadius: 10 }}>

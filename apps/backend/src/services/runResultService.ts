@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { getDb, participants, runs, runSessions } from '../db/index.js';
+import { movePendingToFinal, unlinkRelative } from './runPhotoStorage.js';
 import type { RunSessionResultDto } from '@treadmill-challenge/shared';
 import { getRunTypeById, type RunTypeId } from '@treadmill-challenge/shared';
 import { runs as runsDb } from '../db/index.js';
@@ -82,6 +83,35 @@ export async function submitRunSessionResult(
     dto.distance,
     speed
   );
+
+  const pendingPhoto = runSessions.getPendingPhotoPath(db, session.id);
+  if (pendingPhoto) {
+    try {
+      const finalRel = movePendingToFinal(pendingPhoto, runId);
+      runs.setVerificationPhotoPath(db, runId, finalRel);
+      runSessions.clearPendingPhotoPath(db, session.id);
+      log?.info?.({
+        msg: 'verification_photo_persisted_with_result',
+        runSessionId: session.id,
+        runId,
+        participantId: session.participantId,
+        verificationPhotoPath: finalRel,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      log?.warn?.({
+        msg: 'verification_photo_finalize_failed',
+        runSessionId: session.id,
+        runId,
+        participantId: session.participantId,
+        pendingPhoto,
+        error: msg,
+      });
+      unlinkRelative(pendingPhoto);
+      runSessions.clearPendingPhotoPath(db, session.id);
+    }
+  }
+
   runSessions.updateSessionResults(db, session.id, dto.resultTime, dto.distance);
   runSessions.renumberGlobalQueuedSessions(db);
 

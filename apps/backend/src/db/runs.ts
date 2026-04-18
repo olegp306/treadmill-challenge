@@ -11,6 +11,10 @@ function rowToRun(row: Record<string, unknown>): Run {
     distance: Number(row.distance),
     speed: Number(row.speed),
     createdAt: row.createdAt as string,
+    verificationPhotoPath:
+      row.verification_photo_path != null && String(row.verification_photo_path).trim()
+        ? String(row.verification_photo_path)
+        : null,
   };
 }
 
@@ -34,7 +38,11 @@ export function createRun(
     INSERT INTO runs (id, participantId, competitionId, runSessionId, resultTime, distance, speed, createdAt)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, participantId, competitionId, runSessionId, resultTime, distance, speed, createdAt);
-  return { id, participantId, competitionId, runSessionId, resultTime, distance, speed, createdAt };
+  return { id, participantId, competitionId, runSessionId, resultTime, distance, speed, createdAt, verificationPhotoPath: null };
+}
+
+export function setVerificationPhotoPath(db: Db, runId: string, relativePath: string): void {
+  db.prepare(`UPDATE runs SET verification_photo_path = ? WHERE id = ?`).run(relativePath, runId);
 }
 
 export function updateRunMetrics(
@@ -103,6 +111,7 @@ export function getLeaderboardForCompetition(db: Db, competitionId: string, runT
     WITH ranked AS (
       SELECT
         r.id, r.participantId, r.competitionId, r.runSessionId, r.resultTime, r.distance, r.speed, r.createdAt,
+        r.verification_photo_path,
         TRIM(COALESCE(p.firstName, '') || ' ' || COALESCE(p.lastName, '')) as participantName,
         p.phone as phone,
         ROW_NUMBER() OVER (
@@ -113,7 +122,7 @@ export function getLeaderboardForCompetition(db: Db, competitionId: string, runT
       JOIN participants p ON p.id = r.participantId
       WHERE r.competitionId = ?
     )
-    SELECT id, participantId, competitionId, runSessionId, resultTime, distance, speed, createdAt, participantName
+    SELECT id, participantId, competitionId, runSessionId, resultTime, distance, speed, createdAt, verification_photo_path, participantName
     FROM ranked
     WHERE phonePickRank = 1
     ORDER BY ${order}, createdAt ASC, id ASC
