@@ -12,11 +12,13 @@ function CompetitionCard({
   busy,
   onPauseToggle,
   onStopAndStart,
+  onOpenLeaderPhoto,
 }: {
   slot: Slot;
   busy: boolean;
   onPauseToggle: () => void;
   onStopAndStart: () => void;
+  onOpenLeaderPhoto: (runSessionId: string) => void;
 }) {
   const comp = slot.competition;
   const hasComp = !!comp;
@@ -60,6 +62,27 @@ function CompetitionCard({
             <span style={{ color: '#888' }}>
               ({slot.leader.resultTime.toFixed(1)} c / {Math.round(slot.leader.distance)} м)
             </span>
+            {slot.leader.runSessionId && slot.leader.verificationPhotoAvailable ? (
+              <button
+                type="button"
+                onClick={() => onOpenLeaderPhoto(slot.leader!.runSessionId!)}
+                style={{
+                  marginLeft: 8,
+                  minHeight: 32,
+                  padding: '0 10px',
+                  fontSize: 13,
+                  borderRadius: 8,
+                  border: '1px solid #3fb950',
+                  background: '#132a18',
+                  color: '#b4f0c4',
+                  cursor: 'pointer',
+                }}
+              >
+                Фото забега
+              </button>
+            ) : (
+              <span style={{ marginLeft: 8, fontSize: 12, color: '#555' }}>Нет фото</span>
+            )}
           </>
         ) : (
           <span style={{ color: '#666' }}>—</span>
@@ -108,6 +131,27 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<{ runSessionId: string; url: string } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (photoPreview?.url) URL.revokeObjectURL(photoPreview.url);
+    };
+  }, [photoPreview?.url]);
+
+  const openLeaderPhoto = useCallback((runSessionId: string) => {
+    void (async () => {
+      try {
+        const blob = await api.adminGetRunSessionVerificationPhotoBlob(runSessionId);
+        setPhotoPreview((prev) => {
+          if (prev?.url) URL.revokeObjectURL(prev.url);
+          return { runSessionId, url: URL.createObjectURL(blob) };
+        });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Не удалось загрузить фото');
+      }
+    })();
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -181,6 +225,7 @@ export default function AdminDashboardPage() {
               key={id}
               slot={slot}
               busy={!!busy}
+              onOpenLeaderPhoto={openLeaderPhoto}
               onPauseToggle={() => {
                 if (!compId) return;
                 const next = !slot.queuePaused;
@@ -211,6 +256,50 @@ export default function AdminDashboardPage() {
           {renderRow('Женщины', femaleSlots)}
         </>
       )}
+      {photoPreview ? (
+        <div
+          role="dialog"
+          aria-modal
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+          }}
+          onClick={() => {
+            setPhotoPreview((p) => {
+              if (p?.url) URL.revokeObjectURL(p.url);
+              return null;
+            });
+          }}
+        >
+          <div style={{ maxWidth: 'min(920px, 100%)' }} onClick={(e) => e.stopPropagation()}>
+            <p style={{ margin: '0 0 8px', color: '#ccc' }}>Фото забега (runSessionId)</p>
+            <p style={{ margin: '0 0 8px', fontSize: 12, color: '#888', wordBreak: 'break-all' }}>{photoPreview.runSessionId}</p>
+            <img
+              src={photoPreview.url}
+              alt=""
+              style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 8, display: 'block' }}
+            />
+            <button
+              type="button"
+              style={{ ...touchBtn(false, false), marginTop: 12 }}
+              onClick={() => {
+                setPhotoPreview((p) => {
+                  if (p?.url) URL.revokeObjectURL(p.url);
+                  return null;
+                });
+              }}
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      ) : null}
     </AdminLayout>
   );
 }

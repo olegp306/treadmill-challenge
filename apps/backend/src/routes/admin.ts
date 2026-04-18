@@ -23,6 +23,10 @@ import {
   stopAndStartNewCompetition,
 } from '../services/competitionService.js';
 import { absoluteFromRelative } from '../services/runPhotoStorage.js';
+import {
+  isVerificationPhotoAvailableForRunSession,
+  readVerificationPhotoBufferForRunSession,
+} from '../services/runSessionVerificationAdmin.js';
 import { getAppVersion } from '../version.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const x = request.headers['x-admin-pin'];
@@ -95,6 +99,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
             ? competitions.competitionRowCount(db, comp.id)
             : { queued: 0, running: 0, finished: 0 };
           const lb = comp ? runs.getTopLeaderboardEntryForCompetition(db, comp.id, runTypeId) : null;
+          const leaderRunSessionId = lb?.run.runSessionId?.trim() ? lb.run.runSessionId.trim() : null;
           slots.push({
             runTypeId,
             sex,
@@ -107,6 +112,10 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
                   resultTime: lb.run.resultTime,
                   distance: lb.run.distance,
                   runId: lb.run.id,
+                  runSessionId: leaderRunSessionId,
+                  verificationPhotoAvailable:
+                    leaderRunSessionId != null &&
+                    isVerificationPhotoAvailableForRunSession(db, leaderRunSessionId),
                 }
               : null,
           });
@@ -223,6 +232,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
           participantId: r.runSession.participantId,
           participantName: r.participantName,
           phone: r.phone,
+          verificationPhotoAvailable: isVerificationPhotoAvailableForRunSession(db, r.runSession.id),
         })),
       });
     });
@@ -244,9 +254,33 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
           runId: e.run.id,
           runSessionId: e.run.runSessionId,
           createdAt: e.run.createdAt,
-          verificationPhotoAvailable: Boolean(e.run.verificationPhotoPath),
+          verificationPhotoAvailable:
+            e.run.runSessionId != null
+              ? isVerificationPhotoAvailableForRunSession(db, e.run.runSessionId)
+              : Boolean(e.run.verificationPhotoPath),
         })),
       });
+    });
+
+    scoped.get('/api/admin/run-sessions/:runSessionId/verification-photo', async (request, reply) => {
+      const { runSessionId } = request.params as { runSessionId: string };
+      if (!runSessionId?.trim()) return reply.status(400).send({ error: 'runSessionId required' });
+      const db = getDb();
+      const session = runSessions.getRunSessionById(db, runSessionId.trim());
+      if (!session) {
+        return reply.status(404).send({ error: 'Run session not found' });
+      }
+      const buf = readVerificationPhotoBufferForRunSession(db, runSessionId.trim());
+      if (!buf) {
+        return reply.status(404).send({ error: 'Photo not found' });
+      }
+      request.log.info({
+        msg: 'admin_run_session_verification_photo_served',
+        runSessionId: runSessionId.trim(),
+        participantId: session.participantId,
+        bytes: buf.length,
+      });
+      return reply.type('image/jpeg').send(buf);
     });
 
     scoped.get('/api/admin/runs/:runId/verification-photo', async (request, reply) => {
@@ -282,11 +316,49 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const { id } = request.params as { id: string };
       const comp = competitions.getCompetitionById(db, id);
       if (!comp) return reply.status(404).send({ error: 'Not found' });
+      const sessionRows = db
+        .prepare(
+          `SELECT id, participantId, status, queueNumber, createdAt FROM run_sessions WHERE competitionId = ? ORDER BY createdAt ASC, id ASC`
+        )
+        .all(id) as Array<{
+        id: string;
+        participantId: string;
+        status: string;
+        queueNumber: number;
+        createdAt: string;
+      }>;
+      const sessionsByPid = new Map<string, typeof sessionRows>();
+      for (const s of sessionRows) {
+        const list = sessionsByPid.get(s.participantId) ?? [];
+        list.push(s);
+        sessionsByPid.set(s.participantId, list);
+      }
       const ids = runSessions.listParticipantIdsForCompetition(db, id);
-      const out = [];
+      const out: Array<
+        ReturnType<typeof participants.getParticipantById> & {
+          runSessions: Array<{
+            runSessionId: string;
+            status: string;
+            queueNumber: number;
+            createdAt: string;
+            verificationPhotoAvailable: boolean;
+          }>;
+        }
+      > = [];
       for (const pid of ids) {
         const p = participants.getParticipantById(db, pid);
-        if (p) out.push(p);
+        if (!p) continue;
+        const sess = sessionsByPid.get(pid) ?? [];
+        out.push({
+          ...p,
+          runSessions: sess.map((s) => ({
+            runSessionId: s.id,
+            status: s.status,
+            queueNumber: s.queueNumber,
+            createdAt: s.createdAt,
+            verificationPhotoAvailable: isVerificationPhotoAvailableForRunSession(db, s.id),
+          })),
+        });
       }
       return reply.send({ participants: out });
     });

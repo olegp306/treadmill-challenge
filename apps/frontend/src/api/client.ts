@@ -303,6 +303,8 @@ export const api = {
           resultTime: number;
           distance: number;
           runId: string;
+          runSessionId: string | null;
+          verificationPhotoAvailable: boolean;
         } | null;
       }>;
     }>('/admin/dashboard');
@@ -369,6 +371,7 @@ export const api = {
         participantId: string;
         participantName: string;
         phone: string;
+        verificationPhotoAvailable: boolean;
       }>;
     }>(`/admin/competitions/${id}/queue`);
   },
@@ -399,6 +402,13 @@ export const api = {
         phone: string;
         sex: Gender;
         createdAt: string;
+        runSessions: Array<{
+          runSessionId: string;
+          status: string;
+          queueNumber: number;
+          createdAt: string;
+          verificationPhotoAvailable: boolean;
+        }>;
       }>;
     }>(`/admin/competitions/${id}/participants`);
   },
@@ -536,6 +546,21 @@ export const api = {
     const res = await fetch(`${API_BASE}/admin/runs/${encodeURIComponent(runId)}/verification-photo`, {
       headers: { ...adminHeaders() },
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? `Request failed: ${res.status}`);
+    }
+    return res.blob();
+  },
+
+  /** Prefer this: photo is always tied to a specific run session (pending or finished). */
+  async adminGetRunSessionVerificationPhotoBlob(runSessionId: string): Promise<Blob> {
+    const res = await fetch(
+      `${API_BASE}/admin/run-sessions/${encodeURIComponent(runSessionId)}/verification-photo`,
+      {
+        headers: { ...adminHeaders() },
+      }
+    );
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error((data as { error?: string }).error ?? `Request failed: ${res.status}`);

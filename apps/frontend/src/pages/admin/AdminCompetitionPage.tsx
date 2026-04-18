@@ -22,7 +22,7 @@ export default function AdminCompetitionPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [editRun, setEditRun] = useState<{ runId: string; resultTime: string; distance: string } | null>(null);
-  const [verificationPhoto, setVerificationPhoto] = useState<{ runId: string; url: string } | null>(null);
+  const [verificationPhoto, setVerificationPhoto] = useState<{ runSessionId: string; url: string } | null>(null);
 
   const loadDetail = useCallback(async () => {
     if (!id) return;
@@ -58,6 +58,20 @@ export default function AdminCompetitionPage() {
       if (verificationPhoto?.url) URL.revokeObjectURL(verificationPhoto.url);
     };
   }, [verificationPhoto?.url]);
+
+  const openVerificationPhoto = (runSessionId: string) => {
+    void (async () => {
+      try {
+        const blob = await api.adminGetRunSessionVerificationPhotoBlob(runSessionId);
+        setVerificationPhoto((prev) => {
+          if (prev?.url) URL.revokeObjectURL(prev.url);
+          return { runSessionId, url: URL.createObjectURL(blob) };
+        });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Не удалось загрузить фото');
+      }
+    })();
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -165,6 +179,19 @@ export default function AdminCompetitionPage() {
             >
               <span style={{ minWidth: 36, fontWeight: 600 }}>#{row.queueNumber}</span>
               <span style={{ flex: '1 1 160px' }}>{row.participantName}</span>
+              <span style={{ color: '#888', fontSize: 13, maxWidth: 120 }}>
+                {row.verificationPhotoAvailable ? (
+                  <button
+                    type="button"
+                    style={{ ...smallBtn, borderColor: '#3fb950', minHeight: 36, fontSize: 13 }}
+                    onClick={() => openVerificationPhoto(row.runSessionId)}
+                  >
+                    Фото
+                  </button>
+                ) : (
+                  <span style={{ color: '#555' }}>Нет фото</span>
+                )}
+              </span>
               <span style={{ color: '#888', fontSize: 14 }}>{row.status}</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 <button
@@ -253,27 +280,17 @@ export default function AdminCompetitionPage() {
                 <span style={{ color: '#888' }}>
                   {row.resultTime.toFixed(2)} c · {Math.round(row.distance)} м
                 </span>
-                {row.verificationPhotoAvailable ? (
+                {row.verificationPhotoAvailable && row.runSessionId ? (
                   <button
                     type="button"
                     style={{ ...smallBtn, borderColor: '#3fb950' }}
-                    onClick={() => {
-                      void (async () => {
-                        try {
-                          const blob = await api.adminGetRunVerificationPhotoBlob(row.runId);
-                          setVerificationPhoto((prev) => {
-                            if (prev?.url) URL.revokeObjectURL(prev.url);
-                            return { runId: row.runId, url: URL.createObjectURL(blob) };
-                          });
-                        } catch (e) {
-                          setError(e instanceof Error ? e.message : 'Не удалось загрузить фото');
-                        }
-                      })();
-                    }}
+                    onClick={() => openVerificationPhoto(row.runSessionId!)}
                   >
                     Фото
                   </button>
-                ) : null}
+                ) : (
+                  <span style={{ fontSize: 12, color: '#555', minWidth: 56 }}>Нет фото</span>
+                )}
                 <button
                   type="button"
                   style={smallBtn}
@@ -325,7 +342,12 @@ export default function AdminCompetitionPage() {
                 style={{ maxWidth: 'min(920px, 100%)', maxHeight: '90vh' }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <p style={{ margin: '0 0 8px', color: '#ccc' }}>Фото в начале забега (проверка)</p>
+                <p style={{ margin: '0 0 8px', color: '#ccc' }}>
+                  Фото забега (runSessionId)
+                </p>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#888', wordBreak: 'break-all' }}>
+                  {verificationPhoto.runSessionId}
+                </p>
                 <img
                   src={verificationPhoto.url}
                   alt="Проверочное фото участника"
@@ -396,6 +418,7 @@ export default function AdminCompetitionPage() {
               participant={p}
               busy={!!busy}
               onError={setError}
+              onOpenVerificationPhoto={openVerificationPhoto}
               onRefresh={async () => {
                 await loadPart();
                 await loadQueue();
@@ -455,6 +478,7 @@ function ParticipantRow({
   participant,
   busy,
   onError,
+  onOpenVerificationPhoto,
   onRefresh,
 }: {
   competitionId: string;
@@ -464,9 +488,17 @@ function ParticipantRow({
     lastName: string;
     phone: string;
     sex: string;
+    runSessions?: Array<{
+      runSessionId: string;
+      status: string;
+      queueNumber: number;
+      createdAt: string;
+      verificationPhotoAvailable: boolean;
+    }>;
   };
   busy: boolean;
   onError: (s: string | null) => void;
+  onOpenVerificationPhoto: (runSessionId: string) => void;
   onRefresh: () => Promise<void>;
 }) {
   const [edit, setEdit] = useState(false);
@@ -494,6 +526,40 @@ function ParticipantRow({
           <p style={{ margin: '0 0 8px', color: '#888', fontSize: 14 }}>
             {participant.phone} · {participant.sex}
           </p>
+          {participant.runSessions && participant.runSessions.length > 0 ? (
+            <div style={{ margin: '10px 0', padding: 10, background: '#111', borderRadius: 8, border: '1px solid #2a2a2a' }}>
+              <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Забеги в этом соревновании (каждый — свой runSessionId):</div>
+              {participant.runSessions.map((s) => (
+                <div
+                  key={s.runSessionId}
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 6,
+                    fontSize: 13,
+                  }}
+                >
+                  <span style={{ color: '#aaa' }}>
+                    {s.status} · #{s.queueNumber}
+                  </span>
+                  {s.verificationPhotoAvailable ? (
+                    <button
+                      type="button"
+                      style={{ ...smallBtn, borderColor: '#3fb950', minHeight: 34, fontSize: 13 }}
+                      onClick={() => onOpenVerificationPhoto(s.runSessionId)}
+                    >
+                      Фото
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: 12, color: '#555' }}>Нет фото</span>
+                  )}
+                  <code style={{ fontSize: 10, color: '#666', flex: '1 1 100%' }}>{s.runSessionId}</code>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <button type="button" style={smallBtn} disabled={busy} onClick={() => setEdit(true)}>
             Править
           </button>

@@ -111,6 +111,49 @@
 
 ---
 
+### 3.1. Фото проверки в начале забега (HTTP, опционально)
+
+**Зачем:** снимок участника в **начале** забега (пока сессия `running`), чтобы в админке проверять подмену пола / повторные заезды. Обычно фото отправляет **киоск** с фронт-камеры. Если у вас камера или скрипт на стороне TD / отдельного ПК — можно слать **тот же** запрос на бэкенд.
+
+**Условия:** у `runSession` статус **`running`**, в теле указан тот же **`participantId`**, что у сессии. Формат — **JPEG** (проверка по сигнатуре файла), размер тела до **~6 МБ** (на бэкенде лимит тела запроса 10 МБ).
+
+| Метод | URL |
+|-------|-----|
+| `POST` | `http://<HOST>:<PORT>/api/run-session/<runSessionId>/start-photo` |
+
+**Тело (JSON):**
+
+```json
+{
+  "participantId": "<uuid участника>",
+  "imageBase64": "<строка base64 JPEG или data URL вида data:image/jpeg;base64,...>"
+}
+```
+
+**Успех:** `201` и `{ "ok": true, "path": "photos/pending/<runSessionId>.jpg" }`.  
+Повторная отправка для той же сессии **перезаписывает** файл.
+
+**Пример `curl`** (подставьте свой хост, UUID и файл `shot.jpg`):
+
+```bash
+curl -sS -X POST "http://127.0.0.1:3001/api/run-session/00000000-0000-4000-8000-000000000001/start-photo" \
+  -H "Content-Type: application/json" \
+  -d "{\"participantId\":\"11111111-1111-4111-8111-111111111111\",\"imageBase64\":\"$(openssl base64 -A -in shot.jpg)\"}"
+```
+
+На Windows (PowerShell), из файла `shot.jpg`:
+
+```powershell
+$b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes("shot.jpg"))
+$body = @{ participantId = "11111111-1111-4111-8111-111111111111"; imageBase64 = $b64 } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3001/api/run-session/00000000-0000-4000-8000-000000000001/start-photo" `
+  -ContentType "application/json" -Body $body
+```
+
+Файл после финиша забега прикрепляется к записи результата автоматически (вместе с `POST /api/run-result`). В админке фото открывается из лидерборда соревнования.
+
+---
+
 ### 4. Финиш забега и запись результата
 
 **Когда:** дорожка/логика TD знает, что забег окончен.
@@ -175,8 +218,9 @@ http://localhost:5173/td/leaderboard/result?runSessionId=xxxxxxxx-xxxx-xxxx-xxxx
 1. Принимать **`/treadmill/start`** при регистрации (опционально для визуала).
 2. Принимать **`/treadmill/runSession`** — запускать сцену забега, запоминать `runSessionId`.
 3. Отправлять **`/treadmill/ack`** на `127.0.0.1:7001` (или иной хост/порт бэкенда) с тем же `runSessionId` и статусом `free` или `busy`.
-4. По окончании забега отправить **`POST /api/run-result`** (или защищённый `/api/touchdesigner/run-result`) с `runSessionId`, `resultTime`, `distance`.
-5. Для больших экранов вывести веб-клиент: **ожидание** — `/td/leaderboard/waiting`, **после забега** — `/td/leaderboard/result?runSessionId=...`.
+4. (Опционально) После перехода сессии в **`running`** — при необходимости отправить **`POST /api/run-session/.../start-photo`** с JPEG для проверки в админке (см. п. 3.1).
+5. По окончании забега отправить **`POST /api/run-result`** (или защищённый `/api/touchdesigner/run-result`) с `runSessionId`, `resultTime`, `distance`.
+6. Для больших экранов вывести веб-клиент: **ожидание** — `/td/leaderboard/waiting`, **после забега** — `/td/leaderboard/result?runSessionId=...`.
 
 ---
 
@@ -186,3 +230,4 @@ http://localhost:5173/td/leaderboard/result?runSessionId=xxxxxxxx-xxxx-xxxx-xxxx
 - Код OSC исходящий: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAdapter.ts`
 - Входящий ack/runState: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAck.ts`, разбор runState: `touchDesignerProtocolCompat.ts`
 - Обработка результата: `apps/backend/src/routes/runResult.ts`
+- Загрузка фото начала забега: `apps/backend/src/routes/runPhoto.ts`
