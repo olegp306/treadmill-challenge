@@ -68,6 +68,11 @@ export function clearLoggedRunSessionId(): void {
   sessionStorage.removeItem(RUN_SESSION_KEY);
 }
 
+export function clearLoggedParticipantId(): void {
+  if (typeof sessionStorage === 'undefined') return;
+  sessionStorage.removeItem(PARTICIPANT_KEY);
+}
+
 function readStoredParticipantId(): string | undefined {
   if (typeof sessionStorage === 'undefined') return undefined;
   return sessionStorage.getItem(PARTICIPANT_KEY) ?? undefined;

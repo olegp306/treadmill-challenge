@@ -8,9 +8,8 @@ import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
 import { AdminPinModal } from '../features/admin/AdminPinModal';
 import {
+  clearLoggedParticipantId,
   clearLoggedRunSessionId,
-  getLoggedParticipantId,
-  getLoggedRunSessionId,
   logEvent,
 } from '../logging/logEvent';
 import { pluralizePeople } from '../utils/russianPlural';
@@ -163,67 +162,14 @@ export default function Main() {
         return;
       }
 
-      const resumeStoredRunSessionIfActive = async (): Promise<boolean> => {
-        const storedRunSessionId = getLoggedRunSessionId();
-        if (!storedRunSessionId) return false;
-        try {
-          const session = await api.getRunSessionState(storedRunSessionId);
-          if (session.status === 'queued' || session.status === 'running') {
-            const pos = session.queuePosition ?? session.queueNumber ?? 1;
-            logEvent(
-              'landing_resume_active_run_session',
-              { runSessionId: session.runSessionId, status: session.status },
-              {
-                participantId: session.participantId,
-                runSessionId: session.runSessionId,
-                readableMessage:
-                  'На главной нажали «Принять участие» при активном забеге — возврат в очередь',
-              }
-            );
-            navigate('/run/queue', {
-              state: {
-                participantId: session.participantId,
-                runSessionId: session.runSessionId,
-                runTypeId: session.runTypeId,
-                position: pos,
-                participantSex: 'male',
-                demoMode: false,
-                initialSessionStatus: session.status === 'running' ? 'running' : 'queued',
-                initialOtherSessionRunning: session.otherSessionRunning,
-              },
-            });
-            return true;
-          }
-        } catch {
-          // Stale id or network error — allow a fresh participation attempt.
-        }
-        clearLoggedRunSessionId();
-        return false;
-      };
-
-      const resumed = await resumeStoredRunSessionIfActive();
-      if (resumed) return;
-
-      const loggedParticipantId = getLoggedParticipantId();
-      if (loggedParticipantId) {
-        logEvent(
-          'landing_skip_queue_full_already_registered',
-          {},
-          {
-            participantId: loggedParticipantId,
-            readableMessage:
-              'На главной нажали «Принять участие» — участник уже зарегистрирован, переход к выбору забега',
-          }
-        );
-        navigate('/run-select', {
-          state: {
-            participantId: loggedParticipantId,
-            participantFirstName: '',
-            participantSex: 'male',
-          },
-        });
-        return;
-      }
+      /**
+       * Пока в глобальном пуле есть место (total < max), с главной всегда начинаем
+       * регистрацию заново — не `/run/select` («Привет, участник!»). Старые id в
+       * sessionStorage от прошлого участника / после экрана переполнения не должны
+       * подставляться без нового прохода анкеты.
+       */
+      clearLoggedRunSessionId();
+      clearLoggedParticipantId();
 
       logEvent(
         'landing_click_register',
@@ -552,7 +498,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'stretch',
     gap: w(31),
-    marginTop: h(224),
+    marginTop: h(184),
     width: '100%',
   },
   headline: {

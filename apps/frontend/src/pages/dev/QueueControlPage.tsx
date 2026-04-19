@@ -21,31 +21,26 @@ const btnBase: CSSProperties = {
   cursor: 'pointer',
 };
 
-const btnDisabledGhost: CSSProperties = {
-  ...btnBase,
-  opacity: 0.45,
-  cursor: 'not-allowed',
-  background: '#e0e0e0',
-  color: '#757575',
-  border: '1px solid #bdbdbd',
-};
-
-const tableStyle: CSSProperties = {
-  width: '100%',
-  borderCollapse: 'collapse',
-  fontSize: 14,
-};
-
-const thtd: CSSProperties = {
-  border: '1px solid #ccc',
-  padding: '6px 8px',
-  textAlign: 'left',
+const mutedFooter: CSSProperties = {
+  marginTop: 36,
+  paddingTop: 24,
+  borderTop: '1px solid #ddd',
+  color: '#555',
+  fontSize: 13,
+  lineHeight: 1.5,
 };
 
 function absoluteResultLeaderboardUrl(runSessionId: string): string {
   const path = tdLeaderboardResultPath(runSessionId);
   if (typeof window === 'undefined') return path;
   return `${window.location.origin}${path}`;
+}
+
+function genderLabel(g: string): string {
+  const x = g.toLowerCase();
+  if (x === 'male') return 'мужской слот';
+  if (x === 'female') return 'женский слот';
+  return g;
 }
 
 export default function QueueControlPage() {
@@ -96,34 +91,92 @@ export default function QueueControlPage() {
 
   const showPromote = Boolean(state && !state.running && state.queued.length > 0);
   const showRunnerActions = Boolean(state?.running);
+  const running = state?.running ?? null;
+
+  const factChip: CSSProperties = {
+    display: 'inline-block',
+    marginRight: 10,
+    marginBottom: 8,
+    padding: '6px 12px',
+    fontSize: 14,
+    fontWeight: 600,
+    borderRadius: 8,
+    background: '#fff',
+    border: '1px solid #90caf9',
+    color: '#0d47a1',
+  };
 
   return (
     <div style={box}>
-      <h1 style={{ marginTop: 0 }}>Queue control (dev)</h1>
-      <p style={{ color: '#444', fontSize: 14, lineHeight: 1.45 }}>
-        Управление глобальной очередью: URL <code>/dev/queue-control</code> (в меню киоска не показывается).
-        Работает и на dev, и на production при том же origin, что и API (<code>/api/dev/queue-control/*</code>).
-      </p>
+      <h1 style={{ marginTop: 0, marginBottom: 8 }}>Queue control (dev)</h1>
+
       {error && (
         <p style={{ color: '#b00020', marginBottom: 16 }} role="alert">
           {error}
         </p>
       )}
-      <p style={{ fontSize: 13, color: '#666' }}>
+
+      <section style={{ marginBottom: 24 }} aria-label="Действия оператора">
+        <h2 style={{ fontSize: 18, margin: '0 0 12px', color: '#111' }}>Действия</h2>
+        {showPromote && (
+          <button
+            type="button"
+            style={{ ...btnBase, background: '#6a1b9a', color: '#fff', border: 'none' }}
+            disabled={busy}
+            onClick={() => void runAction(() => api.devQueueControlPromoteNext())}
+          >
+            Поставить следующего на дорожку
+          </button>
+        )}
+        <button
+          type="button"
+          style={{ ...btnBase, background: '#1a7f37', color: '#fff', border: 'none' }}
+          disabled={busy || !showRunnerActions}
+          onClick={() => void runAction(() => api.devQueueControlFinishCurrent())}
+        >
+          Добежал (фейковые результаты)
+        </button>
+        <button
+          type="button"
+          style={{ ...btnBase, background: '#0d47a1', color: '#fff', border: 'none' }}
+          disabled={busy || !showRunnerActions}
+          onClick={() => void runAction(() => api.devQueueControlMoveCurrentToEnd())}
+          title="Текущий забег → в конец FIFO; следующий из очереди стартует (если есть)"
+        >
+          Переставить текущего в конец очереди
+        </button>
+      </section>
+
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 16,
+          fontSize: 14,
+          color: '#333',
+        }}
+      >
         <button type="button" onClick={() => void load()} disabled={busy}>
           Обновить сейчас
         </button>
-      </p>
-      {state && (
-        <p style={{ fontSize: 14, color: '#333', marginBottom: 16 }} role="status">
-          Глобальный пул (в очереди + на дорожке):{' '}
-          <strong>
-            {state.activeSessionCount} / {state.maxGlobalQueueSize}
-          </strong>
-        </p>
-      )}
+        {state && (
+          <span role="status">
+            Пул (queued + running):{' '}
+            <strong>
+              {state.activeSessionCount} / {state.maxGlobalQueueSize}
+            </strong>
+            {state.queued.length > 0 ? (
+              <span style={{ color: '#666', marginLeft: 8 }}>
+                · в очереди: {state.queued.length}
+              </span>
+            ) : null}
+          </span>
+        )}
+      </div>
 
-      <h2>Сейчас на дорожке</h2>
+      <h2 style={{ fontSize: 18, marginBottom: 12 }}>Текущий runSession</h2>
       {!state && !error && <p>Загрузка…</p>}
       {lastKnownRunSessionId && (
         <div
@@ -136,24 +189,44 @@ export default function QueueControlPage() {
           }}
         >
           <p style={{ margin: '0 0 10px', fontSize: 13, color: '#0d47a1', fontWeight: 600 }}>
-            {state?.running
-              ? 'Текущий runSessionId'
-              : 'Последний runSessionId (сохранён после завершения — можно открыть result)'}
+            {running
+              ? 'Активный забег — runSessionId'
+              : 'Последний runSessionId (после завершения — можно открыть result)'}
           </p>
           <div
             style={{
               fontFamily: 'ui-monospace, monospace',
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: 600,
               lineHeight: 1.35,
               wordBreak: 'break-all',
               color: '#111',
-              marginBottom: 14,
+              marginBottom: 12,
               userSelect: 'all',
             }}
           >
             {lastKnownRunSessionId}
           </div>
+
+          {running ? (
+            <>
+              <div style={{ marginBottom: 12 }}>
+                <span style={factChip}>Формат: {running.runTypeName}</span>
+                <span style={factChip}>Пол: {genderLabel(String(running.gender))}</span>
+                <span style={{ ...factChip, borderColor: '#81c784', color: '#1b5e20', background: '#e8f5e9' }}>
+                  Статус: {running.status}
+                </span>
+              </div>
+              <p style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 600, color: '#1565c0' }}>
+                {running.firstName} {running.lastName}
+              </p>
+            </>
+          ) : (
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#555' }}>
+              Нет активного running — метаданные формата / пола недоступны до следующего старта.
+            </p>
+          )}
+
           <p style={{ margin: '0 0 6px', fontSize: 12, color: '#444' }}>Финальный leaderboard (TD / external)</p>
           <a
             href={tdLeaderboardResultPath(lastKnownRunSessionId)}
@@ -161,7 +234,7 @@ export default function QueueControlPage() {
             rel="noreferrer"
             style={{
               display: 'block',
-              fontSize: 17,
+              fontSize: 15,
               fontFamily: 'ui-monospace, monospace',
               wordBreak: 'break-all',
               color: '#0d47a1',
@@ -210,127 +283,17 @@ export default function QueueControlPage() {
           </div>
         </div>
       )}
-      {state && !state.running && <p>Никто не бежит.</p>}
-      {state?.running && (
-        <table style={tableStyle}>
-          <tbody>
-            <tr>
-              <th style={thtd}>Имя</th>
-              <td style={thtd}>
-                {state.running.firstName} {state.running.lastName}
-              </td>
-            </tr>
-            <tr>
-              <th style={thtd}>runSessionId</th>
-              <td style={{ ...thtd, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 16 }}>
-                <span style={{ fontSize: 18, fontWeight: 600 }}>{state.running.runSessionId}</span>
-                <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>См. также крупный блок и ссылку на result выше.</div>
-              </td>
-            </tr>
-            <tr>
-              <th style={thtd}>Формат</th>
-              <td style={thtd}>{state.running.runTypeName}</td>
-            </tr>
-            <tr>
-              <th style={thtd}>Пол (слот)</th>
-              <td style={thtd}>{state.running.gender}</td>
-            </tr>
-            <tr>
-              <th style={thtd}>Статус</th>
-              <td style={thtd}>{state.running.status}</td>
-            </tr>
-          </tbody>
-        </table>
+      {state && !state.running && !lastKnownRunSessionId && <p>Никто не бежит.</p>}
+      {state && !state.running && lastKnownRunSessionId && (
+        <p style={{ fontSize: 14, color: '#555' }}>Сейчас на дорожке никто не бежит.</p>
       )}
 
-      <h2>Глобальная очередь (queued)</h2>
-      {state && state.queued.length === 0 && <p>Очередь пуста.</p>}
-      {state && state.queued.length > 0 && (
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thtd}>Позиция</th>
-              <th style={thtd}>Участник</th>
-              <th style={thtd}>Формат</th>
-              <th style={thtd}>runSessionId</th>
-              <th style={thtd}>Действие</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.queued.map((q) => (
-              <tr key={q.runSessionId}>
-                <td style={thtd}>{q.position}</td>
-                <td style={thtd}>{q.participantName}</td>
-                <td style={thtd}>{q.runTypeName}</td>
-                <td style={{ ...thtd, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 11 }}>
-                  {q.runSessionId}
-                </td>
-                <td style={thtd}>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    title="Убрать из очереди без результата (cancel)"
-                    style={{
-                      padding: '6px 10px',
-                      fontSize: 13,
-                      cursor: busy ? 'not-allowed' : 'pointer',
-                      background: '#fff',
-                      border: '1px solid #c62828',
-                      color: '#c62828',
-                      borderRadius: 6,
-                    }}
-                    onClick={() =>
-                      void runAction(() => api.devQueueControlRemoveQueued(q.runSessionId))
-                    }
-                  >
-                    Удалить из очереди
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      <h2>Действия</h2>
-
-      {showPromote && (
-        <button
-          type="button"
-          style={{ ...btnBase, background: '#6a1b9a', color: '#fff', border: 'none' }}
-          disabled={busy}
-          onClick={() => void runAction(() => api.devQueueControlPromoteNext())}
-        >
-          Поставить следующего на дорожку
-        </button>
-      )}
-
-      <button
-        type="button"
-        style={{ ...btnBase, background: '#1a7f37', color: '#fff', border: 'none' }}
-        disabled={busy || !showRunnerActions}
-        onClick={() => void runAction(() => api.devQueueControlFinishCurrent())}
-      >
-        Добежал (фейковые результаты)
-      </button>
-      <button
-        type="button"
-        style={{ ...btnBase, background: '#0d47a1', color: '#fff', border: 'none' }}
-        disabled={busy || !showRunnerActions}
-        onClick={() => void runAction(() => api.devQueueControlMoveCurrentToEnd())}
-        title="Текущий забег → в конец FIFO; следующий из очереди стартует (если есть)"
-      >
-        Переставить текущего в конец очереди
-      </button>
-
-      <button
-        type="button"
-        style={btnDisabledGhost}
-        disabled
-        title="Пока не реализовано"
-      >
-        Перезапустить
-      </button>
+      <footer style={mutedFooter}>
+        <p style={{ marginTop: 0 }}>
+          Управление глобальной очередью: URL <code>/dev/queue-control</code> (в меню киоска не показывается).
+          Работает на том же origin, что и API — эндпоинты <code>/api/dev/queue-control/*</code>.
+        </p>
+      </footer>
     </div>
   );
 }
