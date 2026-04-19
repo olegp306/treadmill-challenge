@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { DEFAULT_MAX_GLOBAL_QUEUE_SIZE } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
 import { AdminLayout } from '../../features/admin/AdminLayout';
 
@@ -36,7 +37,7 @@ export default function AdminSettingsPage() {
         tdPort: settings.tdPort,
         tdAdapter: settings.tdAdapter,
         tdDemoMode: settings.tdDemoMode,
-        maxGlobalQueueSize: settings.maxGlobalQueueSize ?? settings.maxQueueSizePerRun ?? 3,
+        maxGlobalQueueSize: settings.maxGlobalQueueSize ?? settings.maxQueueSizePerRun ?? DEFAULT_MAX_GLOBAL_QUEUE_SIZE,
         eventTitle: settings.eventTitle,
         heartbeatIntervalMin: settings.heartbeatIntervalMin,
         showIntegrationInfoMessages: settings.showIntegrationInfoMessages,
@@ -137,11 +138,14 @@ export default function AdminSettingsPage() {
               type="number"
               min={1}
               max={500}
-              value={settings.maxGlobalQueueSize ?? settings.maxQueueSizePerRun ?? 3}
+              value={settings.maxGlobalQueueSize ?? settings.maxQueueSizePerRun ?? DEFAULT_MAX_GLOBAL_QUEUE_SIZE}
               onChange={(e) =>
                 setSettings({
                   ...settings,
-                  maxGlobalQueueSize: Math.max(1, Math.min(500, Number(e.target.value) || 3)),
+                  maxGlobalQueueSize: Math.max(
+                    1,
+                    Math.min(500, Number(e.target.value) || DEFAULT_MAX_GLOBAL_QUEUE_SIZE)
+                  ),
                 })
               }
               style={inp}

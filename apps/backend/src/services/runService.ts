@@ -145,10 +145,15 @@ export function getQueue(
     runName: string;
     status: string;
   }>;
+  maxGlobalQueueSize: number;
+  /** Same pool as entries when unfiltered (global active queued + running). */
+  activeSessionCount: number;
 } {
   const db = getDb();
   const rows = runSessions.listActiveQueue(db, runTypeId, sex);
   return {
+    maxGlobalQueueSize: adminSettings.getMaxGlobalQueueSize(db),
+    activeSessionCount: runSessions.countGlobalQueueOccupancy(db),
     entries: rows.map((r) => ({
       runSessionId: r.runSession.id,
       queueNumber: r.runSession.queueNumber,

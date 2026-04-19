@@ -502,7 +502,7 @@ export const reg: Record<string, CSSProperties> = {
   },
   ageFigmaBlockedText: {
     margin: 0,
-    fontSize: w(40),
+    fontSize: w(45),
     lineHeight: 1.35,
     textAlign: 'center',
     color: 'rgba(255,255,255,0.92)',

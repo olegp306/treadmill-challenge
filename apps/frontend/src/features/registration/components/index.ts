@@ -1,3 +1,4 @@
+export { WizardBlockedNotice } from './WizardBlockedNotice';
 export { StepBody } from './StepBody';
 export { PrimaryButton } from './PrimaryButton';
 export type { PrimaryButtonProps } from './PrimaryButton';

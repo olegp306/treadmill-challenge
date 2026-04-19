@@ -114,6 +114,14 @@ export default function QueueControlPage() {
           Обновить сейчас
         </button>
       </p>
+      {state && (
+        <p style={{ fontSize: 14, color: '#333', marginBottom: 16 }} role="status">
+          Глобальный пул (в очереди + на дорожке):{' '}
+          <strong>
+            {state.activeSessionCount} / {state.maxGlobalQueueSize}
+          </strong>
+        </p>
+      )}
 
       <h2>Сейчас на дорожке</h2>
       {!state && !error && <p>Загрузка…</p>}

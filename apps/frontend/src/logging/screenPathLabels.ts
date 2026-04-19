@@ -4,6 +4,9 @@ export function getScreenReadableMessage(pathname: string, search: string): stri
   if (pathname === '/') return 'Пользователь на главной странице (hero)';
   if (pathname === '/welcome') return 'Пользователь открыл экран приветствия';
   if (pathname === '/register') return 'Пользователь на экране регистрации';
+  if (pathname === '/register/queue-full') {
+    return 'Пользователь на экране «Очередь переполнена» (главная → Принять участие)';
+  }
   if (pathname === '/start') return 'Пользователь на экране «Начать забег»';
   if (pathname === '/leaderboard') {
     return qs

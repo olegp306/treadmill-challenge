@@ -1,3 +1,4 @@
+export { DEFAULT_MAX_GLOBAL_QUEUE_SIZE } from './globalQueue.js';
 export {
   RUN_TYPES,
   getRunTypeById,

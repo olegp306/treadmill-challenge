@@ -1,4 +1,4 @@
-import { OptionButton, OptionChoiceLink, StepBody } from '../components';
+import { OptionButton, StepBody, WizardBlockedNotice } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import type { AgeChoice } from '../types';
 import { reg } from '../registrationStyles';
@@ -13,31 +13,33 @@ type Props = {
 export function AgeStep({ ageChoice, onAgeChoice, onBack }: Props) {
   const blocked = ageChoice === 'no';
 
-  const footer = !blocked ? (
+  if (blocked) {
+    return (
+      <WizardBlockedNotice
+        aria-label="Подтверждение возраста"
+        lines={[
+          'Участие в забеге доступно только совершеннолетним.',
+          'Вы можете вернуться на главную.',
+        ]}
+        onBack={onBack}
+      />
+    );
+  }
+
+  const footer = (
     <div style={reg.ageFigmaButtonRow}>
       <OptionButton onClick={() => onAgeChoice('yes')}>Да</OptionButton>
       <OptionButton onClick={() => onAgeChoice('no')}>Нет</OptionButton>
-    </div>
-  ) : (
-    <div style={reg.ageFigmaButtonRow}>
-      <OptionChoiceLink to="/">На главную</OptionChoiceLink>
     </div>
   );
 
   return (
     <WizardStepShell variant="tall" onBack={onBack} footer={footer} aria-label="Подтверждение возраста">
       <StepBody variant="tall">
-        {blocked ? (
-          <p style={reg.ageFigmaBlockedText}>
-            <span style={{ display: 'block' }}>Участие в забеге доступно только совершеннолетним.</span>
-            <span style={{ display: 'block' }}>Вы можете вернуться на главную.</span>
-          </p>
-        ) : (
-          <h2 style={reg.ageFigmaQuestion}>
-            <span style={{ display: 'block' }}>Вам уже исполнилось</span>
-            <span style={{ display: 'block' }}>18 лет?</span>
-          </h2>
-        )}
+        <h2 style={reg.ageFigmaQuestion}>
+          <span style={{ display: 'block' }}>Вам уже исполнилось</span>
+          <span style={{ display: 'block' }}>18 лет?</span>
+        </h2>
       </StepBody>
     </WizardStepShell>
   );

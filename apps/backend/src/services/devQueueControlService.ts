@@ -47,6 +47,10 @@ export function removeGlobalQueuedSessionByRunSessionId(runSessionId: string): {
 }
 
 export function getQueueControlState(): {
+  /** Max concurrent sessions (queued + running). */
+  maxGlobalQueueSize: number;
+  /** Current count in that pool. */
+  activeSessionCount: number;
   running: {
     runSessionId: string;
     participantId: string;
@@ -75,9 +79,13 @@ export function getQueueControlState(): {
   }>;
 } {
   const db = getDb();
+  const maxGlobalQueueSize = adminSettings.getMaxGlobalQueueSize(db);
+  const activeSessionCount = runSessions.countGlobalQueueOccupancy(db);
   const running = runSessions.getRunningSessionDetailGlobal(db);
   const queuedRows = runSessions.listGlobalQueuedSessionsOrdered(db);
   return {
+    maxGlobalQueueSize,
+    activeSessionCount,
     running: running
       ? {
           runSessionId: running.runSession.id,

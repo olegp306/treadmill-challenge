@@ -1,3 +1,4 @@
+import { DEFAULT_MAX_GLOBAL_QUEUE_SIZE } from '@treadmill-challenge/shared';
 import type { Db } from './sqlite.js';
 
 export function getSetting(db: Db, key: string): string | null {
@@ -30,11 +31,11 @@ export function getIntegrationInfoMessages(db: Db): boolean {
   return getSetting(db, 'integrationInfoMessages') === 'true';
 }
 
-/** Max global treadmill pool size (queued + running). Default 3. */
+/** Max global treadmill pool size (queued + running). Default 4 (1 running + up to 3 queued). */
 export function getMaxGlobalQueueSize(db: Db): number {
   const raw = getSetting(db, 'maxGlobalQueueSize') ?? getSetting(db, 'maxQueueSizePerRun');
-  const n = parseInt(raw ?? '3', 10);
-  if (!Number.isFinite(n)) return 3;
+  const n = parseInt(raw ?? String(DEFAULT_MAX_GLOBAL_QUEUE_SIZE), 10);
+  if (!Number.isFinite(n)) return DEFAULT_MAX_GLOBAL_QUEUE_SIZE;
   return Math.min(500, Math.max(1, n));
 }
 

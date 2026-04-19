@@ -112,3 +112,13 @@ export function getDbSync(): Db {
   if (!db) throw new Error('Database not initialized. Call initDb() first.');
   return db;
 }
+
+/**
+ * In-memory DB for tests (no file I/O). Do not use in production request path.
+ */
+export async function openInMemoryDatabaseForTests(): Promise<Db> {
+  const wasmPath = WASM_CANDIDATES.find((p) => existsSync(p));
+  const wasmBinary = wasmPath ? readFileSync(wasmPath) : undefined;
+  const SQL = await initSqlJs(wasmBinary ? { wasmBinary } : undefined);
+  return wrapDb(new SQL.Database(), () => {});
+}

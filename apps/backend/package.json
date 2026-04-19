@@ -1,13 +1,14 @@
 {
   "name": "backend",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "tsx --test src/globalQueueLimit.test.ts"
   },
   "dependencies": {
     "@treadmill-challenge/shared": "*",

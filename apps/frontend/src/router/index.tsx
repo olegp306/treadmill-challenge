@@ -20,6 +20,7 @@ import { RequireAdmin } from '../features/admin/RequireAdmin';
 import TdWaitingLeaderboardPage from '../pages/td/TdWaitingLeaderboardPage';
 import TdResultLeaderboardPage from '../pages/td/TdResultLeaderboardPage';
 import QueueControlPage from '../pages/dev/QueueControlPage';
+import QueueFullPage from '../pages/QueueFullPage';
 
 export function AppRoutes() {
   return (
@@ -27,6 +28,7 @@ export function AppRoutes() {
       <Route path="/" element={<Main />} />
       <Route path="/welcome" element={<WelcomePage />} />
       <Route path="/register" element={<RegistrationPage />} />
+      <Route path="/register/queue-full" element={<QueueFullPage />} />
       <Route path="/start" element={<StartRunningPage />} />
       <Route path="/leaderboard" element={<LeaderboardPage />} />
       <Route path="/result" element={<ResultPage />} />

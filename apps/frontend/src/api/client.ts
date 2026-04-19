@@ -102,6 +102,8 @@ export const api = {
         runName: string;
         status: string;
       }>;
+      maxGlobalQueueSize: number;
+      activeSessionCount: number;
     }>(`/run/queue${qs ? `?${qs}` : ''}`);
   },
 
@@ -214,6 +216,8 @@ export const api = {
   /** Global queue operator API: `/api/dev/queue-control/*` (dev + production). */
   getDevQueueControlState() {
     return request<{
+      maxGlobalQueueSize: number;
+      activeSessionCount: number;
       running: {
         runSessionId: string;
         participantId: string;

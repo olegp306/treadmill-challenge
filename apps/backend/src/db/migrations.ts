@@ -1,3 +1,4 @@
+import { DEFAULT_MAX_GLOBAL_QUEUE_SIZE } from '@treadmill-challenge/shared';
 import type { Db } from './sqlite.js';
 import {
   getRunTypeById,
@@ -23,6 +24,7 @@ export function runMigrations(db: Db): void {
   migrateIntegrationInfoMessagesSetting(db);
   migrateGlobalQueueV2(db);
   migrateRunVerificationPhotos(db);
+  migrateGlobalQueueMaxSizeDefaultTo4(db);
 }
 
 function migrateIntegrationInfoMessagesSetting(db: Db): void {
@@ -202,8 +204,8 @@ function seedAdminSettings(db: Db): void {
   ins.run('tdAdapter', process.env.TD_ADAPTER ?? 'mock');
   ins.run('tdDemoMode', 'false');
   ins.run('eventTitle', 'Amazing Red');
-  ins.run('maxQueueSizePerRun', '3');
-  ins.run('maxGlobalQueueSize', '3');
+  ins.run('maxQueueSizePerRun', String(DEFAULT_MAX_GLOBAL_QUEUE_SIZE));
+  ins.run('maxGlobalQueueSize', String(DEFAULT_MAX_GLOBAL_QUEUE_SIZE));
   ins.run('heartbeatIntervalMin', '5');
   ins.run('integrationInfoMessages', 'false');
   ins.run('lastTdSyncOk', '');
@@ -259,11 +261,18 @@ function migrateGlobalQueueV2(db: Db): void {
       | { value: string }
       | undefined;
     db.prepare(`INSERT OR IGNORE INTO admin_settings (key, value) VALUES ('maxGlobalQueueSize', ?)`).run(
-      old?.value ?? '3'
+      old?.value ?? String(DEFAULT_MAX_GLOBAL_QUEUE_SIZE)
     );
   }
   dedupeMultipleRunningSessions(db);
   reassignGlobalQueueNumbersMigration(db);
+}
+
+/** Bump stock install limit 3 → 4 (1 running + 3 queued max). Custom values unchanged. */
+function migrateGlobalQueueMaxSizeDefaultTo4(db: Db): void {
+  db.prepare(
+    `UPDATE admin_settings SET value = ? WHERE key IN ('maxGlobalQueueSize', 'maxQueueSizePerRun') AND value = '3'`
+  ).run(String(DEFAULT_MAX_GLOBAL_QUEUE_SIZE));
 }
 
 function reassignQueueNumbersByCompetition(db: Db): void {

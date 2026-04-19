@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeShortName } from '@treadmill-challenge/shared';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
@@ -39,6 +39,7 @@ function splitNameLines(fullName: string): { nameLine1: string; nameLine2?: stri
 const ADMIN_TAP_SEQ = ['amazing', 'amazing', 'red', 'red', 'amazing', 'red'] as const;
 
 export default function Main() {
+  const navigate = useNavigate();
   const [queueCards, setQueueCards] = useState<QueueCardItem[]>([]);
   const [loadingQueue, setLoadingQueue] = useState(true);
   const [queueBlockVisible, setQueueBlockVisible] = useState(false);
@@ -98,6 +99,50 @@ export default function Main() {
   const queuePeopleCount = queueCards.length;
   const queueSummary = pluralizePeople(queuePeopleCount);
   const blockShown = heroFullLoaded && queueBlockVisible;
+
+  const onParticipateClick = useCallback(
+    async (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      try {
+        const data = await api.getRunQueue();
+        setQueueCards(data.entries as QueueCardItem[]);
+        setQueueBlockVisible(true);
+        if (data.activeSessionCount >= data.maxGlobalQueueSize) {
+          logEvent(
+            'landing_register_queue_full',
+            {
+              activeSessionCount: data.activeSessionCount,
+              maxGlobalQueueSize: data.maxGlobalQueueSize,
+            },
+            {
+              readableMessage:
+                'Пользователь нажал «Принять участие» при полной глобальной очереди — показан экран переполнения',
+            }
+          );
+          navigate('/register/queue-full');
+          return;
+        }
+      } catch {
+        logEvent(
+          'landing_click_register_after_queue_fetch_failed',
+          {},
+          {
+            readableMessage:
+              'Не удалось получить состояние очереди перед «Принять участие» — переход к регистрации',
+          }
+        );
+        navigate('/register');
+        return;
+      }
+      logEvent(
+        'landing_click_register',
+        {},
+        { readableMessage: 'Пользователь нажал кнопку «Принять участие»' }
+      );
+      navigate('/register');
+    },
+    [navigate]
+  );
 
   const onAdminTap = (zone: 'amazing' | 'red') => {
     const expected = ADMIN_TAP_SEQ[adminTapIdx.current];
@@ -199,73 +244,87 @@ export default function Main() {
             ) : null}
 
             <div style={styles.heroForeground}>
-              <h1 style={styles.headline}>
-                Беги
-                <br />
-                на максимум!
-              </h1>
-
               <div
                 style={{
-                  ...styles.queueBlock,
+                  ...styles.heroMainStack,
                   opacity: blockShown ? 1 : 0,
                   transform: blockShown ? 'translateY(0)' : `translateY(${h(10)})`,
                   transition: 'opacity 280ms ease-out, transform 280ms ease-out',
                   willChange: blockShown ? undefined : 'opacity, transform',
                 }}
               >
-                <p style={styles.queueTitle}>
-                  <span style={styles.queueTitleWhite}>Очередь забега</span>
-                  <span style={styles.queueTitleWhite}>:</span>
-                  <span> </span>
-                  <span style={styles.queueAccent}>{queueSummary}</span>
-                </p>
+                <h1 style={styles.headline}>
+                  Беги
+                  <br />
+                  на максимум!
+                </h1>
 
-                {!loadingQueue && queueCards.length === 0 ? (
-                  <article style={styles.emptyQueueState}>
-                    <p style={styles.emptyQueueTitle}>Очереди нет</p>
-                    <p style={styles.emptyQueueText}>Стань первым участником этого забега</p>
-                  </article>
-                ) : (
-                  <div className="ar-ozio-cards-scroll" style={styles.cardsRow}>
-                    {queueCards.map((card, i) => {
-                      const isActive = i === 0;
-                      const { nameLine1, nameLine2 } = splitNameLines(card.participantName);
-                      return (
-                        <article
-                          key={card.runSessionId}
-                          style={{
-                            ...styles.card,
-                            ...(isActive ? styles.cardActive : styles.cardInactive),
-                          }}
-                        >
-                          <div style={styles.cardTop}>
-                            <span style={styles.cardOrder}>
-                              {String(i + 1).padStart(2, '0')}
-                            </span>
-                            <span
-                              style={{
-                                ...styles.tagPill,
-                                ...(isActive ? styles.tagPillActive : styles.tagPillInactive),
-                              }}
-                            >
-                              {getRunTypeShortName(card.runTypeId)}
-                            </span>
-                          </div>
-                          <div style={styles.cardName}>
-                            <span>{nameLine1}</span>
-                            {nameLine2 != null && (
-                              <>
-                                <br />
-                                <span>{nameLine2}</span>
-                              </>
-                            )}
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
+                <div
+                  style={{
+                    ...styles.queueBlock,
+                    ...(!loadingQueue && queueCards.length === 0 ? styles.queueBlockEmpty : null),
+                  }}
+                >
+                  {!loadingQueue && queueCards.length > 0 ? (
+                    <p style={styles.queueTitle}>
+                      <span style={styles.queueTitleWhite}>Очередь забега</span>
+                      <span style={styles.queueTitleWhite}>:</span>
+                      <span> </span>
+                      <span style={styles.queueAccent}>{queueSummary}</span>
+                    </p>
+                  ) : null}
+
+                  {!loadingQueue && queueCards.length === 0 ? (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      style={styles.trackFreeStatus}
+                    >
+                      <span style={styles.trackFreeStatusText}>Дорожка свободна</span>
+                    </div>
+                  ) : null}
+
+                  {!loadingQueue && queueCards.length > 0 ? (
+                    <div className="ar-ozio-cards-scroll" style={styles.cardsRow}>
+                      {queueCards.map((card, i) => {
+                        const isActive = i === 0;
+                        const { nameLine1, nameLine2 } = splitNameLines(card.participantName);
+                        return (
+                          <article
+                            key={card.runSessionId}
+                            style={{
+                              ...styles.card,
+                              ...(isActive ? styles.cardActive : styles.cardInactive),
+                            }}
+                          >
+                            <div style={styles.cardTop}>
+                              <span style={styles.cardOrder}>
+                                {String(i + 1).padStart(2, '0')}
+                              </span>
+                              <span
+                                style={{
+                                  ...styles.tagPill,
+                                  ...(isActive ? styles.tagPillActive : styles.tagPillInactive),
+                                }}
+                              >
+                                {getRunTypeShortName(card.runTypeId)}
+                              </span>
+                            </div>
+                            <div style={styles.cardName}>
+                              <span>{nameLine1}</span>
+                              {nameLine2 != null && (
+                                <>
+                                  <br />
+                                  <span>{nameLine2}</span>
+                                </>
+                              )}
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
             </div>
@@ -283,17 +342,7 @@ export default function Main() {
             <Link to={TD_LEADERBOARD_WAITING_PATH} style={styles.btnLeaderboard}>
               Лидерборд
             </Link>
-            <Link
-              to="/register"
-              style={styles.btnParticipate}
-              onClick={() =>
-                logEvent(
-                  'landing_click_register',
-                  {},
-                  { readableMessage: 'Пользователь нажал кнопку «Принять участие»' }
-                )
-              }
-            >
+            <Link to="/register" style={styles.btnParticipate} onClick={onParticipateClick}>
               Принять участие
             </Link>
           </nav>
@@ -355,7 +404,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: `${h(50)} ${w(40)} 0`,
+    /** Figma 964:1493 — py-[50px] вокруг логотипа. */
+    padding: `${h(50)} ${w(40)} ${h(50)}`,
   },
   logoMark: {
     justifyContent: 'center',
@@ -398,9 +448,21 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
-    gap: w(68),
-    padding: `${h(40)} ${w(40)} ${h(40)}`,
-    justifyContent: 'flex-end',
+    /** Figma 964:1491 — px-40 pb-40, без верхнего паддинга (учтён логотип). */
+    padding: `0 ${w(40)} ${h(40)}`,
+    justifyContent: 'flex-start',
+  },
+  /**
+   * Figma 964:1491: заголовок top = calc(50% − 155px) при высоте панели 1032px → 361px от верха;
+   * блок логотипа ~137px → 361 − 137 = 224px до заголовка. Между заголовком и «Дорожка свободна» ~31px.
+   */
+  heroMainStack: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: w(31),
+    marginTop: h(224),
+    width: '100%',
   },
   headline: {
     margin: 0,
@@ -415,6 +477,10 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: w(40),
     minHeight: h(420),
+  },
+  queueBlockEmpty: {
+    gap: 0,
+    minHeight: h(103),
   },
   queueTitle: {
     margin: 0,
@@ -436,32 +502,32 @@ const styles: Record<string, React.CSSProperties> = {
     overflowX: 'auto',
     WebkitOverflowScrolling: 'touch',
   },
-  emptyQueueState: {
-    minHeight: h(220),
-    borderRadius: w(40),
-    border: '1px solid rgba(255,255,255,0.14)',
-    background: 'rgba(255,255,255,0.04)',
+  /** Figma node 964:2878 — статус «Дорожка свободна», не интерактивный. */
+  trackFreeStatus: {
+    alignSelf: 'flex-start',
+    width: w(648),
+    minHeight: h(103),
+    boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: h(12),
-    padding: `${h(22)} ${w(24)}`,
+    padding: `${h(24)} ${w(32)}`,
+    borderRadius: w(40),
+    background: 'rgba(230, 35, 58, 0.58)',
+    borderTop: `${w(2)} solid #ff3e55`,
+    pointerEvents: 'none',
   },
-  emptyQueueTitle: {
+  trackFreeStatusText: {
     margin: 0,
-    fontSize: w(56),
-    lineHeight: 1.05,
+    fontFamily: "'Druk Wide Cyr', 'Oswald', system-ui, sans-serif",
+    fontWeight: 400,
+    fontSize: w(30),
+    lineHeight: 1,
     textTransform: 'uppercase',
     color: ui.color.text,
-  },
-  emptyQueueText: {
-    margin: 0,
-    fontSize: w(30),
-    lineHeight: 1.2,
-    color: 'rgba(255,255,255,0.72)',
-    textTransform: 'uppercase',
     textAlign: 'center',
+    width: '100%',
   },
   card: {
     flex: '0 0 auto',
