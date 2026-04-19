@@ -30,6 +30,33 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return;
+
+    const body = document.body;
+    const html = document.documentElement;
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyOverscroll = body.style.overscrollBehavior;
+    const prevBodyTouchAction = body.style.touchAction;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevHtmlOverscroll = html.style.overscrollBehavior;
+
+    // Keep background fixed while modal is open; restore exactly on close.
+    body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+    body.style.touchAction = 'none';
+    html.style.overflow = 'hidden';
+    html.style.overscrollBehavior = 'none';
+
+    return () => {
+      body.style.overflow = prevBodyOverflow;
+      body.style.overscrollBehavior = prevBodyOverscroll;
+      body.style.touchAction = prevBodyTouchAction;
+      html.style.overflow = prevHtmlOverflow;
+      html.style.overscrollBehavior = prevHtmlOverscroll;
+    };
+  }, [open]);
+
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
@@ -45,6 +72,8 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
         justifyContent: 'center',
         padding: 'clamp(16px, 3vw, 48px)',
         boxSizing: 'border-box',
+        overscrollBehavior: 'contain',
+        touchAction: 'none',
       }}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -142,6 +171,8 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
             overflow: 'auto',
             padding: `0 clamp(24px, 2.5vw, 48px) clamp(24px, 2.5vw, 48px)`,
             WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+            touchAction: 'pan-y',
           }}
         >
           <p

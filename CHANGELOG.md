@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.11] - 2026-04-19
+
+### Changed
+
+- **Consent cards interaction:** checkbox hit area expanded to the whole card (checkbox, title, text area, and empty card space toggle consent); `Ознакомиться` remains an exception and opens the modal without toggling.
+- **Consent legal modal scroll behavior:** long document content now scrolls strictly inside the popup with background scroll lock while open and full style restoration on close to prevent overscroll leakage to subsequent registration steps.
+- **Immediate-start treadmill screen (`/run/prepare`):** preserved Figma message screen (`Пройдите на дорожку, забег сейчас начнется!`) for the free-treadmill flow and removed auto-hop into the running queue screen for this case.
+- **Run-prepare close policy:** added close-on-tap, auto-close after 10 seconds, and close on actual run start transition (`queued → running`) with a single-close guard to avoid repeated redirects.
+
+### Fixed
+
+- **Registration flow stability:** prevented popup/overlay scroll state from affecting the main form and later steps after closing consent documents.
+
+---
+
 ## [0.2.10] - 2026-04-19
 
 ### Changed

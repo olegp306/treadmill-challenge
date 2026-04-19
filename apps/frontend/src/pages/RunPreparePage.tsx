@@ -44,11 +44,30 @@ export default function RunPreparePage() {
   const [demoRank, setDemoRank] = useState<number | null>(null);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
   const finishNavigateScheduledRef = useRef(false);
+  const closedRef = useRef(false);
+  const prevStatusRef = useRef<string | null>(immediateRunning ? 'running' : null);
   const { report } = useIntegrationInfo();
+  const autoCloseEnabled = !demoMode;
+
+  const closeToMain = () => {
+    if (closedRef.current) return;
+    closedRef.current = true;
+    navigate('/', { replace: true });
+  };
 
   useEffect(() => {
     finishNavigateScheduledRef.current = false;
+    closedRef.current = false;
+    prevStatusRef.current = immediateRunning ? 'running' : null;
   }, [runSessionId]);
+
+  useEffect(() => {
+    if (!autoCloseEnabled) return;
+    const timer = window.setTimeout(() => {
+      closeToMain();
+    }, 10_000);
+    return () => window.clearTimeout(timer);
+  }, [autoCloseEnabled, runSessionId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,22 +142,15 @@ export default function RunPreparePage() {
       try {
         const s = await api.getRunSessionState(runSessionId, participantId);
         if (cancelled) return;
-        if (s.status === 'running' && !immediateRunning) {
-          navigate('/run/queue', {
-            replace: true,
-            state: {
-              participantId,
-              runSessionId,
-              runTypeId,
-              participantSex,
-              participantFirstName: state?.participantFirstName,
-              demoMode: state?.demoMode,
-              position: 1,
-              prepareAcknowledged: true,
-              initialSessionStatus: 'running',
-            },
-          });
-          return;
+        if (s.status === 'running') {
+          const startedNow = prevStatusRef.current !== 'running';
+          prevStatusRef.current = 'running';
+          if (autoCloseEnabled && startedNow) {
+            closeToMain();
+            return;
+          }
+        } else if (s.status === 'queued') {
+          prevStatusRef.current = 'queued';
         }
         if (s.status === 'queued' && s.queuePosition === 1 && s.otherSessionRunning) {
           navigate('/run/queue', {
@@ -198,7 +210,7 @@ export default function RunPreparePage() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName, report, immediateRunning]);
+  }, [participantId, runSessionId, runTypeId, participantSex, navigate, state?.participantFirstName, report, immediateRunning, autoCloseEnabled]);
 
   if (!participantId || !runSessionId || runTypeId === null) return null;
 
@@ -206,26 +218,46 @@ export default function RunPreparePage() {
     <RunQueueScreenShell
       participantDisplayName={displayName}
       footer={
-        <button
-          type="button"
-          style={rq.btnWideSolid}
-          onClick={() =>
-            navigate('/run/queue', {
-              replace: true,
-              state: {
-                ...state,
-                position: 1,
-                prepareAcknowledged: true,
-                initialSessionStatus: immediateRunning ? 'running' : undefined,
-              },
-            })
-          }
-        >
-          Ок
-        </button>
+        demoMode ? (
+          <button
+            type="button"
+            style={rq.btnWideSolid}
+            onClick={() =>
+              navigate('/run/queue', {
+                replace: true,
+                state: {
+                  ...state,
+                  position: 1,
+                  prepareAcknowledged: true,
+                  initialSessionStatus: immediateRunning ? 'running' : undefined,
+                },
+              })
+            }
+          >
+            Ок
+          </button>
+        ) : null
       }
     >
-      <GoToTreadmillContent />
+      <div
+        onClick={() => {
+          if (!autoCloseEnabled) return;
+          closeToMain();
+        }}
+        role={autoCloseEnabled ? 'button' : undefined}
+        aria-label={autoCloseEnabled ? 'Закрыть экран и вернуться на главную' : undefined}
+        tabIndex={autoCloseEnabled ? 0 : undefined}
+        onKeyDown={(e) => {
+          if (!autoCloseEnabled) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            closeToMain();
+          }
+        }}
+        style={{ width: '100%', cursor: autoCloseEnabled ? 'pointer' : 'default' }}
+      >
+        <GoToTreadmillContent />
+      </div>
       {demoEnabled && demoMetrics ? (
         <div style={{ marginTop: 24, width: '100%', maxWidth: 980, marginLeft: 'auto', marginRight: 'auto' }}>
           <div
