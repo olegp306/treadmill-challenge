@@ -1,21 +1,34 @@
 import type { CSSProperties, Ref, RefObject } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
+import { api } from '../api/client';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
 import { ScreenContainer } from '../arOzio/ScreenContainer';
 import { h, w } from '../arOzio/dimensions';
-import { readLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
-import { useLeaderboard, type LeaderboardEntry, type LeaderboardScope } from '../hooks/useLeaderboard';
+import type { LeaderboardEntry } from '../hooks/useLeaderboard';
 import { getRunOption } from '../features/run-selection/runOptions';
 import { FooterActionsRow } from '../ui/components/FooterActionsRow';
 import { HeaderChrome } from '../ui/components/HeaderChrome';
 import { Sheet } from '../ui/components/Sheet';
 import { ui } from '../ui/tokens';
 
-const RUN_TYPE_ORDER: RunTypeId[] = [0, 1, 2];
+/** Стабильная высота списка: не больше 7 строк (top 7) на колонку. */
+const MAX_LEADERBOARD_ROWS = 7;
 
-function parseLeaderboardScope(searchParams: URLSearchParams): LeaderboardScope | null {
+/** Порядок карусели: 3 мужских зачёта, затем 3 женских (те же форматы). */
+const CAROUSEL_ORDER: Array<{ runTypeId: RunTypeId; sex: Gender }> = [
+  { runTypeId: 0, sex: 'male' },
+  { runTypeId: 1, sex: 'male' },
+  { runTypeId: 2, sex: 'male' },
+  { runTypeId: 0, sex: 'female' },
+  { runTypeId: 1, sex: 'female' },
+  { runTypeId: 2, sex: 'female' },
+];
+
+const CAROUSEL_INTERVAL_MS = 6000;
+
+function parseLeaderboardScope(searchParams: URLSearchParams): { runTypeId: RunTypeId; sex: Gender } | null {
   const rt = searchParams.get('runTypeId');
   const g = searchParams.get('sex') ?? searchParams.get('gender');
   if (rt === null || rt === '' || g === null || g === '') return null;
@@ -42,64 +55,174 @@ function globalMetric(entry: LeaderboardEntry): string {
   return `${formatTimeMmSs(entry.resultTime)} · ${Math.round(entry.distance)} м`;
 }
 
+function filterEntries(entries: LeaderboardEntry[], q: string): LeaderboardEntry[] {
+  const t = q.trim().toLowerCase();
+  if (!t) return entries;
+  return entries.filter((e) => e.participantName.toLowerCase().includes(t));
+}
+
+type SlideState = {
+  loading: boolean;
+  error: string | null;
+  entries: LeaderboardEntry[];
+};
+
+function emptySlide(): SlideState {
+  return { loading: true, error: null, entries: [] };
+}
+
 export default function LeaderboardPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const scope = useMemo(() => parseLeaderboardScope(searchParams), [searchParams]);
-  const [fallbackScope] = useState(() => readLastFinishedRunScope());
-  const effectiveScope = scope ?? (fallbackScope ? { runTypeId: fallbackScope.runTypeId, sex: fallbackScope.sex } : null);
-  const highlightId = searchParams.get('highlightParticipantId') ?? fallbackScope?.participantId;
-  const { entries, meta, loading, error } = useLeaderboard(effectiveScope);
+  const [searchParams] = useSearchParams();
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [slides, setSlides] = useState<SlideState[]>(() =>
+    Array.from({ length: 6 }, () => emptySlide())
+  );
   const [searchQuery, setSearchQuery] = useState('');
-
-  const effectiveRunTypeId: RunTypeId = effectiveScope?.runTypeId ?? 2;
-
-  useEffect(() => {
-    if (scope || !fallbackScope) return;
-    setSearchParams(
-      {
-        runTypeId: String(fallbackScope.runTypeId),
-        sex: fallbackScope.sex,
-        ...(fallbackScope.participantId ? { highlightParticipantId: fallbackScope.participantId } : {}),
-      },
-      { replace: true }
-    );
-  }, [scope, fallbackScope, setSearchParams]);
-
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return entries;
-    return entries.filter((e) => e.participantName.toLowerCase().includes(q));
-  }, [entries, searchQuery]);
+  /** Подсветка только после успешного разрешения `?runSessionId=` (не из URL participant id). */
+  const [highlightParticipantId, setHighlightParticipantId] = useState<string | undefined>(undefined);
+  const [resolvedHighlightScope, setResolvedHighlightScope] = useState<{
+    runTypeId: RunTypeId;
+    sex: Gender;
+  } | null>(null);
+  /** Пауза автоповорота при открытии с runSessionId (чтобы остаться на зачёте участника). */
+  const [pauseCarousel, setPauseCarousel] = useState(false);
 
   const highlightRef = useRef<HTMLDivElement | null>(null);
+  const urlScopeSynced = useRef(false);
+
+  /** Загрузка шести зачётов одним батчем. */
   useEffect(() => {
-    if (!highlightId || !highlightRef.current) return;
+    let cancelled = false;
+    void (async () => {
+      const settled = await Promise.allSettled(CAROUSEL_ORDER.map((scope) => api.getLeaderboard(scope)));
+      if (cancelled) return;
+      setSlides(
+        settled.map((r) => {
+          if (r.status === 'fulfilled') {
+            return {
+              loading: false,
+              error: null,
+              entries: r.value.leaderboard,
+            };
+          }
+          const msg = r.reason instanceof Error ? r.reason.message : 'Ошибка загрузки';
+          return { loading: false, error: msg, entries: [] };
+        })
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** Подсветка строго по `runSessionId`: участник и зачёт из API. */
+  useEffect(() => {
+    const raw = searchParams.get('runSessionId')?.trim();
+    if (!raw) {
+      setHighlightParticipantId(undefined);
+      setResolvedHighlightScope(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const session = await api.getRunSessionState(raw);
+        const participant = await api.getParticipant(session.participantId);
+        if (cancelled) return;
+        const idx = CAROUSEL_ORDER.findIndex(
+          (s) => s.runTypeId === session.runTypeId && s.sex === participant.sex
+        );
+        if (idx >= 0) setCarouselIndex(idx);
+        setHighlightParticipantId(session.participantId);
+        setResolvedHighlightScope({ runTypeId: session.runTypeId, sex: participant.sex });
+        setPauseCarousel(true);
+      } catch {
+        if (!cancelled) {
+          setHighlightParticipantId(undefined);
+          setResolvedHighlightScope(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
+
+  /** Опционально: стартовый слайд из `?runTypeId=&sex=` без runSessionId (один раз). */
+  useEffect(() => {
+    if (urlScopeSynced.current) return;
+    if (searchParams.get('runSessionId')) return;
+    const scope = parseLeaderboardScope(searchParams);
+    if (!scope) return;
+    const idx = CAROUSEL_ORDER.findIndex(
+      (s) => s.runTypeId === scope.runTypeId && s.sex === scope.sex
+    );
+    if (idx >= 0) {
+      setCarouselIndex(idx);
+      urlScopeSynced.current = true;
+    }
+  }, [searchParams]);
+
+  /** Автоповорот карусели между шестью зачётами. */
+  useEffect(() => {
+    if (pauseCarousel) return;
+    const id = window.setInterval(() => {
+      setCarouselIndex((i) => (i + 1) % 6);
+    }, CAROUSEL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [pauseCarousel]);
+
+  const leftIdx = (carouselIndex + 5) % 6;
+  const centerIdx = carouselIndex;
+  const rightIdx = (carouselIndex + 1) % 6;
+
+  const centerScope = CAROUSEL_ORDER[centerIdx];
+
+  const showHighlight =
+    highlightParticipantId !== undefined &&
+    resolvedHighlightScope !== null &&
+    centerScope.runTypeId === resolvedHighlightScope.runTypeId &&
+    centerScope.sex === resolvedHighlightScope.sex;
+
+  const centerEntriesRaw = slides[centerIdx]?.entries ?? [];
+  const centerEntries = useMemo(
+    () => filterEntries(centerEntriesRaw, searchQuery),
+    [centerEntriesRaw, searchQuery]
+  );
+
+  const leftEntries = useMemo(
+    () => filterEntries(slides[leftIdx]?.entries ?? [], searchQuery),
+    [slides, leftIdx, searchQuery]
+  );
+  const rightEntries = useMemo(
+    () => filterEntries(slides[rightIdx]?.entries ?? [], searchQuery),
+    [slides, rightIdx, searchQuery]
+  );
+
+  useEffect(() => {
+    if (!showHighlight || !highlightRef.current) return;
     const t = window.setTimeout(() => {
       highlightRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }, 120);
+    }, 160);
     return () => clearTimeout(t);
-  }, [highlightId, filtered, loading]);
+  }, [showHighlight, centerEntries, carouselIndex]);
 
-  const subtitle = effectiveScope
-    ? meta?.competitionTitle ?? 'Текущее соревнование'
-    : 'Все активные соревнования · общий рейтинг';
+  const shiftCarousel = useCallback((delta: -1 | 1) => {
+    setCarouselIndex((i) => (i + delta + 6) % 6);
+    setPauseCarousel(false);
+  }, []);
 
-  const setGender = (g: Gender) => {
-    if (effectiveScope) {
-      setSearchParams({ runTypeId: String(effectiveScope.runTypeId), sex: g });
-    } else {
-      setSearchParams({ runTypeId: '2', sex: g });
+  const setGenderTab = useCallback((sex: Gender) => {
+    const rt = centerScope.runTypeId;
+    const idx = CAROUSEL_ORDER.findIndex((s) => s.runTypeId === rt && s.sex === sex);
+    if (idx >= 0) {
+      setCarouselIndex(idx);
+      setPauseCarousel(false);
     }
-  };
+  }, [centerScope.runTypeId]);
 
-  const shiftRunType = (delta: -1 | 1) => {
-    const idx = RUN_TYPE_ORDER.indexOf(effectiveRunTypeId);
-    const next = RUN_TYPE_ORDER[(idx + delta + RUN_TYPE_ORDER.length) % RUN_TYPE_ORDER.length];
-    const g = effectiveScope?.sex ?? 'male';
-    setSearchParams({ runTypeId: String(next), sex: g });
-  };
-
-  const showSideColumns = Boolean(effectiveScope) && !loading;
+  const centerLoading = slides[centerIdx]?.loading ?? true;
+  const centerError = slides[centerIdx]?.error ?? null;
 
   return (
     <ArOzioViewport>
@@ -136,9 +259,9 @@ export default function LeaderboardPage() {
                 type="button"
                 style={{
                   ...styles.genderTab,
-                  ...(effectiveScope?.sex === 'female' ? styles.genderTabActive : styles.genderTabIdle),
+                  ...(centerScope.sex === 'female' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
-                onClick={() => setGender('female')}
+                onClick={() => setGenderTab('female')}
               >
                 Женщины
               </button>
@@ -146,78 +269,87 @@ export default function LeaderboardPage() {
                 type="button"
                 style={{
                   ...styles.genderTab,
-                  ...(effectiveScope?.sex === 'male' ? styles.genderTabActive : styles.genderTabIdle),
+                  ...(centerScope.sex === 'male' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
-                onClick={() => setGender('male')}
+                onClick={() => setGenderTab('male')}
               >
                 Мужчины
               </button>
             </div>
 
-            {!effectiveScope ? (
-              <>
-                <p style={styles.pageTitle}>Лидерборд</p>
-                <p style={styles.pageSubtitle}>{subtitle}</p>
-              </>
-            ) : (
-              <p style={styles.pageSubtitleScoped}>{subtitle}</p>
-            )}
+            <p style={styles.pageTitle}>Лидерборд</p>
 
             <div style={styles.leaderboardRow}>
               <button
                 type="button"
-                aria-label="Предыдущий формат"
+                aria-label="Предыдущий зачёт"
                 style={{ ...styles.arrowBtn, left: w(8) }}
-                onClick={() => shiftRunType(-1)}
+                onClick={() => shiftCarousel(-1)}
               >
                 ‹
               </button>
 
-              {showSideColumns ? (
-                <aside style={{ ...styles.sideCol, pointerEvents: 'none' }} aria-hidden>
-                  <LeaderboardStack
-                    entries={filtered}
-                    runTypeId={effectiveScope!.runTypeId}
-                    scoped
-                    highlightId={undefined}
-                    highlightRef={null}
-                    dim
-                  />
-                </aside>
-              ) : null}
-
-              <section style={styles.mainCol}>
+              <aside
+                style={{
+                  ...styles.sideCol,
+                  ...styles.colCarouselFlank,
+                  pointerEvents: 'none',
+                }}
+                aria-hidden
+              >
                 <LeaderboardStack
-                  entries={filtered}
-                  runTypeId={effectiveScope?.runTypeId ?? 2}
-                  scoped={Boolean(effectiveScope)}
-                  highlightId={highlightId}
+                  entries={leftEntries}
+                  runTypeId={CAROUSEL_ORDER[leftIdx].runTypeId}
+                  scoped
+                  highlightId={undefined}
+                  highlightRef={null}
+                  dim
+                  loading={slides[leftIdx]?.loading}
+                  error={slides[leftIdx]?.error}
+                  emptyHint="Пока нет результатов в этом зачёте."
+                />
+              </aside>
+
+              <section style={{ ...styles.mainCol, ...styles.colCarouselCenter }}>
+                <LeaderboardStack
+                  entries={centerEntries}
+                  runTypeId={centerScope.runTypeId}
+                  scoped
+                  highlightId={showHighlight ? highlightParticipantId : undefined}
                   highlightRef={highlightRef}
                   dim={false}
-                  loading={loading}
-                  error={error}
-                  emptyHint={!effectiveScope ? 'Пока нет заездов.' : 'Пока нет результатов в этом зачёте.'}
+                  loading={centerLoading}
+                  error={centerError}
+                  emptyHint="Пока нет результатов в этом зачёте."
                 />
               </section>
 
-              {showSideColumns ? (
-                <aside style={{ ...styles.sideCol, pointerEvents: 'none' }} aria-hidden>
-                  <LeaderboardStack
-                    entries={filtered}
-                    runTypeId={effectiveScope!.runTypeId}
-                    scoped
-                    highlightId={undefined}
-                    highlightRef={null}
-                    dim
-                  />
-                </aside>
-              ) : null}
+              <aside
+                style={{
+                  ...styles.sideCol,
+                  ...styles.colCarouselFlank,
+                  pointerEvents: 'none',
+                }}
+                aria-hidden
+              >
+                <LeaderboardStack
+                  entries={rightEntries}
+                  runTypeId={CAROUSEL_ORDER[rightIdx].runTypeId}
+                  scoped
+                  highlightId={undefined}
+                  highlightRef={null}
+                  dim
+                  loading={slides[rightIdx]?.loading}
+                  error={slides[rightIdx]?.error}
+                  emptyHint="Пока нет результатов в этом зачёте."
+                />
+              </aside>
 
               <button
                 type="button"
-                aria-label="Следующий формат"
+                aria-label="Следующий зачёт"
                 style={{ ...styles.arrowBtn, right: w(8) }}
-                onClick={() => shiftRunType(1)}
+                onClick={() => shiftCarousel(1)}
               >
                 ›
               </button>
@@ -260,6 +392,7 @@ function LeaderboardStack({
   emptyHint?: string;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
+  const rows = entries.slice(0, MAX_LEADERBOARD_ROWS);
 
   return (
     <div
@@ -275,12 +408,12 @@ function LeaderboardStack({
       <div style={styles.stackBody}>
         {loading ? <p style={styles.muted}>Загрузка…</p> : null}
         {!loading && error ? <p style={styles.err}>{error}</p> : null}
-        {!loading && !error && entries.length === 0 && !dim ? (
+        {!loading && !error && rows.length === 0 && !dim ? (
           <p style={styles.muted}>{emptyHint ?? 'Нет данных.'}</p>
         ) : null}
-        {!loading && !error && entries.length > 0
-          ? entries.map((e, i) => {
-              const isHighlight = highlightId !== undefined && e.participantId === highlightId;
+        {!loading && !error && rows.length > 0
+          ? rows.map((e, i) => {
+              const isHighlight = Boolean(highlightId) && e.participantId === highlightId;
               const rowRef = isHighlight && highlightRef ? highlightRef : undefined;
               const top3 = i < 3;
               const resultStr = scoped ? primaryMetric(e, runTypeId) : globalMetric(e);
@@ -304,7 +437,7 @@ function LeaderboardStack({
               );
             })
           : null}
-        {!scoped && !loading && !error && entries.length > 0 ? (
+        {!scoped && !loading && !error && rows.length > 0 ? (
           <p style={styles.mutedSmall}>Время · дистанция · все форматы</p>
         ) : null}
       </div>
@@ -445,18 +578,6 @@ const styles: Record<string, CSSProperties> = {
     color: '#fff',
     fontWeight: 400,
   },
-  pageSubtitle: {
-    margin: 0,
-    textAlign: 'center',
-    fontSize: w(24),
-    color: '#8b949e',
-  },
-  pageSubtitleScoped: {
-    margin: 0,
-    textAlign: 'center',
-    fontSize: w(22),
-    color: '#6e7681',
-  },
   leaderboardRow: {
     position: 'relative',
     display: 'flex',
@@ -494,12 +615,21 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: w(480),
     alignSelf: 'stretch',
   },
+  colCarouselFlank: {
+    transform: 'scale(0.94) translateZ(0)',
+    opacity: 0.92,
+    transition: 'transform 0.45s ease, opacity 0.45s ease',
+  },
   mainCol: {
     flex: '1 1 40%',
     minWidth: 0,
     maxWidth: w(980),
     zIndex: 2,
     alignSelf: 'stretch',
+  },
+  colCarouselCenter: {
+    transform: 'scale(1) translateZ(0)',
+    transition: 'transform 0.45s ease',
   },
   stackCard: {
     display: 'flex',

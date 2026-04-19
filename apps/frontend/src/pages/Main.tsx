@@ -16,7 +16,6 @@ import { pluralizePeople } from '../utils/russianPlural';
 import { LogoMark } from '../ui/components/LogoMark';
 import { APP_VERSION } from '../appVersion';
 import { ui } from '../ui/tokens';
-import { TD_LEADERBOARD_WAITING_PATH } from '../features/td/tdLeaderboardRoutes';
 
 /** Figma hero — LQIP blur под видео; основной фон — loop mp4 (public/). */
 const HERO_BG_LQ = '/assets/hero/hero-bg-lq.jpg';
@@ -384,7 +383,7 @@ export default function Main() {
             }}
             aria-label="Основные действия"
           >
-            <Link to={TD_LEADERBOARD_WAITING_PATH} style={styles.btnLeaderboard}>
+            <Link to="/leaderboard" style={styles.btnLeaderboard}>
               Лидерборд
             </Link>
             <Link to="/register" style={styles.btnParticipate} onClick={onParticipateClick}>
