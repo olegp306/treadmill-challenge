@@ -109,12 +109,6 @@ export const rs: Record<string, CSSProperties> = {
     width: '100%',
     maxWidth: w(1900),
   },
-  /** Строки имени/фамилии в приветствии: плотный блок, без влияния на ширину карточки. */
-  greetingNameLine: {
-    display: 'block',
-    maxWidth: '100%',
-    margin: '0 auto',
-  },
   subtitle: {
     margin: 0,
     fontWeight: 400,

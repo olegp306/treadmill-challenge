@@ -332,9 +332,8 @@ export default function RunSelectionPage() {
         >
           <div style={rs.runSelectTopBlock}>
             <p style={rs.greeting}>
-              Привет,
-              <br />
-              <span style={{ ...reg.logoRed, ...rs.greetingNameLine }}>
+              Привет,{' '}
+              <span style={reg.logoRed}>
                 {greetingFirstLine}
                 {greetingLastLine != null ? (
                   <>
