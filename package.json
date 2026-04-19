@@ -1,6 +1,6 @@
 {
   "name": "treadmill-challenge",
-  "version": "1.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Interactive treadmill challenge installation - monorepo",
   "workspaces": [
@@ -18,7 +18,11 @@
     "start:backend": "npm run start -w apps/backend",
     "preview:frontend": "npm run preview -w apps/frontend",
     "print-dev-qr": "node scripts/print-dev-qr.mjs",
-    "td:callback:smoke": "node scripts/td-callback-smoke.mjs"
+    "td:callback:smoke": "node scripts/td-callback-smoke.mjs",
+    "version:bump": "node scripts/bump-version.mjs",
+    "release:patch": "node scripts/bump-version.mjs patch",
+    "release:minor": "node scripts/bump-version.mjs minor",
+    "release:major": "node scripts/bump-version.mjs major"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

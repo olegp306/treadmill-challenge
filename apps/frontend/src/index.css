@@ -185,13 +185,15 @@ body {
   min-height: 100vh;
 }
 
-/* Admin: document scroll (global `body { overflow: hidden }` keeps kiosk/TD layouts stable). */
-body.admin-route {
+/* Admin + dev queue control: document scroll (global `body { overflow: hidden }` keeps kiosk/TD stable). */
+body.admin-route,
+body.dev-queue-control-route {
   overflow-x: hidden;
   overflow-y: auto;
 }
 
-body.admin-route #root {
+body.admin-route #root,
+body.dev-queue-control-route #root {
   height: auto;
   min-height: var(--app-height, 100vh);
 }

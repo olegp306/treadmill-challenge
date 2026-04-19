@@ -9,6 +9,43 @@ import {
 } from './runSessionPromotion.js';
 import { submitRunSessionResult } from './runResultService.js';
 
+export async function moveCurrentRunnerToEndOfQueue(
+  touchDesigner: TouchDesignerIntegration,
+  log?: PromotionLog
+): Promise<{ demotedRunSessionId: string; promotedRunSessionId: string | null }> {
+  const db = getDb();
+  const current = runSessions.getCurrentRunningSessionGlobal(db);
+  if (!current) {
+    throw new Error('No running session');
+  }
+  const demotedRunSessionId = current.id;
+  runSessions.setSessionStatus(db, demotedRunSessionId, 'queued');
+  runSessions.bumpRunSessionCreatedAtToGlobalQueueTail(db, demotedRunSessionId);
+  runSessions.renumberGlobalQueuedSessions(db);
+  await promoteNextQueuedSessionAfterFinish(touchDesigner, log);
+  const nowRunning = runSessions.getCurrentRunningSessionGlobal(db);
+  return {
+    demotedRunSessionId,
+    promotedRunSessionId: nowRunning?.id ?? null,
+  };
+}
+
+export function removeGlobalQueuedSessionByRunSessionId(runSessionId: string): { ok: true } {
+  const db = getDb();
+  const id = runSessionId.trim();
+  if (!id) {
+    throw new Error('runSessionId required');
+  }
+  const r = runSessions.cancelGlobalQueuedSessionById(db, id);
+  if (r === 'not_found') {
+    throw new Error('Run session not found');
+  }
+  if (r === 'not_queued') {
+    throw new Error('Not a queued session');
+  }
+  return { ok: true };
+}
+
 export function getQueueControlState(): {
   running: {
     runSessionId: string;
@@ -97,28 +134,6 @@ export async function finishCurrentWithFakeResults(
     log
   );
   return { ...result, resultTime, distance };
-}
-
-export async function cancelCurrentRunning(
-  touchDesigner: TouchDesignerIntegration,
-  log?: PromotionLog
-): Promise<{ cancelledRunSessionId: string }> {
-  const db = getDb();
-  const current = runSessions.getCurrentRunningSessionGlobal(db);
-  if (!current) {
-    throw new Error('No running session');
-  }
-  runSessions.setSessionStatus(db, current.id, 'cancelled');
-  runSessions.renumberGlobalQueuedSessions(db);
-  try {
-    await promoteNextQueuedSessionAfterFinish(touchDesigner, log);
-  } catch (e) {
-    log?.error?.({
-      msg: 'global_queue_promote_unexpected_after_cancel',
-      error: e instanceof Error ? e.message : String(e),
-    });
-  }
-  return { cancelledRunSessionId: current.id };
 }
 
 /**

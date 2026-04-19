@@ -211,7 +211,7 @@ export const api = {
     });
   },
 
-  /** Hidden dev tool: global queue + treadmill simulation (non-production or ALLOW_DEV_QUEUE_CONTROL). */
+  /** Global queue operator API: `/api/dev/queue-control/*` (dev + production). */
   getDevQueueControlState() {
     return request<{
       running: {
@@ -263,10 +263,17 @@ export const api = {
     }>('/dev/queue-control/finish-current', { method: 'POST', body: JSON.stringify({}) });
   },
 
-  devQueueControlCancelCurrent() {
-    return request<{ cancelledRunSessionId: string }>('/dev/queue-control/cancel-current', {
+  devQueueControlMoveCurrentToEnd() {
+    return request<{ demotedRunSessionId: string; promotedRunSessionId: string | null }>(
+      '/dev/queue-control/move-current-to-end',
+      { method: 'POST', body: JSON.stringify({}) }
+    );
+  },
+
+  devQueueControlRemoveQueued(runSessionId: string) {
+    return request<{ ok: boolean }>('/dev/queue-control/remove-queued', {
       method: 'POST',
-      body: JSON.stringify({}),
+      body: JSON.stringify({ runSessionId }),
     });
   },
 

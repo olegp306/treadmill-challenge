@@ -72,6 +72,11 @@ export default function QueueControlPage() {
   }, [load]);
 
   useEffect(() => {
+    document.body.classList.add('dev-queue-control-route');
+    return () => document.body.classList.remove('dev-queue-control-route');
+  }, []);
+
+  useEffect(() => {
     const id = state?.running?.runSessionId?.trim();
     if (id) setLastKnownRunSessionId(id);
   }, [state?.running?.runSessionId]);
@@ -95,9 +100,9 @@ export default function QueueControlPage() {
   return (
     <div style={box}>
       <h1 style={{ marginTop: 0 }}>Queue control (dev)</h1>
-      <p style={{ color: '#444', fontSize: 14 }}>
-        Скрытая страница для локальной проверки глобальной очереди. В production API выключен без{' '}
-        <code>ALLOW_DEV_QUEUE_CONTROL=true</code>. Для старта без OSC включите TouchDesigner demo mode в админке.
+      <p style={{ color: '#444', fontSize: 14, lineHeight: 1.45 }}>
+        Управление глобальной очередью: URL <code>/dev/queue-control</code> (в меню киоска не показывается).
+        Работает и на dev, и на production при том же origin, что и API (<code>/api/dev/queue-control/*</code>).
       </p>
       {error && (
         <p style={{ color: '#b00020', marginBottom: 16 }} role="alert">
@@ -240,6 +245,7 @@ export default function QueueControlPage() {
               <th style={thtd}>Участник</th>
               <th style={thtd}>Формат</th>
               <th style={thtd}>runSessionId</th>
+              <th style={thtd}>Действие</th>
             </tr>
           </thead>
           <tbody>
@@ -250,6 +256,27 @@ export default function QueueControlPage() {
                 <td style={thtd}>{q.runTypeName}</td>
                 <td style={{ ...thtd, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 11 }}>
                   {q.runSessionId}
+                </td>
+                <td style={thtd}>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    title="Убрать из очереди без результата (cancel)"
+                    style={{
+                      padding: '6px 10px',
+                      fontSize: 13,
+                      cursor: busy ? 'not-allowed' : 'pointer',
+                      background: '#fff',
+                      border: '1px solid #c62828',
+                      color: '#c62828',
+                      borderRadius: 6,
+                    }}
+                    onClick={() =>
+                      void runAction(() => api.devQueueControlRemoveQueued(q.runSessionId))
+                    }
+                  >
+                    Удалить из очереди
+                  </button>
                 </td>
               </tr>
             ))}
@@ -280,11 +307,12 @@ export default function QueueControlPage() {
       </button>
       <button
         type="button"
-        style={{ ...btnBase, background: '#c62828', color: '#fff', border: 'none' }}
+        style={{ ...btnBase, background: '#0d47a1', color: '#fff', border: 'none' }}
         disabled={busy || !showRunnerActions}
-        onClick={() => void runAction(() => api.devQueueControlCancelCurrent())}
+        onClick={() => void runAction(() => api.devQueueControlMoveCurrentToEnd())}
+        title="Текущий забег → в конец FIFO; следующий из очереди стартует (если есть)"
       >
-        Остановить и удалить запись
+        Переставить текущего в конец очереди
       </button>
 
       <button

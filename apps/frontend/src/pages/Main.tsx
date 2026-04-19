@@ -10,6 +10,7 @@ import { AdminPinModal } from '../features/admin/AdminPinModal';
 import { logEvent } from '../logging/logEvent';
 import { pluralizePeople } from '../utils/russianPlural';
 import { LogoMark } from '../ui/components/LogoMark';
+import { APP_VERSION } from '../appVersion';
 import { ui } from '../ui/tokens';
 import { TD_LEADERBOARD_WAITING_PATH } from '../features/td/tdLeaderboardRoutes';
 
@@ -43,8 +44,11 @@ export default function Main() {
   const [queueBlockVisible, setQueueBlockVisible] = useState(false);
   const [heroFullLoaded, setHeroFullLoaded] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [showUiVersion, setShowUiVersion] = useState(false);
   const heroFullImgRef = useRef<HTMLImageElement>(null);
   const adminTapIdx = useRef(0);
+  /** Triple consecutive taps on AMAZING (RED resets) reveal build version — independent of admin tap sequence. */
+  const amazingVersionTapRef = useRef(0);
 
   useLayoutEffect(() => {
     const el = heroFullImgRef.current;
@@ -108,6 +112,20 @@ export default function Main() {
     }
   };
 
+  const onAmazingPointer = () => {
+    amazingVersionTapRef.current += 1;
+    if (amazingVersionTapRef.current >= 3) {
+      amazingVersionTapRef.current = 0;
+      setShowUiVersion(true);
+    }
+    onAdminTap('amazing');
+  };
+
+  const onRedPointer = () => {
+    amazingVersionTapRef.current = 0;
+    onAdminTap('red');
+  };
+
   return (
     <ArOzioViewport>
       <ScreenContainer style={styles.page}>
@@ -151,10 +169,34 @@ export default function Main() {
               <LogoMark
                 aria-label="AMAZING RED"
                 style={styles.logoMark}
-                onAmazingClick={() => onAdminTap('amazing')}
-                onRedClick={() => onAdminTap('red')}
+                onAmazingClick={onAmazingPointer}
+                onRedClick={onRedPointer}
               />
             </div>
+
+            {showUiVersion ? (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  position: 'absolute',
+                  top: h(28),
+                  right: w(40),
+                  zIndex: 10,
+                  fontSize: w(22),
+                  lineHeight: 1.2,
+                  fontWeight: 400,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.42)',
+                  pointerEvents: 'none',
+                  maxWidth: '50%',
+                  textAlign: 'right',
+                }}
+              >
+                v{APP_VERSION}
+              </div>
+            ) : null}
 
             <div style={styles.heroForeground}>
               <h1 style={styles.headline}>

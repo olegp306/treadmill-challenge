@@ -324,6 +324,36 @@ export function swapQueueNumbers(db: Db, sessionIdA: string, sessionIdB: string)
   renumberGlobalQueuedSessions(db);
 }
 
+/**
+ * Put `sessionId` last in global FIFO among queued sessions (updates `createdAt`).
+ * Caller must ensure the session is already `queued`.
+ */
+export function bumpRunSessionCreatedAtToGlobalQueueTail(db: Db, sessionId: string): void {
+  const s = getRunSessionById(db, sessionId);
+  if (!s || s.status !== 'queued') {
+    throw new Error('Session must exist and be queued');
+  }
+  const row = db
+    .prepare(`SELECT MAX(createdAt) as m FROM run_sessions WHERE status = 'queued'`)
+    .get() as { m: string | null } | undefined;
+  let nextMs = Date.now();
+  if (row?.m != null && String(row.m).trim().length > 0) {
+    const maxMs = new Date(String(row.m)).getTime();
+    if (!Number.isNaN(maxMs)) nextMs = Math.max(nextMs, maxMs + 1);
+  }
+  db.prepare(`UPDATE run_sessions SET createdAt = ? WHERE id = ?`).run(new Date(nextMs).toISOString(), sessionId);
+}
+
+/** Cancel a globally queued session (not running); renumbers remaining queue. */
+export function cancelGlobalQueuedSessionById(db: Db, sessionId: string): 'ok' | 'not_found' | 'not_queued' {
+  const s = getRunSessionById(db, sessionId);
+  if (!s) return 'not_found';
+  if (s.status !== 'queued') return 'not_queued';
+  setSessionStatus(db, sessionId, 'cancelled');
+  renumberGlobalQueuedSessions(db);
+  return 'ok';
+}
+
 /** Renumber queueNumber 1..n for all queued+running sessions (global FIFO order). */
 export function renumberGlobalQueuedSessions(db: Db): void {
   const rows = db
