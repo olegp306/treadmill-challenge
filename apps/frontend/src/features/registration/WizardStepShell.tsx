@@ -20,7 +20,7 @@ export function WizardStepShell({ onBack, variant, children, footer, ...rest }: 
   const mainStyle: CSSProperties = {
     ...reg.ageFigmaMain,
     ...(variant === 'short'
-      ? { flex: '0 1 auto', minHeight: h(749), alignSelf: 'stretch' }
+      ? { flex: '0 1 auto', minHeight: h(1334), alignSelf: 'stretch' }
       : { flex: 1, minHeight: 0 }),
   };
 

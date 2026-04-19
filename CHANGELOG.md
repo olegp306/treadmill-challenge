@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.10] - 2026-04-19
+
+### Changed
+
+- **Registration / Name step (`Как тебя зовут?`):** iPad keyboard behavior stabilized with a local keyboard-open state driven by `visualViewport`, no-scroll short-step mode, and content shift-up in keyboard state (instead of page/canvas scrolling).
+- **Registration layout height behavior:** fullscreen fallback heights migrated from `100vh` to `100dvh` in the AR Ozio viewport/root containers to reduce iOS viewport jumpiness during keyboard open/close.
+- **Name step card fit:** short wizard card minimum height tuned to better match Figma and avoid squeezed appearance.
+- **Phone step underline:** removed duplicate underline from the input itself and kept a single long custom underline matching design.
+
+### Fixed
+
+- **iPad form UX regression:** prevented extra scroll areas and unstable vertical scrolling after focusing name fields and opening the software keyboard.
+
+---
+
 ## [0.2.9] - 2026-04-19
 
 ### Changed

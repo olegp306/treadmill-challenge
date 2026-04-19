@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RegistrationFormData } from '../types';
 import { focusInputForMobileKeyboard } from '../iosInputFocus';
 import { logEvent } from '../../../logging/logEvent';
@@ -27,6 +27,8 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
   const [blurLastError, setBlurLastError] = useState<string | null>(null);
   const [firstEdited, setFirstEdited] = useState(false);
   const [lastEdited, setLastEdited] = useState(false);
+  const [nameFieldFocused, setNameFieldFocused] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const firstResult = useMemo(() => validateNamePart(form.firstName, 'first'), [form.firstName]);
   const lastResult = useMemo(() => validateNamePart(form.lastName, 'last'), [form.lastName]);
@@ -60,25 +62,69 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
     };
   }, []);
 
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const recompute = () => {
+      // iPad keyboard typically reduces visual viewport by >100px.
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardOpen(nameFieldFocused && inset > 170);
+    };
+
+    recompute();
+    vv.addEventListener('resize', recompute);
+    vv.addEventListener('scroll', recompute);
+    window.addEventListener('resize', recompute, { passive: true });
+    return () => {
+      vv.removeEventListener('resize', recompute);
+      vv.removeEventListener('scroll', recompute);
+      window.removeEventListener('resize', recompute);
+    };
+  }, [nameFieldFocused]);
+
+  const onAnyFieldFocus = () => {
+    setNameFieldFocused(true);
+  };
+
+  const onAnyFieldBlur = () => {
+    window.setTimeout(() => {
+      const active = document.activeElement;
+      const stillOnName =
+        active === firstRef.current ||
+        active === lastRef.current;
+      if (!stillOnName) {
+        setNameFieldFocused(false);
+        setKeyboardOpen(false);
+      }
+    }, 0);
+  };
+
   const tryAdvance = () => {
     onNext();
   };
 
   return (
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод имени">
-      <StepBody variant="short">
-        <h2 style={{ ...reg.ageFigmaQuestion, ...reg.stepTitle, lineHeight: 2 }}>Как тебя зовут?</h2>
-        {stepError ? (
-          <p style={{ ...reg.error, ...reg.stepErrorCentered }}>{stepError}</p>
-        ) : null}
-        <form
-          style={reg.nameFormRow}
-          onSubmit={(e) => {
-            e.preventDefault();
-            tryAdvance();
+      <StepBody variant="short" lockScroll>
+        <div
+          style={{
+            ...reg.nameStepContent,
+            ...(keyboardOpen ? reg.nameStepContentKeyboardOpen : {}),
           }}
         >
-          <InputField
+          <h2 style={{ ...reg.ageFigmaQuestion, ...reg.stepTitle, lineHeight: 2 }}>Как тебя зовут?</h2>
+          {stepError ? (
+            <p style={{ ...reg.error, ...reg.stepErrorCentered }}>{stepError}</p>
+          ) : null}
+          <form
+            style={reg.nameFormRow}
+            onSubmit={(e) => {
+              e.preventDefault();
+              tryAdvance();
+            }}
+          >
+            <InputField
             ref={firstRef}
             id={idFirst}
             className="reg-input-name-narrow"
@@ -104,20 +150,23 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               setBlurFirstError(null);
             }}
             onBlur={(e) => {
-              if (!firstEdited) return;
-              const r = validateNamePart(e.target.value, 'first');
-              if (r.ok) {
-                onChange({ firstName: r.normalized });
-                setBlurFirstError(null);
-                logEvent(
-                  'field_name_first_blur',
-                  { length: r.normalized.length },
-                  { readableMessage: `Пользователь ввёл имя: ${r.normalized}` }
-                );
-              } else {
-                setBlurFirstError(r.message);
+              if (firstEdited) {
+                const r = validateNamePart(e.target.value, 'first');
+                if (r.ok) {
+                  onChange({ firstName: r.normalized });
+                  setBlurFirstError(null);
+                  logEvent(
+                    'field_name_first_blur',
+                    { length: r.normalized.length },
+                    { readableMessage: `Пользователь ввёл имя: ${r.normalized}` }
+                  );
+                } else {
+                  setBlurFirstError(r.message);
+                }
               }
+              onAnyFieldBlur();
             }}
+            onFocus={onAnyFieldFocus}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -150,20 +199,23 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
               setBlurLastError(null);
             }}
             onBlur={(e) => {
-              if (!lastEdited) return;
-              const r = validateNamePart(e.target.value, 'last');
-              if (r.ok) {
-                onChange({ lastName: r.normalized });
-                setBlurLastError(null);
-                logEvent(
-                  'field_name_last_blur',
-                  { length: r.normalized.length },
-                  { readableMessage: `Пользователь ввёл фамилию: ${r.normalized}` }
-                );
-              } else {
-                setBlurLastError(r.message);
+              if (lastEdited) {
+                const r = validateNamePart(e.target.value, 'last');
+                if (r.ok) {
+                  onChange({ lastName: r.normalized });
+                  setBlurLastError(null);
+                  logEvent(
+                    'field_name_last_blur',
+                    { length: r.normalized.length },
+                    { readableMessage: `Пользователь ввёл фамилию: ${r.normalized}` }
+                  );
+                } else {
+                  setBlurLastError(r.message);
+                }
               }
+              onAnyFieldBlur();
             }}
+            onFocus={onAnyFieldFocus}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && filled) {
                 e.preventDefault();
@@ -174,7 +226,8 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
           <PrimaryButton variant="next" type="submit" active={filled} disabled={!filled}>
             Далее
           </PrimaryButton>
-        </form>
+          </form>
+        </div>
       </StepBody>
     </WizardStepShell>
   );

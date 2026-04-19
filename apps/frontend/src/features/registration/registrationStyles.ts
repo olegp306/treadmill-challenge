@@ -601,6 +601,12 @@ export const reg: Record<string, CSSProperties> = {
     alignSelf: 'center',
     WebkitOverflowScrolling: 'touch' as const,
   },
+  /** Lock inner scroll to avoid iPad keyboard creating extra scroll regions. */
+  stepBodyNoScroll: {
+    overflow: 'hidden',
+    WebkitOverflowScrolling: 'auto' as const,
+    overscrollBehavior: 'contain' as const,
+  },
   /** Tall steps: single centered column (age unanswered, gender). */
   stepBodyTall: {
     flex: 1,
@@ -657,6 +663,19 @@ export const reg: Record<string, CSSProperties> = {
     flex: 1,
     minWidth: 0,
     paddingTop: '30px',
+  },
+  /** Name step keyboard handling: move content, don't scroll page/canvas. */
+  nameStepContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: h(24),
+    width: '100%',
+    transition: 'transform 220ms ease, gap 220ms ease',
+    transform: 'translateY(0)',
+  },
+  nameStepContentKeyboardOpen: {
+    transform: 'translateY(-9%)',
+    gap: h(16),
   },
   nameFieldsCluster: {
     display: 'flex',

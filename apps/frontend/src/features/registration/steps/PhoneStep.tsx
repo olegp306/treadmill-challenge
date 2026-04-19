@@ -82,6 +82,7 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
             hasError={fieldError}
             errorText={null}
             inputBaseStyle={reg.phoneDigitsInput}
+            style={{ borderBottom: 'none', paddingBottom: 0 }}
             ref={(node) => {
               phoneInputRef.current = node;
               if (typeof hookRef === 'function') {
