@@ -18,10 +18,10 @@ import { APP_VERSION } from '../appVersion';
 import { ui } from '../ui/tokens';
 import { TD_LEADERBOARD_WAITING_PATH } from '../features/td/tdLeaderboardRoutes';
 
-/** Figma hero — local assets (WebP + JPEG fallback, tiny LQIP blur). */
-const HERO_BG_WEBP = '/assets/hero/hero-bg.webp';
-const HERO_BG_FULL = '/assets/hero/hero-bg.jpg';
+/** Figma hero — LQIP blur под видео; основной фон — loop mp4 (public/). */
 const HERO_BG_LQ = '/assets/hero/hero-bg-lq.jpg';
+/** Имя файла с пробелами — кодируем путь для надёжности в URL. */
+const HERO_BG_VIDEO = encodeURI('/assets/hero/bg ipad 2bit.mp4');
 
 type QueueCardItem = {
   runSessionId: string;
@@ -62,17 +62,24 @@ export default function Main() {
   const [heroFullLoaded, setHeroFullLoaded] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [showUiVersion, setShowUiVersion] = useState(false);
-  const heroFullImgRef = useRef<HTMLImageElement>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
   const adminTapIdx = useRef(0);
   /** Triple consecutive taps on AMAZING (RED resets) reveal build version — independent of admin tap sequence. */
   const amazingVersionTapRef = useRef(0);
 
   useLayoutEffect(() => {
-    const el = heroFullImgRef.current;
-    if (!el) return;
-    if (el.complete && el.naturalWidth > 0) {
+    const v = heroVideoRef.current;
+    if (!v) return;
+    if (v.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
       setHeroFullLoaded(true);
     }
+  }, []);
+
+  /** Muted autoplay: подстраховка для WebKit/iPad (playsInline + muted в разметке). */
+  useEffect(() => {
+    const v = heroVideoRef.current;
+    if (!v) return;
+    void v.play().catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -221,23 +228,24 @@ export default function Main() {
                 decoding="async"
                 fetchPriority="low"
               />
-              <picture style={styles.heroPicture}>
-                <source srcSet={HERO_BG_WEBP} type="image/webp" />
-                <img
-                  ref={heroFullImgRef}
-                  src={HERO_BG_FULL}
-                  alt=""
-                  style={{
-                    ...styles.heroImage,
-                    opacity: heroFullLoaded ? 1 : 0,
-                    transition: 'opacity 280ms ease-out',
-                  }}
-                  decoding="async"
-                  fetchPriority="high"
-                  onLoad={() => setHeroFullLoaded(true)}
-                  onError={() => setHeroFullLoaded(true)}
-                />
-              </picture>
+              <video
+                ref={heroVideoRef}
+                src={HERO_BG_VIDEO}
+                style={{
+                  ...styles.heroVideo,
+                  opacity: heroFullLoaded ? 1 : 0,
+                  transition: 'opacity 280ms ease-out',
+                }}
+                muted
+                loop
+                playsInline
+                autoPlay
+                preload="auto"
+                tabIndex={-1}
+                onCanPlay={() => setHeroFullLoaded(true)}
+                onLoadedData={() => setHeroFullLoaded(true)}
+                onError={() => setHeroFullLoaded(true)}
+              />
             </div>
             <div
               style={{
@@ -414,6 +422,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: ui.color.panel,
     boxShadow: `inset 0 -280px 250px -350px ${ui.color.red}`,
     pointerEvents: 'none',
+    zIndex: 0,
   },
   heroContentLayer: {
     position: 'relative',
@@ -448,6 +457,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     flexWrap: 'wrap',
   },
+  /** Без mix-blend на видео: color-dodge на тёмном panel «съедает» кадры и даёт невидимый слой в WebKit. */
   heroImageWrap: {
     position: 'absolute',
     left: '50%',
@@ -457,25 +467,19 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     borderRadius: w(70),
     overflow: 'hidden',
-    opacity: 0.5,
-    mixBlendMode: 'color-dodge',
+    opacity: 1,
     pointerEvents: 'none',
+    zIndex: 1,
   },
-  heroPicture: {
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    margin: 0,
-    display: 'block',
-  },
-  heroImage: {
+  /** Те же кадрирование/масштаб, что у бывшего hero full-asset (cover, смещение по Y). */
+  heroVideo: {
     position: 'absolute',
     width: '100%',
     height: '121.36%',
     left: 0,
     top: '-19.65%',
     objectFit: 'cover',
+    pointerEvents: 'none',
   },
   heroForeground: {
     position: 'relative',

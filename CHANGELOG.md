@@ -7,6 +7,22 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.7] - 2026-04-19
+
+### Added
+
+- **Главная («Беги на максимум»):** фон — **loop video** **`public/assets/hero/bg ipad 2bit.mp4`** (`<video>`: **autoplay**, **muted**, **loop**, **playsInline**, **preload="auto"**); подложка **LQ blur** **`hero-bg-lq.jpg`** до появления кадра; плавное появление как у прежнего full-asset.
+
+### Changed
+
+- **Main:** вместо стека **WebP / JPEG** на full-слое — **одно видео**; **`video.play()`** как подстраховка автозапуска.
+
+### Fixed
+
+- **Видимость фонового видео:** у контейнера **`heroImageWrap`** убраны **`mixBlendMode: color-dodge`** и полупрозрачность — на тёмной пластине и с **`<video>`** слой иначе почти не виден; задан явный **z-index** (пластина **0**, видео **1**, контент **3**).
+
+---
+
 ## [0.2.6] - 2026-04-19
 
 ### Added
