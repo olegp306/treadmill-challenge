@@ -72,6 +72,18 @@ export const rq: Record<string, CSSProperties> = {
     zIndex: 1,
     boxSizing: 'border-box',
   },
+  goToTreadmillBlock: {
+    width: '100%',
+    maxWidth: w(2000),
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    gap: h(40),
+    marginLeft: 'auto',
+    marginRight: 'auto',
+  },
   titleMain: {
     margin: 0,
     textAlign: 'center',

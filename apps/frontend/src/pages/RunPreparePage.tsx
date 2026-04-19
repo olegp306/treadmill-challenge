@@ -217,6 +217,7 @@ export default function RunPreparePage() {
   return (
     <RunQueueScreenShell
       participantDisplayName={displayName}
+      centerAgainstSheet
       footer={
         demoMode ? (
           <button

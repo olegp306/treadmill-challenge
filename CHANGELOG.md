@@ -7,6 +7,16 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.12] - 2026-04-19
+
+### Changed
+
+- **Prepare screen content alignment (`/run/prepare`):** grouped `Пройдите на дорожку` + `Забег сейчас начнется!` into a single centered content block for consistent intra-block alignment.
+- **Vertical centering root cause fix:** run-queue shell now supports centering content against the entire card (`Sheet`), not only the area below the header; enabled for the immediate-start prepare screen.
+- **Prepare screen placement parity:** switched prepare screen to sheet-wide centering mode so the full text block sits at true visual vertical center of the card/screen.
+
+---
+
 ## [0.2.11] - 2026-04-19
 
 ### Changed

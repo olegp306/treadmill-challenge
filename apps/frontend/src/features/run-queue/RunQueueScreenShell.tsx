@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import { h, w } from '../../arOzio/dimensions';
 import { RegistrationLayout } from '../registration/RegistrationLayout';
 import { rq } from './runQueueScreensStyles';
@@ -10,10 +11,27 @@ type Props = {
   participantDisplayName: string;
   children: ReactNode;
   footer: ReactNode;
+  /** Center content against the whole sheet, not area below header. */
+  centerAgainstSheet?: boolean;
 };
 
 /** Shared chrome for Figma queue / treadmill screens: dark sheet (logo + name) + footer buttons below. */
-export function RunQueueScreenShell({ participantDisplayName, children, footer }: Props) {
+export function RunQueueScreenShell({
+  participantDisplayName,
+  children,
+  footer,
+  centerAgainstSheet = false,
+}: Props) {
+  const centerStyle: CSSProperties = centerAgainstSheet
+    ? {
+        ...rq.centerWrap,
+        position: 'absolute',
+        inset: 0,
+        minHeight: 0,
+        zIndex: 1,
+      }
+    : rq.centerWrap;
+
   return (
     <RegistrationLayout chrome="wizard">
       <div
@@ -30,9 +48,15 @@ export function RunQueueScreenShell({ participantDisplayName, children, footer }
           boxSizing: 'border-box',
         }}
       >
-        <Sheet style={rq.sheet} overlay={<div style={rq.sheetGlow} aria-hidden />}>
+        <Sheet
+          style={{
+            ...rq.sheet,
+            ...(centerAgainstSheet ? ({ position: 'relative' } as CSSProperties) : {}),
+          }}
+          overlay={<div style={rq.sheetGlow} aria-hidden />}
+        >
           <HeaderChrome right={<p style={rq.namePill}>{participantDisplayName}</p>} style={rq.headerRow} logoStyle={rq.logoMark} />
-          <div style={rq.centerWrap}>{children}</div>
+          <div style={centerStyle}>{children}</div>
         </Sheet>
         <FooterActionsRow style={{ ...rq.footerRow, marginTop: h(24) }} maxWidth={w(2120)}>
           {footer}
