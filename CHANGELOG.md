@@ -7,6 +7,17 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.9] - 2026-04-19
+
+### Changed
+
+- **TouchDesigner result leaderboard (`/td/leaderboard/result`):** fullscreen shell now prioritizes **full-width** composition for external wide displays (2560×1120 target) while keeping vertical centering.
+- **Final leaderboard spacing:** increased vertical gap between the top title/logo block and the leaderboard list; then tuned to **`top: calc(50% + 40px)`**.
+- **Background decor (final leaderboard):** positions aligned closer to Figma — **7 dashes left + 7 dashes right** in mirrored vertical columns and **4 corner plus signs**.
+- **Decor visual style:** plus/dash markers reworked from font glyphs to thin stroke-like shapes for cleaner Figma parity; thickness tuned to final value (**2.5px**).
+
+---
+
 ## [0.2.8] - 2026-04-19
 
 ### Added

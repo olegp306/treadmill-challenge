@@ -259,7 +259,7 @@ export default function TdResultLeaderboardPage() {
               style={{
                 position: 'absolute',
                 left: 0,
-                top: 'calc(50% + 27px)',
+                top: 'calc(50% + 40px)',
                 transform: 'translateY(-50%)',
                 width: td.designW,
                 display: 'flex',

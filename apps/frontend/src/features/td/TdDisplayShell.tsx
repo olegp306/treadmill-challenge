@@ -5,13 +5,15 @@ import { td } from './tdTokens';
  * Scales the fixed 2560×1120 composition to fit the viewport (letterboxed, no scroll).
  */
 export function TdDisplayShell({ children }: { children: ReactNode }) {
-  const [scale, setScale] = useState(1);
+  const [layout, setLayout] = useState({ scale: 1, topOffset: 0 });
 
   useLayoutEffect(() => {
     const update = () => {
-      const sx = window.innerWidth / td.designW;
-      const sy = window.innerHeight / td.designH;
-      setScale(Math.min(sx, sy));
+      // External wide display priority: always occupy full viewport width.
+      const scale = window.innerWidth / td.designW;
+      const scaledH = td.designH * scale;
+      const topOffset = Math.max(0, (window.innerHeight - scaledH) / 2);
+      setLayout({ scale, topOffset });
     };
     update();
     window.addEventListener('resize', update, { passive: true });
@@ -25,9 +27,7 @@ export function TdDisplayShell({ children }: { children: ReactNode }) {
         height: '100vh',
         overflow: 'hidden',
         background: td.bg,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        position: 'relative',
       }}
     >
       <div
@@ -35,9 +35,11 @@ export function TdDisplayShell({ children }: { children: ReactNode }) {
         style={{
           width: td.designW,
           height: td.designH,
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-          position: 'relative',
+          transform: `translateX(-50%) scale(${layout.scale})`,
+          transformOrigin: 'top center',
+          position: 'absolute',
+          left: '50%',
+          top: layout.topOffset,
           flexShrink: 0,
           color: '#ffffff',
         }}
