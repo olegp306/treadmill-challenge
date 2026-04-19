@@ -98,6 +98,25 @@ export const rq: Record<string, CSSProperties> = {
   subtitleStrong: {
     color: ui.color.text,
   },
+  /** Однострочные подписи под заголовком «Дорожка пока занята» (Figma): серый префикс + белый акцент. */
+  queueFigmaSubline: {
+    margin: 0,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    textAlign: 'center',
+    fontSize: w(40),
+    lineHeight: 1.25,
+    fontWeight: 400,
+    textTransform: 'none',
+    maxWidth: w(2000),
+    whiteSpace: 'nowrap',
+  },
+  queueFigmaMuted: {
+    color: 'rgba(255,255,255,0.6)',
+  },
+  queueFigmaStrong: {
+    color: ui.color.text,
+  },
   footerRow: {
     display: 'flex',
     flexDirection: 'row',
@@ -112,7 +131,8 @@ export const rq: Record<string, CSSProperties> = {
   btnWide: {
     flex: '1 1 0',
     minWidth: 0,
-    minHeight: h(146),
+    flexShrink: 0,
+    minHeight: h(188),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -131,7 +151,8 @@ export const rq: Record<string, CSSProperties> = {
   btnWideSolid: {
     flex: '1 1 0',
     minWidth: 0,
-    minHeight: h(146),
+    flexShrink: 0,
+    minHeight: h(188),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

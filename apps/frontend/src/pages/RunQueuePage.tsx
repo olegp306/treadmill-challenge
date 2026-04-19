@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { RunTypeId } from '@treadmill-challenge/shared';
+import { computeAheadFromGlobalQueueEntries } from '../features/run-queue/queueAheadFromApi';
+import { QueueBusyEstimateLines } from '../features/run-queue/QueueBusyEstimateLines';
 import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
 import { GoToTreadmillContent } from '../features/run-queue/GoToTreadmillContent';
@@ -56,6 +58,9 @@ export default function RunQueuePage() {
   });
   const [livePosition, setLivePosition] = useState<number>(position);
   const [liveOtherRunning, setLiveOtherRunning] = useState(() => Boolean(state?.initialOtherSessionRunning));
+  /** По глобальной очереди (FIFO): сколько человек и минут суммарно перед этой сессией. */
+  const [queueAheadPeople, setQueueAheadPeople] = useState(0);
+  const [queueWaitMinutes, setQueueWaitMinutes] = useState(0);
   const [resultPendingLong, setResultPendingLong] = useState(false);
   const resultPendingLoggedRef = useRef(false);
   const waitingTdReportedRef = useRef(false);
@@ -68,6 +73,8 @@ export default function RunQueuePage() {
     finishNavigateScheduledRef.current = false;
     setResultPendingLong(false);
     setLiveOtherRunning(Boolean(state?.initialOtherSessionRunning));
+    setQueueAheadPeople(0);
+    setQueueWaitMinutes(0);
   }, [runSessionId, state?.initialOtherSessionRunning]);
 
   useEffect(() => {
@@ -158,6 +165,20 @@ export default function RunQueuePage() {
         setLiveStatus(s.status === 'running' ? 'running' : s.status === 'queued' ? 'queued' : null);
         setLivePosition(s.queuePosition ?? 0);
         setLiveOtherRunning(Boolean(s.otherSessionRunning));
+        if (s.status === 'queued') {
+          try {
+            const q = await api.getRunQueue();
+            const entries = q.entries.map((e) => ({
+              runSessionId: e.runSessionId,
+              runTypeId: e.runTypeId as RunTypeId,
+            }));
+            const est = computeAheadFromGlobalQueueEntries(entries, runSessionId);
+            setQueueAheadPeople(est.peopleAhead);
+            setQueueWaitMinutes(est.waitMinutes);
+          } catch {
+            /* keep previous estimate */
+          }
+        }
         const demoEnabled = demoMode && tdDemoMode;
         if (s.status === 'running' && !demoEnabled) {
           if (!waitingTdReportedRef.current) {
@@ -327,9 +348,6 @@ export default function RunQueuePage() {
         : livePosition === 1 && !prepareAck && !liveOtherRunning
           ? 'prepare'
           : 'queue';
-  const peopleAhead = Math.max(0, livePosition - 1);
-  const approxWaitMin = Math.max(0, peopleAhead * 2);
-
   return (
     <RunQueueScreenShell
       participantDisplayName={displayName}
@@ -380,21 +398,13 @@ export default function RunQueuePage() {
         <>
           {liveOtherRunning && liveStatus === 'queued' ? (
             <>
-              <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка занята</p>
-              <p style={rq.subtitle}>Дождитесь, когда предыдущий участник закончит</p>
+              <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка пока занята</p>
+              <QueueBusyEstimateLines peopleAhead={queueAheadPeople} waitMinutes={queueWaitMinutes} />
             </>
           ) : demoEnabled ? (
             <>
-              <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка занята</p>
-              <p style={rq.subtitle}>
-                <span>Перед тобой </span>
-                <span style={rq.subtitleStrong}>
-                  {peopleAhead} {peopleAhead === 1 ? 'человек' : peopleAhead >= 2 && peopleAhead <= 4 ? 'человека' : 'человек'}
-                </span>
-              </p>
-              <p style={rq.subtitle}>
-                Примерное ожидание: <span style={rq.subtitleStrong}>{approxWaitMin} мин</span>
-              </p>
+              <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка пока занята</p>
+              <QueueBusyEstimateLines peopleAhead={queueAheadPeople} waitMinutes={queueWaitMinutes} />
             </>
           ) : (
             <p style={{ ...rq.titleMain, margin: 0 }}>

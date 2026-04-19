@@ -3,7 +3,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { WizardBlockedNotice } from '../features/registration/components/WizardBlockedNotice';
 import { RegistrationLayout } from '../features/registration/RegistrationLayout';
 
-type QueueFullLocationState = { fromMainParticipateQueueFull?: boolean } | null;
+type QueueFullLocationState = {
+  fromMainParticipateQueueFull?: boolean;
+  /** После startRun при полном пуле с экрана выбора формата. */
+  fromRunSelectionQueueFull?: boolean;
+} | null;
 
 /** Same wizard chrome as AgeStep «несовершеннолетний» — только текст про переполненную очередь. */
 export default function QueueFullPage() {
@@ -12,14 +16,12 @@ export default function QueueFullPage() {
   const entry = location.state as QueueFullLocationState;
 
   useLayoutEffect(() => {
-    const hasEntryToken = Boolean(entry?.fromMainParticipateQueueFull);
-    // Только прямой переход с главной (`Main` передаёт state). Иначе закладка/refresh без state.
-    // Нельзя отфутболивать по sessionStorage: при полном пуле там может быть старый runSessionId,
-    // а экран переполнения должен показываться именно из этого сценария.
-    if (!hasEntryToken) {
+    const allowed = Boolean(entry?.fromMainParticipateQueueFull || entry?.fromRunSelectionQueueFull);
+    // Только переход с главной или с выбора формата при полном пуле — иначе закладка/refresh без state.
+    if (!allowed) {
       void navigate('/', { replace: true });
     }
-  }, [entry?.fromMainParticipateQueueFull, navigate]);
+  }, [entry?.fromMainParticipateQueueFull, entry?.fromRunSelectionQueueFull, navigate]);
 
   return (
     <RegistrationLayout chrome="wizard">

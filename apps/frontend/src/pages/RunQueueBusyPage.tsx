@@ -6,7 +6,10 @@ import { logEvent } from '../logging/logEvent';
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
+import { computeAheadFromGlobalQueueEntries } from '../features/run-queue/queueAheadFromApi';
+import { QueueBusyEstimateLines } from '../features/run-queue/QueueBusyEstimateLines';
 import type { RunSelectLocationState } from './RunSelectionPage';
+import { h } from '../arOzio/dimensions';
 
 export type RunQueueBusyLocationState = {
   participantId: string;
@@ -24,6 +27,10 @@ export default function RunQueueBusyPage() {
 
   const participantId = state?.participantId ?? '';
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
+  /** Только для treadmill_busy: расчёт «перед тобой» и ожидания по глобальной очереди. */
+  const [peopleAhead, setPeopleAhead] = useState(0);
+  const [waitMinutes, setWaitMinutes] = useState(0);
+  const [queuePosition, setQueuePosition] = useState(1);
 
   useEffect(() => {
     if (!participantId) {
@@ -39,9 +46,7 @@ export default function RunQueueBusyPage() {
         }
       } catch {
         if (!cancelled && state?.participantFirstName) {
-          setDisplayName(
-            formatParticipantDisplayName(state.participantFirstName, '')
-          );
+          setDisplayName(formatParticipantDisplayName(state.participantFirstName, ''));
         }
       }
     })();
@@ -50,8 +55,10 @@ export default function RunQueueBusyPage() {
     };
   }, [participantId, navigate, state?.participantFirstName]);
 
+  const isTreadmillBusy = state?.reason === 'treadmill_busy';
+
   useEffect(() => {
-    if (!participantId) return;
+    if (!participantId || !state) return;
     logEvent(
       'queue_busy_enter',
       { reason: state?.reason ?? 'queue_full' },
@@ -59,11 +66,48 @@ export default function RunQueueBusyPage() {
         participantId,
         readableMessage:
           state?.reason === 'treadmill_busy'
-            ? 'Пользователь увидел экран «Дорожка занята» (тренажер временно недоступен)'
-            : 'Пользователь увидел экран «Дорожка занята» (очередь заполнена)',
+            ? 'Экран решения «дорожка занята» (можно занять очередь или выйти)'
+            : 'Экран «очередь заполнена» после старта забега',
       }
     );
-  }, [participantId, state?.reason]);
+  }, [participantId, state]);
+
+  useEffect(() => {
+    if (!isTreadmillBusy || !state?.runSessionId || !participantId) return;
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [q, session] = await Promise.all([
+          api.getRunQueue(),
+          api.getRunSessionState(state.runSessionId!, participantId),
+        ]);
+        if (cancelled) return;
+        const entries = q.entries.map((e) => ({
+          runSessionId: e.runSessionId,
+          runTypeId: e.runTypeId as RunTypeId,
+        }));
+        const { peopleAhead: pa, waitMinutes: wm } = computeAheadFromGlobalQueueEntries(
+          entries,
+          state.runSessionId!
+        );
+        setPeopleAhead(pa);
+        setWaitMinutes(wm);
+        const qp = session.queuePosition ?? 1;
+        setQueuePosition(Math.max(1, qp));
+      } catch {
+        /* keep previous */
+      }
+    };
+
+    void load();
+    const t = window.setInterval(() => void load(), 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+    };
+  }, [isTreadmillBusy, state?.runSessionId, participantId]);
 
   if (!participantId || !state) {
     return null;
@@ -74,72 +118,121 @@ export default function RunQueueBusyPage() {
     participantFirstName: state.participantFirstName ?? '',
     participantSex: state.participantSex,
   };
-  const isTreadmillBusy = state?.reason === 'treadmill_busy';
+
+  const goLeaveConfirm = () => {
+    if (!state.runSessionId) return;
+    logEvent(
+      'queue_busy_click_leave_confirm',
+      {},
+      {
+        participantId,
+        readableMessage: 'С экрана «дорожка занята» — подтверждение выхода из забега',
+      }
+    );
+    navigate('/run/leave-queue', {
+      state: {
+        runSessionId: state.runSessionId,
+        participantId,
+        participantSex: state.participantSex,
+        runTypeId: state.runTypeId,
+        position: queuePosition,
+        cancelNavigate: {
+          to: '/run/queue-busy',
+          state: {
+            participantId,
+            participantFirstName: state.participantFirstName,
+            participantSex: state.participantSex,
+            runTypeId: state.runTypeId,
+            reason: 'treadmill_busy' as const,
+            runSessionId: state.runSessionId,
+          },
+        },
+      },
+    });
+  };
+
+  const goJoinQueue = () => {
+    if (!state.runSessionId) return;
+    logEvent(
+      'queue_busy_join_queue',
+      { reason: state.reason ?? 'unknown' },
+      {
+        participantId,
+        readableMessage: 'Пользователь нажал «Занять очередь» на экране дорожки',
+      }
+    );
+    navigate('/run/queue/position', {
+      replace: true,
+      state: {
+        participantId,
+        runSessionId: state.runSessionId,
+        runTypeId: state.runTypeId,
+        position: queuePosition,
+        participantSex: state.participantSex,
+        participantFirstName: state.participantFirstName,
+        initialSessionStatus: 'queued' as const,
+        initialOtherSessionRunning: true,
+      },
+    });
+  };
+
+  const goRetryOrHome = () => {
+    logEvent(
+      'queue_busy_click_home',
+      {},
+      {
+        participantId,
+        readableMessage: 'Пользователь нажал «Сойти с забега» (очередь полная / без сессии)',
+      }
+    );
+    navigate('/');
+  };
+
+  const goRetryRunSelect = () => {
+    logEvent('queue_busy_retry_run_select', {}, { participantId });
+    navigate('/run-select', { state: retryState, replace: true });
+  };
 
   return (
     <RunQueueScreenShell
       participantDisplayName={displayName}
       footer={
-        <>
-          <button
-            type="button"
-            style={rq.btnWide}
-            onClick={() => {
-              logEvent(
-                'queue_busy_click_home',
-                {},
-                {
-                  participantId,
-                  readableMessage: 'Пользователь нажал «Сойти с забега» на экране «дорожка занята»',
-                }
-              );
-              navigate('/');
-            }}
-          >
-            Сойти с забега
-          </button>
-          <button
-            type="button"
-            style={rq.btnWideSolid}
-            onClick={() => {
-              logEvent(
-                'queue_busy_retry',
-                { reason: state.reason ?? 'queue_full' },
-                {
-                  participantId,
-                  readableMessage: 'Пользователь нажал «Занять очередь» (повторная попытка)',
-                }
-              );
-              if (isTreadmillBusy && state.runSessionId) {
-                navigate('/run/queue', {
-                  replace: true,
-                  state: {
-                    participantId,
-                    runSessionId: state.runSessionId,
-                    runTypeId: state.runTypeId,
-                    participantSex: state.participantSex,
-                    participantFirstName: state.participantFirstName,
-                    position: 1,
-                  },
-                });
-                return;
-              }
-              navigate('/run-select', { state: retryState, replace: true });
-            }}
-          >
-            Занять очередь
-          </button>
-        </>
+        isTreadmillBusy && state.runSessionId ? (
+          <>
+            <button type="button" style={rq.btnWide} onClick={goLeaveConfirm}>
+              Сойти с забега
+            </button>
+            <button type="button" style={rq.btnWideSolid} onClick={goJoinQueue}>
+              Занять очередь
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" style={rq.btnWide} onClick={goRetryOrHome}>
+              Сойти с забега
+            </button>
+            <button type="button" style={rq.btnWideSolid} onClick={goRetryRunSelect}>
+              Попробовать снова
+            </button>
+          </>
+        )
       }
     >
-      <p style={rq.titleMain}>Дорожка пока занята</p>
-      <p style={rq.subtitle}>
-        {isTreadmillBusy ? 'Тренажер сейчас недоступен.' : 'Очередь для этого забега заполнена.'}
-        <br />
-        <span style={rq.subtitleStrong}>
-          {isTreadmillBusy ? 'Вы можете подождать в очереди.' : 'Попробуйте повторить позже.'}
-        </span>
-      </p>
+      {isTreadmillBusy ? (
+        <>
+          <p style={{ ...rq.titleMain, margin: 0 }}>Дорожка пока занята</p>
+          <QueueBusyEstimateLines peopleAhead={peopleAhead} waitMinutes={waitMinutes} />
+        </>
+      ) : (
+        <>
+          <p style={{ ...rq.titleMain, margin: 0 }}>Очередь заполнена</p>
+          <p style={{ ...rq.subtitle, marginTop: h(24) }}>
+            Сейчас нет свободного места в очереди.
+            <br />
+            <span style={rq.subtitleStrong}>Попробуйте позже.</span>
+          </p>
+        </>
+      )}
     </RunQueueScreenShell>
   );
 }

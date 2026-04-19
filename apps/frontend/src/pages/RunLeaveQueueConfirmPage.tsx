@@ -14,6 +14,8 @@ export type RunLeaveQueueLocationState = {
   participantSex: 'male' | 'female';
   runTypeId: RunTypeId;
   position: number;
+  /** Если задано, «Нет» возвращает сюда вместо `/run/queue` (напр. экран «дорожка занята» до входа в очередь). */
+  cancelNavigate?: { to: string; state?: Record<string, unknown> };
 };
 
 export default function RunLeaveQueueConfirmPage() {
@@ -99,6 +101,11 @@ export default function RunLeaveQueueConfirmPage() {
   }
 
   const backToQueue = () => {
+    const cancel = state.cancelNavigate;
+    if (cancel) {
+      navigate(cancel.to, { replace: true, state: cancel.state });
+      return;
+    }
     navigate('/run/queue', {
       replace: true,
       state: {
@@ -130,11 +137,7 @@ export default function RunLeaveQueueConfirmPage() {
         </>
       }
     >
-      <p style={rq.titleMain}>
-        Вы уверены что
-        <br />
-        хотите сойти с забега?
-      </p>
+      <p style={rq.titleMain}>Вы уверены, что хотите сойти с забега?</p>
       {leaveError ? (
         <p style={{ ...rq.subtitle, color: '#f85149', marginTop: h(16) }}>{leaveError}</p>
       ) : null}

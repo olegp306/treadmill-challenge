@@ -121,17 +121,12 @@ export default function RunSelectionPage() {
             { runTypeId: selected, reason: 'queue_full' },
             {
               participantId,
-              readableMessage: 'Очередь заполнена: пользователь перенаправлен на экран уведомления',
+              readableMessage: 'Очередь заполнена: экран переполнения (не смешивается с «дорожка занята»)',
             }
           );
-          navigate('/run/queue-busy', {
+          navigate('/register/queue-full', {
             replace: true,
-            state: {
-              participantId,
-              participantFirstName: state?.participantFirstName,
-              participantSex,
-              runTypeId: selected,
-            },
+            state: { fromRunSelectionQueueFull: true as const },
           });
         } else if (res.reason === 'queue_paused') {
           logEvent(

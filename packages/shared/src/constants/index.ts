@@ -9,6 +9,10 @@ export {
   runTypeKeyStringToId,
 } from './runTypes.js';
 export type { RunType, RunTypeConfig, RunTypeId, RunTypeKey } from './runTypes.js';
+export {
+  estimatedRunDurationMinutes,
+  sumEstimatedWaitMinutesForRunTypes,
+} from './queueEstimate.js';
 
 /**
  * API route paths (for consistency between frontend and backend).
