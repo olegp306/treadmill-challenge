@@ -14,6 +14,11 @@ export function AdminLayout({
   const [apiVersion, setApiVersion] = useState<string | null>(null);
 
   useEffect(() => {
+    document.body.classList.add('admin-route');
+    return () => document.body.classList.remove('admin-route');
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     void api
       .getApiVersion()

@@ -88,6 +88,8 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
           resultTime: number;
           distance: number;
           runId: string;
+          runSessionId: string | null;
+          verificationPhotoAvailable: boolean;
         } | null;
       }> = [];
       for (let rt = 0; rt <= 2; rt++) {

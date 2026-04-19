@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { api } from '../../api/client';
+import { tdLeaderboardResultPath } from '../../features/td/tdLeaderboardRoutes';
 
 type QueueState = Awaited<ReturnType<typeof api.getDevQueueControlState>>;
 
@@ -41,10 +42,18 @@ const thtd: CSSProperties = {
   textAlign: 'left',
 };
 
+function absoluteResultLeaderboardUrl(runSessionId: string): string {
+  const path = tdLeaderboardResultPath(runSessionId);
+  if (typeof window === 'undefined') return path;
+  return `${window.location.origin}${path}`;
+}
+
 export default function QueueControlPage() {
   const [state, setState] = useState<QueueState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Обновляется при активном забеге; после fake finish не сбрасывается — для dev-ссылки на TD result. */
+  const [lastKnownRunSessionId, setLastKnownRunSessionId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -61,6 +70,11 @@ export default function QueueControlPage() {
     const t = setInterval(() => void load(), 2500);
     return () => clearInterval(t);
   }, [load]);
+
+  useEffect(() => {
+    const id = state?.running?.runSessionId?.trim();
+    if (id) setLastKnownRunSessionId(id);
+  }, [state?.running?.runSessionId]);
 
   async function runAction(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -98,6 +112,91 @@ export default function QueueControlPage() {
 
       <h2>Сейчас на дорожке</h2>
       {!state && !error && <p>Загрузка…</p>}
+      {lastKnownRunSessionId && (
+        <div
+          style={{
+            marginBottom: 20,
+            padding: '16px 18px',
+            borderRadius: 10,
+            border: '2px solid #1565c0',
+            background: '#e3f2fd',
+          }}
+        >
+          <p style={{ margin: '0 0 10px', fontSize: 13, color: '#0d47a1', fontWeight: 600 }}>
+            {state?.running
+              ? 'Текущий runSessionId'
+              : 'Последний runSessionId (сохранён после завершения — можно открыть result)'}
+          </p>
+          <div
+            style={{
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: 20,
+              fontWeight: 600,
+              lineHeight: 1.35,
+              wordBreak: 'break-all',
+              color: '#111',
+              marginBottom: 14,
+              userSelect: 'all',
+            }}
+          >
+            {lastKnownRunSessionId}
+          </div>
+          <p style={{ margin: '0 0 6px', fontSize: 12, color: '#444' }}>Финальный leaderboard (TD / external)</p>
+          <a
+            href={tdLeaderboardResultPath(lastKnownRunSessionId)}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'block',
+              fontSize: 17,
+              fontFamily: 'ui-monospace, monospace',
+              wordBreak: 'break-all',
+              color: '#0d47a1',
+              fontWeight: 600,
+              marginBottom: 12,
+            }}
+          >
+            {absoluteResultLeaderboardUrl(lastKnownRunSessionId)}
+          </a>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+            <button
+              type="button"
+              style={{
+                padding: '12px 18px',
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: '#1565c0',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+              }}
+              onClick={() => {
+                window.open(tdLeaderboardResultPath(lastKnownRunSessionId), '_blank', 'noopener,noreferrer');
+              }}
+            >
+              Открыть result leaderboard
+            </button>
+            <button
+              type="button"
+              style={{
+                padding: '12px 18px',
+                fontSize: 14,
+                cursor: 'pointer',
+                background: '#fff',
+                color: '#1565c0',
+                border: '1px solid #1565c0',
+                borderRadius: 8,
+              }}
+              onClick={() => {
+                void navigator.clipboard.writeText(absoluteResultLeaderboardUrl(lastKnownRunSessionId));
+              }}
+            >
+              Копировать URL
+            </button>
+          </div>
+        </div>
+      )}
       {state && !state.running && <p>Никто не бежит.</p>}
       {state?.running && (
         <table style={tableStyle}>
@@ -110,8 +209,9 @@ export default function QueueControlPage() {
             </tr>
             <tr>
               <th style={thtd}>runSessionId</th>
-              <td style={{ ...thtd, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 12 }}>
-                {state.running.runSessionId}
+              <td style={{ ...thtd, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 16 }}>
+                <span style={{ fontSize: 18, fontWeight: 600 }}>{state.running.runSessionId}</span>
+                <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>См. также крупный блок и ссылку на result выше.</div>
               </td>
             </tr>
             <tr>

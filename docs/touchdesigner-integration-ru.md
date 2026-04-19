@@ -10,7 +10,7 @@
 
 1. **Исходящие OSC (UDP)** — с машины бэкенда **на** процесс TouchDesigner (по умолчанию `127.0.0.1:7000`), когда включён адаптер `osc`.
 2. **Входящие OSC (UDP)** — с TouchDesigner **на** бэкенд: классическое подтверждение **`/treadmill/ack`** или единый канал **`/treadmill/runState`** (start / busy / stop с метриками).
-3. **HTTP POST** — с TouchDesigner (или скрипта) **на** бэкенд: передача результата забега (`resultTime`, `distance`) по завершении.
+3. **HTTP POST** — с TouchDesigner (или скрипта) **на** бэкенд: передача результата забега (`resultTime`, `distance`) по завершении; опционально — **JPEG верификации** (`verificationPhotoBase64`) в том же теле (см. п. 3.1).
 
 Пуллинг результата с бэкенда (`GET /api/touchdesigner/run-result`) в текущей реализации **не используется** — адатер возвращает пусто; основной путь — **POST результата** на бэкенд.
 
@@ -111,46 +111,20 @@
 
 ---
 
-### 3.1. Фото проверки в начале забега (HTTP, опционально)
+### 3.1. Фото для верификации (только от TouchDesigner, вместе с результатом)
 
-**Зачем:** снимок участника в **начале** забега (пока сессия `running`), чтобы в админке проверять подмену пола / повторные заезды. Обычно фото отправляет **киоск** с фронт-камеры. Если у вас камера или скрипт на стороне TD / отдельного ПК — можно слать **тот же** запрос на бэкенд.
+**Зачем:** снимок для ручной проверки в админке (анти-фрод: кто реально бежал, пол, подмена). **Киоск/браузер фото не делает** — снимок формирует **TouchDesigner** (камера, сцена, тайминг — на стороне TD, обычно в **начале или в середине** забега, а не в конце). Бэкенд **только принимает** JPEG в **том же HTTP-запросе**, что и метрики финиша, и сохраняет его **для конкретного `runSessionId`** (через строку `runs` в БД, не как «вечное» фото участника).
 
-**Условия:** у `runSession` статус **`running`**, в теле указан тот же **`participantId`**, что у сессии. Формат — **JPEG** (проверка по сигнатуре файла), размер тела до **~6 МБ** (на бэкенде лимит тела запроса 10 МБ).
+**Как:** в одном **POST** `/api/run-result` или `/api/touchdesigner/run-result` (см. п. 4) в JSON добавьте поле с **base64** кадра (опционально):
 
-| Метод | URL |
-|-------|-----|
-| `POST` | `http://<HOST>:<PORT>/api/run-session/<runSessionId>/start-photo` |
+- `verificationPhotoBase64` — приоритетно, **или**
+- `imageBase64` (синоним), **или** вложенно: `verificationPhoto: { "imageBase64": "..." }`
 
-**Тело (JSON):**
+Значение: **сырая base64-строка** или `data:image/jpeg;base64,...`. Только **JPEG** (по сигнатуре), размер декодированного файла до **~6 МБ**; тело JSON — в лимите **10 МБ** (см. настройки Fastify на бэкенде).
 
-```json
-{
-  "participantId": "<uuid участника>",
-  "imageBase64": "<строка base64 JPEG или data URL вида data:image/jpeg;base64,...>"
-}
-```
+Повторный `POST` с тем же `runSessionId` после уже сохранённого результата **не прикрепит** новое фото (дубликат обрабатывается отдельно; фото в повторе игнорируется, смотрите логи `run_result_duplicate_photo_ignored`).
 
-**Успех:** `201` и `{ "ok": true, "path": "photos/pending/<runSessionId>.jpg" }`.  
-Повторная отправка для той же сессии **перезаписывает** файл.
-
-**Пример `curl`** (подставьте свой хост, UUID и файл `shot.jpg`):
-
-```bash
-curl -sS -X POST "http://127.0.0.1:3001/api/run-session/00000000-0000-4000-8000-000000000001/start-photo" \
-  -H "Content-Type: application/json" \
-  -d "{\"participantId\":\"11111111-1111-4111-8111-111111111111\",\"imageBase64\":\"$(openssl base64 -A -in shot.jpg)\"}"
-```
-
-На Windows (PowerShell), из файла `shot.jpg`:
-
-```powershell
-$b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes("shot.jpg"))
-$body = @{ participantId = "11111111-1111-4111-8111-111111111111"; imageBase64 = $b64 } | ConvertTo-Json
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3001/api/run-session/00000000-0000-4000-8000-000000000001/start-photo" `
-  -ContentType "application/json" -Body $body
-```
-
-Файл после финиша забега прикрепляется к записи результата автоматически (вместе с `POST /api/run-result`). В админке фото открывается из лидерборда соревнования.
+Когда снимок **не** передавать: бэкенд всё равно сохраняет результат; в лог пишется `verification_photo_missing_for_run_session` — в админке фото для этого забега не появится.
 
 ---
 
@@ -178,12 +152,14 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3001/api/run-session/00000
 {
   "runSessionId": "<uuid сессии из /treadmill/runSession>",
   "resultTime": 300.5,
-  "distance": 1200.3
+  "distance": 1200.3,
+  "verificationPhotoBase64": "/9j/4AAQSkZJRgABAQ... (опционально, JPEG в base64)"
 }
 ```
 
 - `resultTime` — секунды (число).
 - `distance` — метры (число).
+- `verificationPhotoBase64` — опционально, **один** снимок на **этот** `runSessionId` (см. п. 3.1). **OSC `runState` с `stop` фото не передаёт** — для кадра используйте **HTTP**.
 
 Бэкенд сохраняет результат, обновляет лидерборд соревнования и при необходимости **запускает следующего** из глобальной очереди (снова уходит `/treadmill/runSession` и ожидается ack).
 
@@ -218,9 +194,8 @@ http://localhost:5173/td/leaderboard/result?runSessionId=xxxxxxxx-xxxx-xxxx-xxxx
 1. Принимать **`/treadmill/start`** при регистрации (опционально для визуала).
 2. Принимать **`/treadmill/runSession`** — запускать сцену забега, запоминать `runSessionId`.
 3. Отправлять **`/treadmill/ack`** на `127.0.0.1:7001` (или иной хост/порт бэкенда) с тем же `runSessionId` и статусом `free` или `busy`.
-4. (Опционально) После перехода сессии в **`running`** — при необходимости отправить **`POST /api/run-session/.../start-photo`** с JPEG для проверки в админке (см. п. 3.1).
-5. По окончании забега отправить **`POST /api/run-result`** (или защищённый `/api/touchdesigner/run-result`) с `runSessionId`, `resultTime`, `distance`.
-6. Для больших экранов вывести веб-клиент: **ожидание** — `/td/leaderboard/waiting`, **после забега** — `/td/leaderboard/result?runSessionId=...`.
+4. По окончании забега отправить **`POST /api/run-result`** (или защищённый `/api/touchdesigner/run-result`) с `runSessionId`, `resultTime`, `distance`, при необходимости — **`verificationPhotoBase64`** (JPEG одного забега, см. п. 3.1).
+5. Для больших экранов вывести веб-клиент: **ожидание** — `/td/leaderboard/waiting`, **после забега** — `/td/leaderboard/result?runSessionId=...`.
 
 ---
 
@@ -229,5 +204,4 @@ http://localhost:5173/td/leaderboard/result?runSessionId=xxxxxxxx-xxxx-xxxx-xxxx
 - Кратко про **новый канал `/treadmill/runState`**, таймаут и обратную совместимость: [touchdesigner-compat-ru.md](touchdesigner-compat-ru.md)
 - Код OSC исходящий: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAdapter.ts`
 - Входящий ack/runState: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAck.ts`, разбор runState: `touchDesignerProtocolCompat.ts`
-- Обработка результата: `apps/backend/src/routes/runResult.ts`
-- Загрузка фото начала забега: `apps/backend/src/routes/runPhoto.ts`
+- Обработка результата и приём JPEG с TD: `apps/backend/src/routes/runResult.ts`, сохранение файлов: `apps/backend/src/services/runPhotoStorage.ts`

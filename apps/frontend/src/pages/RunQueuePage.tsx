@@ -14,8 +14,6 @@ import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboar
 import { tdLeaderboardResultPath } from '../features/td/tdLeaderboardRoutes';
 import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
 import { logEvent } from '../logging/logEvent';
-import { useRunStartVerificationPhoto } from '../features/run-queue/useRunStartVerificationPhoto';
-
 /** After this time running without finish, show “waiting for TD callback” (real mode). */
 const RESULT_CALLBACK_PENDING_MS = 90_000;
 
@@ -150,7 +148,8 @@ export default function RunQueuePage() {
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) return;
     let cancelled = false;
-    const POLL_MS = 2500;
+    /** Keep aligned with TD result polling — faster detection of `finished` for navigation to `/td/leaderboard/result`. */
+    const POLL_MS = 1200;
 
     const load = async () => {
       try {
@@ -245,16 +244,6 @@ export default function RunQueuePage() {
     tdDemoMode,
     report,
   ]);
-
-  /** Skip camera in kiosk demo flow (`demoMode` from run start); TD demo flag alone does not select demo route. */
-  const shouldCaptureVerificationPhoto =
-    Boolean(participantId && runSessionId) && liveStatus === 'running' && !demoMode;
-
-  useRunStartVerificationPhoto({
-    runSessionId,
-    participantId,
-    shouldCapture: shouldCaptureVerificationPhoto,
-  });
 
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) return;

@@ -82,12 +82,34 @@ export function validateRunSessionResultBody(body: unknown): Validation<RunSessi
   if (typeof distance !== 'number' || distance < 0 || !Number.isFinite(distance)) {
     return { success: false, message: 'distance is required and must be a non-negative number' };
   }
+
+  let verificationPhotoBase64: string | undefined;
+  const direct =
+    typeof o.verificationPhotoBase64 === 'string'
+      ? o.verificationPhotoBase64
+      : typeof o.imageBase64 === 'string'
+        ? o.imageBase64
+        : undefined;
+  if (direct !== undefined && direct.trim()) {
+    verificationPhotoBase64 = direct.trim();
+  } else if (o.verificationPhoto && typeof o.verificationPhoto === 'object') {
+    const vp = o.verificationPhoto as Record<string, unknown>;
+    const nested =
+      typeof vp.imageBase64 === 'string'
+        ? vp.imageBase64
+        : typeof vp.verificationPhotoBase64 === 'string'
+          ? vp.verificationPhotoBase64
+          : '';
+    if (nested.trim()) verificationPhotoBase64 = nested.trim();
+  }
+
   return {
     success: true,
     data: {
       runSessionId: runSessionId.trim(),
       resultTime,
       distance,
+      ...(verificationPhotoBase64 !== undefined ? { verificationPhotoBase64 } : {}),
     },
   };
 }

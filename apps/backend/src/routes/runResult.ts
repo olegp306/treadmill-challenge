@@ -33,19 +33,32 @@ export default async function runResultRoutes(app: FastifyInstance): Promise<voi
     if (opts.requiresTdAuth && !assertTdCallbackAuth(request, reply)) {
       return;
     }
+    const bodyObj = request.body && typeof request.body === 'object' ? (request.body as Record<string, unknown>) : null;
+    const hasVerificationPhoto = Boolean(
+      (typeof bodyObj?.verificationPhotoBase64 === 'string' && bodyObj.verificationPhotoBase64.trim()) ||
+        (typeof bodyObj?.imageBase64 === 'string' && bodyObj.imageBase64.trim()) ||
+        (bodyObj?.verificationPhoto &&
+          typeof bodyObj.verificationPhoto === 'object' &&
+          (() => {
+            const v = bodyObj.verificationPhoto as Record<string, unknown>;
+            return (typeof v.imageBase64 === 'string' && v.imageBase64.trim()) ||
+              (typeof v.verificationPhotoBase64 === 'string' && v.verificationPhotoBase64.trim());
+          })())
+    );
     request.log.info({
       msg: 'run_result_request',
       source: opts.source,
       contentType: request.headers['content-type'],
+      hasVerificationPhoto,
       bodyPreview:
-        request.body && typeof request.body === 'object'
+        bodyObj != null
           ? {
-              runSessionId: (request.body as Record<string, unknown>).runSessionId,
-              resultTime: (request.body as Record<string, unknown>).resultTime,
-              distance: (request.body as Record<string, unknown>).distance,
-              result: (request.body as Record<string, unknown>).result,
-              participant: (request.body as Record<string, unknown>).participant,
-              run: (request.body as Record<string, unknown>).run,
+              runSessionId: bodyObj.runSessionId,
+              resultTime: bodyObj.resultTime,
+              distance: bodyObj.distance,
+              result: bodyObj.result,
+              participant: bodyObj.participant,
+              run: bodyObj.run,
             }
           : typeof request.body,
     });
@@ -94,6 +107,7 @@ export default async function runResultRoutes(app: FastifyInstance): Promise<voi
         distance: data.distance,
         rank: result.rank,
         tdDemoMode: demoMode,
+        verificationPhotoInRequest: hasVerificationPhoto,
       });
       return reply.status(201).send(result);
     } catch (err) {
@@ -101,6 +115,14 @@ export default async function runResultRoutes(app: FastifyInstance): Promise<voi
       if (message === 'Run session already finished') {
         const existing = getExistingResultByRunSessionId(data.runSessionId);
         if (existing) {
+          if (hasVerificationPhoto) {
+            request.log.warn({
+              msg: 'run_result_duplicate_photo_ignored',
+              source: opts.source,
+              runSessionId: existing.runSessionId,
+              runId: existing.runId,
+            });
+          }
           request.log.info({
             msg: 'run_result_duplicate_finish_accepted',
             source: opts.source,

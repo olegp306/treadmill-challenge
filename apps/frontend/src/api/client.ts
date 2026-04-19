@@ -532,19 +532,6 @@ export const api = {
     return request<{ name: string; version: string }>('/version');
   },
 
-  submitRunSessionStartPhoto(body: { runSessionId: string; participantId: string; imageBase64: string }) {
-    return request<{ ok: boolean; path: string }>(
-      `/run-session/${encodeURIComponent(body.runSessionId)}/start-photo`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          participantId: body.participantId,
-          imageBase64: body.imageBase64,
-        }),
-      }
-    );
-  },
-
   async adminGetRunVerificationPhotoBlob(runId: string): Promise<Blob> {
     const res = await fetch(`${API_BASE}/admin/runs/${encodeURIComponent(runId)}/verification-photo`, {
       headers: { ...adminHeaders() },

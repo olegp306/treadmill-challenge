@@ -118,7 +118,7 @@ export default function RunPreparePage() {
   useEffect(() => {
     if (!participantId || !runSessionId || runTypeId === null) return;
     let cancelled = false;
-    const POLL_MS = 2000;
+    const POLL_MS = 1200;
     const load = async () => {
       try {
         const s = await api.getRunSessionState(runSessionId, participantId);

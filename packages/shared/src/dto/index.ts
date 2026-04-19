@@ -51,9 +51,17 @@ export interface RunStartDto {
 
 /**
  * Run result from TouchDesigner or internal — keyed by runSessionId (not participantId).
+ *
+ * Verification JPEG is optional: TouchDesigner captures it and sends **with this payload**
+ * (same HTTP request as metrics). Stored per **run** row (via runSessionId → run id), not as a permanent participant asset.
  */
 export interface RunSessionResultDto {
   runSessionId: string;
   resultTime: number;
   distance: number;
+  /**
+   * Raw base64 or `data:image/jpeg;base64,...`. Anti-fraud snapshot for this **run session only**.
+   * Prefer sending from TouchDesigner together with `resultTime` / `distance`.
+   */
+  verificationPhotoBase64?: string;
 }

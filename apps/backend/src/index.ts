@@ -11,7 +11,6 @@ import runRoutes from './routes/run.js';
 import adminRoutes from './routes/admin.js';
 import eventsRoutes from './routes/events.js';
 import devQueueControlRoutes from './routes/devQueueControl.js';
-import runPhotoRoutes from './routes/runPhoto.js';
 import { getAppVersion } from './version.js';
 import { registerTouchDesignerOscRunResultHandler } from './integrations/touchdesigner/oscTouchDesignerAck.js';
 import { touchDesignerAdapter } from './integrations/touchdesigner/adapter.js';
@@ -46,7 +45,7 @@ async function main() {
 
   const app = Fastify({
     logger: true,
-    /** Base64 JPEG for `/api/run-session/:id/start-photo` can exceed default 1 MiB. */
+    /** Large JSON bodies when TouchDesigner sends `verificationPhotoBase64` with `/api/run-result`. */
     bodyLimit: 10 * 1024 * 1024,
   });
 
@@ -67,7 +66,6 @@ async function main() {
   await app.register(runResultRoutes);
   await app.register(touchdesignerRoutes);
   await app.register(runRoutes);
-  await app.register(runPhotoRoutes);
   await app.register(eventsRoutes);
   await app.register(adminRoutes);
   await app.register(devQueueControlRoutes);

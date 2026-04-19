@@ -74,10 +74,6 @@ export async function startRunSession(
   const position =
     session.status === 'queued' ? runSessions.positionInGlobalQueue(db, session.id) : 0;
 
-  const runningNow = runSessions.getCurrentRunningSessionGlobal(db);
-  const otherSessionRunning =
-    session.status === 'queued' && runningNow != null && runningNow.id !== session.id;
-
   return {
     ok: true,
     data: {
@@ -94,7 +90,6 @@ export async function startRunSession(
       createdAt: session.createdAt,
       demoMode,
       treadmillStatus,
-      otherSessionRunning,
     },
   };
 }
@@ -116,8 +111,6 @@ export interface RunSessionStartResponse {
   demoMode: boolean;
   /** Treadmill availability after TD start ack (real mode). */
   treadmillStatus: TreadmillStatus;
-  /** Queued user is #1 in FIFO but another session is already `running` on the treadmill. */
-  otherSessionRunning: boolean;
 }
 
 export function leaveRunSession(runSessionId: string, participantId: string): void {
@@ -181,6 +174,7 @@ export function getRunSessionState(runSessionId: string): {
   queuePosition: number | null;
   startedAt: string | null;
   finishedAt: string | null;
+  /** True when this session is queued and another session is currently on the treadmill. */
   otherSessionRunning: boolean;
 } {
   const db = getDb();
@@ -190,9 +184,11 @@ export function getRunSessionState(runSessionId: string): {
   }
   const queuePosition =
     session.status === 'queued' ? runSessions.positionInGlobalQueue(db, session.id) : null;
-  const runningNow = runSessions.getCurrentRunningSessionGlobal(db);
+  const currentRunning = runSessions.getCurrentRunningSessionGlobal(db);
   const otherSessionRunning =
-    session.status === 'queued' && runningNow != null && runningNow.id !== session.id;
+    session.status === 'queued' &&
+    currentRunning != null &&
+    currentRunning.id !== session.id;
   return {
     runSessionId: session.id,
     participantId: session.participantId,

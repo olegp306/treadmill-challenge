@@ -185,6 +185,17 @@ body {
   min-height: 100vh;
 }
 
+/* Admin: document scroll (global `body { overflow: hidden }` keeps kiosk/TD layouts stable). */
+body.admin-route {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.admin-route #root {
+  height: auto;
+  min-height: var(--app-height, 100vh);
+}
+
 a {
   color: #58a6ff;
   text-decoration: none;

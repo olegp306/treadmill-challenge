@@ -7,8 +7,8 @@ The version number matches the monorepo root `package.json` (`name`: `treadmill-
 
 ### Added
 
-- **Verification photo (fraud checks):** JPEG captured on the kiosk when a run session becomes `running`, stored as pending on the server, then linked to the leaderboard `run` row when the result is submitted (same moment as finish). Admin can open the photo from the competition leaderboard.
-- **API:** `POST /api/run-session/:runSessionId/start-photo`, `GET /api/version`, `appVersion` in `GET /api/public/settings`, `GET /api/admin/runs/:runId/verification-photo` (admin auth).
+- **Verification photo (fraud checks):** JPEG is produced by **TouchDesigner** and sent with **`POST /api/run-result`** (or `/api/touchdesigner/run-result`) as optional `verificationPhotoBase64`; stored per **run** / `runSessionId`, not as a permanent participant asset. Admin opens it from the competition leaderboard / run session.
+- **API:** optional `verificationPhotoBase64` on run-result payloads; `GET /api/version`, `appVersion` in `GET /api/public/settings`, `GET /api/admin/runs/:runId/verification-photo` (admin auth). Removed kiosk `POST /api/run-session/:runSessionId/start-photo`.
 - **Version display:** Admin footer shows bundled kiosk version and live API version.
 
 ### Documentation

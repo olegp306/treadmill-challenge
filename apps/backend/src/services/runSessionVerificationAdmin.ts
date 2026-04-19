@@ -5,8 +5,8 @@ import { absoluteFromRelative } from './runPhotoStorage.js';
 
 /**
  * Verification photo is always scoped to a **run session** (runSessionId):
- * - pending file while session is running (kiosk uploaded to pending path);
- * - final file on the `runs` row after finish (`runs.runSessionId` + `verification_photo_path`).
+ * - optional legacy **pending** file on disk if present from older flows;
+ * - normal case: final JPEG on the `runs` row after finish (`runs.runSessionId` + `verification_photo_path`), usually written from TouchDesigner in `POST /api/run-result`.
  */
 export function getVerificationPhotoAbsolutePathForRunSession(db: Db, runSessionId: string): string | null {
   const pending = runSessions.getPendingPhotoPath(db, runSessionId);

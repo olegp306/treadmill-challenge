@@ -1,11 +1,12 @@
 /**
- * Verification photos: captured at run start (kiosk), held on disk until the run result is saved,
- * then moved to a permanent path linked to `runs.verification_photo_path`.
- *
- * Relative paths are stored in SQLite (forward slashes), rooted under `data/`.
+ * Verification photos: stored on disk per **run** (tied to `runSessionId` through the `runs` row).
+ * TouchDesigner sends JPEG in the same request as run results; the file is written to `data/photos/runs/<runId>.jpg`.
+ * Legacy: `photos/pending/<runSessionId>.jpg` may still be finalized on result if no inline image (old data only).
  */
 import path from 'node:path';
 import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+
+const MAX_VERIFICATION_JPEG_BYTES = 6 * 1024 * 1024;
 
 function dataRoot(): string {
   return path.join(process.cwd(), 'data');
@@ -28,6 +29,42 @@ export function absoluteFromRelative(rel: string): string {
 export function ensurePhotoDirs(): void {
   mkdirSync(path.join(dataRoot(), 'photos', 'pending'), { recursive: true });
   mkdirSync(path.join(dataRoot(), 'photos', 'runs'), { recursive: true });
+}
+
+function stripDataUrlBase64(raw: string): string {
+  const s = raw.trim();
+  const m = /^data:image\/[a-z+]+;base64,(.+)$/i.exec(s);
+  return m ? m[1] : s;
+}
+
+export type ParseJpegResult = { ok: true; buffer: Buffer } | { ok: false; reason: string };
+
+/** Decode base64 / data-URL payload; validate size and JPEG magic bytes. */
+export function parseVerificationJpegFromBase64Input(raw: string): ParseJpegResult {
+  let buf: Buffer;
+  try {
+    const cleaned = stripDataUrlBase64(raw);
+    buf = Buffer.from(cleaned, 'base64');
+  } catch {
+    return { ok: false, reason: 'invalid_base64' };
+  }
+  if (buf.length === 0 || buf.length > MAX_VERIFICATION_JPEG_BYTES) {
+    return { ok: false, reason: 'size' };
+  }
+  const jpegMagic = buf[0] === 0xff && buf[1] === 0xd8;
+  if (!jpegMagic) {
+    return { ok: false, reason: 'not_jpeg' };
+  }
+  return { ok: true, buffer: buf };
+}
+
+export function writeFinalVerificationJpeg(runId: string, buffer: Buffer): string {
+  ensurePhotoDirs();
+  const rel = relativeFinalPath(runId);
+  const abs = absoluteFromRelative(rel);
+  mkdirSync(path.dirname(abs), { recursive: true });
+  writeFileSync(abs, buffer);
+  return rel;
 }
 
 export function writePendingJpeg(runSessionId: string, buffer: Buffer): string {

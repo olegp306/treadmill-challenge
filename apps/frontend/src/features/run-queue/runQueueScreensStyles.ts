@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { h, w } from '../../arOzio/dimensions';
 import { ui } from '../../ui/tokens';
 
-/** Figma 718:870 / 718:897 / 718:828 / 748:1353 — queue & treadmill screens (AR Ozio iPad). */
+/** Figma 718:870 / 718:897 / 748:1353 — queue & treadmill screens (AR Ozio iPad). */
 export const rq: Record<string, CSSProperties> = {
   viewportFill: {
     flex: 1,

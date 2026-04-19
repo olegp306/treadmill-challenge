@@ -4,13 +4,15 @@ import type { RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeShortName } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
 import { LogoMark } from '../../ui/components/LogoMark';
-import { TdDecorations } from '../../features/td/TdDecorations';
+import { TdResultStaticDecor } from '../../features/td/TdResultStaticDecor';
 import { TdDisplayShell } from '../../features/td/TdDisplayShell';
 import { formatTdMetric } from '../../features/td/tdFormat';
 import { td } from '../../features/td/tdTokens';
 import type { LeaderboardEntry } from '../../hooks/useLeaderboard';
 
-const POLL_MS = 1500;
+/** Fast poll while waiting for finish; slower refresh once leaderboard is visible. */
+const POLL_PENDING_MS = 450;
+const POLL_IDLE_MS = 2500;
 
 function sliceAround(entries: LeaderboardEntry[], highlightParticipantId: string): LeaderboardEntry[] {
   const idx = entries.findIndex((e) => e.participantId === highlightParticipantId);
@@ -21,6 +23,12 @@ function sliceAround(entries: LeaderboardEntry[], highlightParticipantId: string
   const end = Math.min(entries.length, idx + after + 1);
   return entries.slice(start, end);
 }
+
+/** Local `DrukWideCyr-400.woff2` — keep weight 400 so the real face applies (no faux bold). */
+const fontDruk = "'Druk Wide Cyr', Oswald, system-ui, sans-serif";
+/** Figma card column; highlight bar uses a wider inner track. */
+const COL_W_CARDS = 970;
+const COL_W_HIGHLIGHT = 1200;
 
 export default function TdResultLeaderboardPage() {
   const [searchParams] = useSearchParams();
@@ -35,28 +43,29 @@ export default function TdResultLeaderboardPage() {
   useEffect(() => {
     if (!runSessionId) return;
     let cancelled = false;
+    let wakeTimer: number | undefined;
 
-    async function tick() {
+    async function tick(): Promise<number> {
       try {
         const session = await api.getRunSessionState(runSessionId);
-        if (cancelled) return;
+        if (cancelled) return POLL_PENDING_MS;
         setSessionStatus(session.status);
         setRunTypeId(session.runTypeId);
         setParticipantId(session.participantId);
 
         if (session.status !== 'finished') {
           setEntries([]);
-          return;
+          return POLL_PENDING_MS;
         }
 
         const participant = await api.getParticipant(session.participantId);
-        if (cancelled) return;
+        if (cancelled) return POLL_IDLE_MS;
 
         const data = await api.getLeaderboard({
           runTypeId: session.runTypeId,
           sex: participant.sex,
         });
-        if (cancelled) return;
+        if (cancelled) return POLL_IDLE_MS;
 
         let list = data.leaderboard;
         const found = list.some((e) => e.participantId === session.participantId);
@@ -80,18 +89,30 @@ export default function TdResultLeaderboardPage() {
 
         setEntries(list);
         setError(null);
+        return POLL_IDLE_MS;
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : 'Ошибка загрузки');
         }
+        return POLL_PENDING_MS;
       }
     }
 
-    void tick();
-    const id = window.setInterval(() => void tick(), POLL_MS);
+    async function loop() {
+      while (!cancelled) {
+        const nextMs = await tick();
+        if (cancelled) break;
+        await new Promise<void>((resolve) => {
+          wakeTimer = window.setTimeout(resolve, nextMs);
+        });
+      }
+    }
+
+    void loop();
+
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      if (wakeTimer !== undefined) window.clearTimeout(wakeTimer);
     };
   }, [runSessionId]);
 
@@ -99,6 +120,21 @@ export default function TdResultLeaderboardPage() {
     if (!participantId || entries.length === 0) return [];
     return sliceAround(entries, participantId);
   }, [entries, participantId]);
+
+  const { rowsAbove, highlightRow, rowsBelow } = useMemo(() => {
+    if (!participantId || visible.length === 0) {
+      return { rowsAbove: [] as LeaderboardEntry[], highlightRow: null as LeaderboardEntry | null, rowsBelow: [] as LeaderboardEntry[] };
+    }
+    const hi = visible.findIndex((e) => e.participantId === participantId);
+    if (hi < 0) {
+      return { rowsAbove: visible, highlightRow: null, rowsBelow: [] };
+    }
+    return {
+      rowsAbove: visible.slice(0, hi),
+      highlightRow: visible[hi] ?? null,
+      rowsBelow: visible.slice(hi + 1),
+    };
+  }, [visible, participantId]);
 
   const title = runTypeId != null ? getRunTypeShortName(runTypeId).toUpperCase() : '—';
 
@@ -113,7 +149,7 @@ export default function TdResultLeaderboardPage() {
         <div
           style={{
             color: td.text,
-            fontFamily: '"Oswald", sans-serif',
+            fontFamily: fontDruk,
             fontSize: 32,
             padding: 40,
           }}
@@ -127,8 +163,9 @@ export default function TdResultLeaderboardPage() {
   return (
     <TdDisplayShell>
       <div style={{ width: '100%', height: '100%', position: 'relative', background: td.bg }}>
-        <TdDecorations />
+        <TdResultStaticDecor />
 
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', minHeight: '100%' }}>
         {error && (
           <div
             style={{
@@ -136,7 +173,7 @@ export default function TdResultLeaderboardPage() {
               left: 80,
               top: 80,
               color: td.red,
-              fontFamily: '"Oswald", sans-serif',
+              fontFamily: fontDruk,
               fontSize: 24,
               zIndex: 2,
             }}
@@ -153,7 +190,7 @@ export default function TdResultLeaderboardPage() {
               top: '50%',
               transform: 'translate(-50%, -50%)',
               color: 'rgba(255,255,255,0.85)',
-              fontFamily: '"Oswald", sans-serif',
+              fontFamily: fontDruk,
               fontSize: 36,
               textTransform: 'uppercase',
               zIndex: 1,
@@ -204,11 +241,12 @@ export default function TdResultLeaderboardPage() {
               >
                 <span
                   style={{
-                    fontFamily: '"Oswald", sans-serif',
-                    fontWeight: 500,
+                    fontFamily: fontDruk,
+                    fontWeight: 400,
                     fontSize: 30,
                     color: '#fff',
                     textTransform: 'uppercase',
+                    fontSynthesis: 'none',
                   }}
                 >
                   {title}
@@ -216,50 +254,22 @@ export default function TdResultLeaderboardPage() {
               </div>
             </div>
 
+            {/* Figma — center column + full-bleed highlight (1414:1771) */}
             <div
               style={{
                 position: 'absolute',
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, calc(-50% + 40px))',
-                width: 970,
+                left: 0,
+                top: 'calc(50% + 27px)',
+                transform: 'translateY(-50%)',
+                width: td.designW,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 16,
+                alignItems: 'center',
+                gap: 30,
               }}
             >
-              {visible.map((e) => {
-                const isHi = e.participantId === participantId;
-                if (isHi) {
-                  return (
-                    <div
-                      key={e.runId}
-                      style={{
-                        background: td.red,
-                        padding: '36px 20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        color: '#fff',
-                        fontFamily: '"Oswald", sans-serif',
-                        fontWeight: 500,
-                        fontSize: 48,
-                        lineHeight: 1.2,
-                        textTransform: 'uppercase',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        gap: 24,
-                      }}
-                    >
-                      <div style={{ display: 'flex', gap: 40, alignItems: 'center', flex: 1, minWidth: 0 }}>
-                        <span style={{ flexShrink: 0 }}>{e.rank ?? '—'}</span>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.participantName}</span>
-                      </div>
-                      <span style={{ letterSpacing: 3.84, flexShrink: 0 }}>{formatTdMetric(e, runTypeId)}</span>
-                    </div>
-                  );
-                }
-                return (
+              <div style={{ width: COL_W_CARDS, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {rowsAbove.map((e) => (
                   <div
                     key={e.runId}
                     style={{
@@ -271,30 +281,125 @@ export default function TdResultLeaderboardPage() {
                       alignItems: 'center',
                       color: td.text,
                       textTransform: 'uppercase',
-                      fontFamily: '"Oswald", sans-serif',
-                      fontWeight: 500,
+                      fontFamily: fontDruk,
+                      fontWeight: 400,
                       fontSize: 26,
+                      lineHeight: 1.2,
+                      fontSynthesis: 'none',
                     }}
                   >
-                    <span style={{ width: 45, flexShrink: 0 }}>{e.rank ?? '—'}</span>
-                    <span style={{ flex: 1, minWidth: 0 }}>{e.participantName}</span>
+                    <span style={{ width: 45, flexShrink: 0, fontFamily: fontDruk, fontWeight: 400 }}>{e.rank ?? '—'}</span>
+                    <span style={{ flex: 1, minWidth: 0, paddingLeft: 10 }}>{e.participantName}</span>
                     <span
                       style={{
                         width: 141,
                         textAlign: 'right',
-                        fontWeight: 700,
+                        fontFamily: fontDruk,
+                        fontWeight: 400,
                         fontSize: 32,
                         letterSpacing: 3.2,
+                        fontSynthesis: 'none',
                       }}
                     >
                       {formatTdMetric(e, runTypeId)}
                     </span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+
+              {highlightRow ? (
+                <div
+                  style={{
+                    width: '100%',
+                    background: td.red,
+                    padding: '36px 20px',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: COL_W_HIGHLIGHT,
+                      margin: '0 auto',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 24,
+                      color: '#fff',
+                      fontFamily: fontDruk,
+                      fontWeight: 400,
+                      fontSize: 48,
+                      lineHeight: 1.2,
+                      textTransform: 'uppercase',
+                      fontSynthesis: 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: 40, alignItems: 'center', flex: 1, minWidth: 0 }}>
+                      <span style={{ flexShrink: 0, letterSpacing: '-0.96px', fontFamily: fontDruk, fontWeight: 400 }}>
+                        {highlightRow.rank ?? '—'}
+                      </span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+                        {highlightRow.participantName}
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        fontFamily: fontDruk,
+                        fontWeight: 400,
+                        letterSpacing: 3.84,
+                        flexShrink: 0,
+                        width: 160,
+                        textAlign: 'right',
+                        fontSynthesis: 'none',
+                      }}
+                    >
+                      {formatTdMetric(highlightRow, runTypeId)}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+
+              <div style={{ width: COL_W_CARDS, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {rowsBelow.map((e) => (
+                  <div
+                    key={e.runId}
+                    style={{
+                      background: td.card,
+                      borderTop: `2px solid ${td.cardBorderTop}`,
+                      borderRadius: 20,
+                      padding: 24,
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: td.text,
+                      textTransform: 'uppercase',
+                      fontFamily: fontDruk,
+                      fontWeight: 400,
+                      fontSize: 26,
+                      lineHeight: 1.2,
+                      fontSynthesis: 'none',
+                    }}
+                  >
+                    <span style={{ width: 45, flexShrink: 0, fontFamily: fontDruk, fontWeight: 400 }}>{e.rank ?? '—'}</span>
+                    <span style={{ flex: 1, minWidth: 0, paddingLeft: 10 }}>{e.participantName}</span>
+                    <span
+                      style={{
+                        width: 141,
+                        textAlign: 'right',
+                        fontFamily: fontDruk,
+                        fontWeight: 400,
+                        fontSize: 32,
+                        letterSpacing: 3.2,
+                        fontSynthesis: 'none',
+                      }}
+                    >
+                      {formatTdMetric(e, runTypeId)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </>
         )}
+        </div>
       </div>
     </TdDisplayShell>
   );

@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { getDb, participants, runs, runSessions } from '../db/index.js';
-import { movePendingToFinal, unlinkRelative } from './runPhotoStorage.js';
+import {
+  movePendingToFinal,
+  unlinkRelative,
+  parseVerificationJpegFromBase64Input,
+  writeFinalVerificationJpeg,
+} from './runPhotoStorage.js';
 import type { RunSessionResultDto } from '@treadmill-challenge/shared';
 import { getRunTypeById, type RunTypeId } from '@treadmill-challenge/shared';
 import { runs as runsDb } from '../db/index.js';
@@ -84,36 +89,99 @@ export async function submitRunSessionResult(
     speed
   );
 
-  const pendingPhoto = runSessions.getPendingPhotoPath(db, session.id);
-  if (pendingPhoto) {
-    try {
-      const finalRel = movePendingToFinal(pendingPhoto, runId);
-      runs.setVerificationPhotoPath(db, runId, finalRel);
-      runSessions.clearPendingPhotoPath(db, session.id);
-      log?.info?.({
-        msg: 'verification_photo_persisted_with_result',
-        runSessionId: session.id,
-        runId,
-        participantId: session.participantId,
-        verificationPhotoPath: finalRel,
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+  /** One verification JPEG per run row — keyed by `runSessionId` via this run only (not participant profile). */
+  let verificationLinked = false;
+  const inlinePhoto = dto.verificationPhotoBase64?.trim();
+
+  if (inlinePhoto) {
+    const parsed = parseVerificationJpegFromBase64Input(inlinePhoto);
+    if (!parsed.ok) {
       log?.warn?.({
-        msg: 'verification_photo_finalize_failed',
+        msg: 'verification_photo_from_td_rejected',
         runSessionId: session.id,
         runId,
-        participantId: session.participantId,
-        pendingPhoto,
-        error: msg,
+        reason: parsed.reason,
       });
-      unlinkRelative(pendingPhoto);
-      runSessions.clearPendingPhotoPath(db, session.id);
+    } else {
+      try {
+        const rel = writeFinalVerificationJpeg(runId, parsed.buffer);
+        runs.setVerificationPhotoPath(db, runId, rel);
+        verificationLinked = true;
+        const stalePending = runSessions.getPendingPhotoPath(db, session.id);
+        if (stalePending) {
+          unlinkRelative(stalePending);
+          runSessions.clearPendingPhotoPath(db, session.id);
+        }
+        log?.info?.({
+          msg: 'verification_photo_saved_for_run',
+          runSessionId: session.id,
+          runId,
+          participantId: session.participantId,
+          path: rel,
+          source: 'touchdesigner_result_payload',
+          bytes: parsed.buffer.length,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        log?.error?.({
+          msg: 'verification_photo_write_failed',
+          runSessionId: session.id,
+          runId,
+          error: msg,
+        });
+      }
     }
+  }
+
+  if (!verificationLinked) {
+    const pendingPhoto = runSessions.getPendingPhotoPath(db, session.id);
+    if (pendingPhoto) {
+      try {
+        const finalRel = movePendingToFinal(pendingPhoto, runId);
+        runs.setVerificationPhotoPath(db, runId, finalRel);
+        runSessions.clearPendingPhotoPath(db, session.id);
+        verificationLinked = true;
+        log?.info?.({
+          msg: 'verification_photo_persisted_from_pending',
+          runSessionId: session.id,
+          runId,
+          participantId: session.participantId,
+          path: finalRel,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        log?.warn?.({
+          msg: 'verification_photo_finalize_failed',
+          runSessionId: session.id,
+          runId,
+          participantId: session.participantId,
+          pendingPhoto,
+          error: msg,
+        });
+        unlinkRelative(pendingPhoto);
+        runSessions.clearPendingPhotoPath(db, session.id);
+      }
+    }
+  }
+
+  if (!verificationLinked) {
+    log?.info?.({
+      msg: 'verification_photo_missing_for_run_session',
+      runSessionId: session.id,
+      runId,
+      participantId: session.participantId,
+    });
   }
 
   runSessions.updateSessionResults(db, session.id, dto.resultTime, dto.distance);
   runSessions.renumberGlobalQueuedSessions(db);
+
+  log?.info?.({
+    msg: 'run_result_persisted',
+    runSessionId: session.id,
+    participantId: session.participantId,
+    competitionId: session.competitionId,
+  });
 
   const top = runsDb.getLeaderboardForCompetition(db, session.competitionId, session.runTypeId, 200);
   const ranks = rankCompetitionEntries(
@@ -132,14 +200,20 @@ export async function submitRunSessionResult(
     rank,
   };
 
-  try {
-    await promoteNextQueuedSessionAfterFinish(touchDesigner, log);
-  } catch (e) {
+  /** Do not await: promotion waits up to TD_OSC_ACK_TIMEOUT_MS for the next runner — clients should get HTTP 201 immediately after persist. */
+  void promoteNextQueuedSessionAfterFinish(touchDesigner, log).catch((e: unknown) => {
     log?.error?.({
       msg: 'global_queue_promote_unexpected',
       error: e instanceof Error ? e.message : String(e),
     });
-  }
+  });
+
+  log?.info?.({
+    msg: 'run_result_promotion_scheduled_async',
+    runSessionId: session.id,
+    participantId: session.participantId,
+  });
+
   return result;
 }
 

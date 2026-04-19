@@ -117,6 +117,15 @@ function handleRunStateMessage(args: unknown[], normalizedAddr: string): void {
   console.log(
     `[TouchDesigner OSC] runState <- ${normalizedAddr} state=stop runSessionId=${parsed.dto.runSessionId} resultTime=${parsed.dto.resultTime} distance=${parsed.dto.distance}`
   );
+  console.log(
+    JSON.stringify({
+      msg: 'td_runstate_stop_received',
+      runSessionId: parsed.dto.runSessionId,
+      resultTime: parsed.dto.resultTime,
+      distance: parsed.dto.distance,
+      ts: new Date().toISOString(),
+    })
+  );
 
   const handler = submitRunResultFromOsc;
   if (!handler) {
