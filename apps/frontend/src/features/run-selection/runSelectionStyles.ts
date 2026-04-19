@@ -80,7 +80,7 @@ export const rs: Record<string, CSSProperties> = {
     flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
+    alignItems: 'stretch',
     width: '100%',
     gap: h(16),
     boxSizing: 'border-box',
@@ -97,6 +97,10 @@ export const rs: Record<string, CSSProperties> = {
     overflow: 'hidden',
     boxSizing: 'border-box',
   },
+  /**
+   * Greeting: use full inner width of the sheet (was maxWidth w(1900) ≈ 80% canvas — narrower than tabs).
+   * minWidth: 0 lets the flex column shrink correctly without clipping calculation quirks.
+   */
   greeting: {
     margin: 0,
     fontWeight: 400,
@@ -107,7 +111,17 @@ export const rs: Record<string, CSSProperties> = {
     textAlign: 'center',
     color: ui.color.text,
     width: '100%',
-    maxWidth: w(1900),
+    maxWidth: '100%',
+    minWidth: 0,
+    alignSelf: 'stretch',
+    boxSizing: 'border-box',
+  },
+  /** Single-line «Привет, Имя!» — keep on one row until JS truncation kicks in at 15 chars. */
+  greetingSingleLine: {
+    display: 'inline-block',
+    maxWidth: '100%',
+    whiteSpace: 'nowrap',
+    verticalAlign: 'top',
   },
   subtitle: {
     margin: 0,
@@ -118,7 +132,10 @@ export const rs: Record<string, CSSProperties> = {
     textAlign: 'center',
     color: ui.color.textMuted,
     width: '100%',
-    maxWidth: w(1900),
+    maxWidth: '100%',
+    minWidth: 0,
+    alignSelf: 'stretch',
+    boxSizing: 'border-box',
   },
   tabBar: {
     display: 'flex',
@@ -126,6 +143,7 @@ export const rs: Record<string, CSSProperties> = {
     alignItems: 'stretch',
     width: '100%',
     maxWidth: w(2020),
+    alignSelf: 'center',
     backgroundColor: '#262626',
     borderRadius: w(33),
     padding: w(11),

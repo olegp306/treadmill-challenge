@@ -7,7 +7,12 @@ import { ScreenContainer } from '../arOzio/ScreenContainer';
 import { h, w } from '../arOzio/dimensions';
 import { api } from '../api/client';
 import { AdminPinModal } from '../features/admin/AdminPinModal';
-import { logEvent } from '../logging/logEvent';
+import {
+  clearLoggedRunSessionId,
+  getLoggedParticipantId,
+  getLoggedRunSessionId,
+  logEvent,
+} from '../logging/logEvent';
 import { pluralizePeople } from '../utils/russianPlural';
 import { LogoMark } from '../ui/components/LogoMark';
 import { APP_VERSION } from '../appVersion';
@@ -46,6 +51,9 @@ function splitParticipantNameParts(fullName: string): {
 }
 
 const ADMIN_TAP_SEQ = ['amazing', 'amazing', 'red', 'red', 'amazing', 'red'] as const;
+
+/** Set only from this page when navigating to `/register/queue-full` after a synchronous full-queue check. */
+const QUEUE_FULL_ENTRY_STATE = { fromMainParticipateQueueFull: true as const };
 
 export default function Main() {
   const navigate = useNavigate();
@@ -112,25 +120,12 @@ export default function Main() {
   const onParticipateClick = useCallback(
     async (e: React.MouseEvent<HTMLAnchorElement>) => {
       e.preventDefault();
+
+      let queueData: Awaited<ReturnType<typeof api.getRunQueue>>;
       try {
-        const data = await api.getRunQueue();
-        setQueueCards(data.entries as QueueCardItem[]);
+        queueData = await api.getRunQueue();
+        setQueueCards(queueData.entries as QueueCardItem[]);
         setQueueBlockVisible(true);
-        if (data.activeSessionCount >= data.maxGlobalQueueSize) {
-          logEvent(
-            'landing_register_queue_full',
-            {
-              activeSessionCount: data.activeSessionCount,
-              maxGlobalQueueSize: data.maxGlobalQueueSize,
-            },
-            {
-              readableMessage:
-                'Пользователь нажал «Принять участие» при полной глобальной очереди — показан экран переполнения',
-            }
-          );
-          navigate('/register/queue-full');
-          return;
-        }
       } catch {
         logEvent(
           'landing_click_register_after_queue_fetch_failed',
@@ -143,6 +138,93 @@ export default function Main() {
         navigate('/register');
         return;
       }
+
+      const isGlobalQueueFull =
+        queueData.activeSessionCount >= queueData.maxGlobalQueueSize;
+
+      /**
+       * При полном пуле (running + queued = max) с главной всегда показываем
+       * `/register/queue-full` (QueueFullPage). Нельзя уходить в `/run/queue` — там сценарий
+       * «Дорожка занята / Сойти с забега / ОК» (другой кейс: ещё есть место в очереди).
+       */
+      if (isGlobalQueueFull) {
+        logEvent(
+          'landing_register_queue_full',
+          {
+            activeSessionCount: queueData.activeSessionCount,
+            maxGlobalQueueSize: queueData.maxGlobalQueueSize,
+          },
+          {
+            readableMessage:
+              'Пользователь нажал «Принять участие» при полной глобальной очереди — показан экран переполнения',
+          }
+        );
+        navigate('/register/queue-full', { state: QUEUE_FULL_ENTRY_STATE });
+        return;
+      }
+
+      const resumeStoredRunSessionIfActive = async (): Promise<boolean> => {
+        const storedRunSessionId = getLoggedRunSessionId();
+        if (!storedRunSessionId) return false;
+        try {
+          const session = await api.getRunSessionState(storedRunSessionId);
+          if (session.status === 'queued' || session.status === 'running') {
+            const pos = session.queuePosition ?? session.queueNumber ?? 1;
+            logEvent(
+              'landing_resume_active_run_session',
+              { runSessionId: session.runSessionId, status: session.status },
+              {
+                participantId: session.participantId,
+                runSessionId: session.runSessionId,
+                readableMessage:
+                  'На главной нажали «Принять участие» при активном забеге — возврат в очередь',
+              }
+            );
+            navigate('/run/queue', {
+              state: {
+                participantId: session.participantId,
+                runSessionId: session.runSessionId,
+                runTypeId: session.runTypeId,
+                position: pos,
+                participantSex: 'male',
+                demoMode: false,
+                initialSessionStatus: session.status === 'running' ? 'running' : 'queued',
+                initialOtherSessionRunning: session.otherSessionRunning,
+              },
+            });
+            return true;
+          }
+        } catch {
+          // Stale id or network error — allow a fresh participation attempt.
+        }
+        clearLoggedRunSessionId();
+        return false;
+      };
+
+      const resumed = await resumeStoredRunSessionIfActive();
+      if (resumed) return;
+
+      const loggedParticipantId = getLoggedParticipantId();
+      if (loggedParticipantId) {
+        logEvent(
+          'landing_skip_queue_full_already_registered',
+          {},
+          {
+            participantId: loggedParticipantId,
+            readableMessage:
+              'На главной нажали «Принять участие» — участник уже зарегистрирован, переход к выбору забега',
+          }
+        );
+        navigate('/run-select', {
+          state: {
+            participantId: loggedParticipantId,
+            participantFirstName: '',
+            participantSex: 'male',
+          },
+        });
+        return;
+      }
+
       logEvent(
         'landing_click_register',
         {},

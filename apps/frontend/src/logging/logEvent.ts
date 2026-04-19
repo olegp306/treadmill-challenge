@@ -78,6 +78,16 @@ function readStoredRunSessionId(): string | undefined {
   return sessionStorage.getItem(RUN_SESSION_KEY) ?? undefined;
 }
 
+/** Participant id saved after successful registration (this browser session). */
+export function getLoggedParticipantId(): string | undefined {
+  return readStoredParticipantId();
+}
+
+/** Latest run session id after a successful startRun (this browser session). */
+export function getLoggedRunSessionId(): string | undefined {
+  return readStoredRunSessionId();
+}
+
 function sanitizePayload(payload: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(payload)) {
