@@ -2,7 +2,7 @@ import type { InputHTMLAttributes, MutableRefObject, Ref } from 'react';
 import { useId, useLayoutEffect, useMemo, useRef } from 'react';
 import { useInput } from 'input-format/react-hook';
 import type { RegistrationFormData } from '../types';
-import { focusInputForMobileKeyboard } from '../iosInputFocus';
+import { scheduleWizardStepPhoneFocus } from '../iosInputFocus';
 import { formatPhoneParsed, parsePhoneChar } from '../phoneFormat';
 import { logEvent } from '../../../logging/logEvent';
 import { formatPhoneFromDigits } from '../phoneFormat';
@@ -39,9 +39,11 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
     format: formatPhoneParsed,
     id: idPhone,
     type: 'tel' as const,
+    /** iPad/iPhone: предпочтительная клавиатура для номера (не полная QWERTY). */
     inputMode: 'tel' as const,
     autoComplete: 'tel',
     autoCorrect: 'off',
+    autoCapitalize: 'off',
     spellCheck: false,
     name: 'participantPhone',
     enterKeyHint: 'done' as const,
@@ -53,22 +55,7 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
 
   useLayoutEffect(() => {
     const el = phoneInputRef.current;
-    if (!el) return;
-    let cancelled = false;
-    const run = () => {
-      if (!cancelled) focusInputForMobileKeyboard(el);
-    };
-    const id1 = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        run();
-      });
-    });
-    const t = window.setTimeout(run, 120);
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(id1);
-      window.clearTimeout(t);
-    };
+    return scheduleWizardStepPhoneFocus(el);
   }, []);
 
   return (
@@ -84,6 +71,10 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
         <div style={reg.phoneFieldButtonRow}>
           <InputField
             {...inputProps}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            autoCapitalize="off"
             className={['reg-input-phone-narrow', (inputProps as { className?: string }).className]
               .filter(Boolean)
               .join(' ')}
@@ -99,6 +90,7 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
                 (hookRef as MutableRefObject<HTMLInputElement | null>).current = node;
               }
             }}
+            /** Дублируем для десктопов; на iOS основной показ клавиатуры — scheduleWizardStepPhoneFocus. */
             autoFocus
             onBlur={(e) => {
               (inputProps as InputHTMLAttributes<HTMLInputElement>).onBlur?.(e);
