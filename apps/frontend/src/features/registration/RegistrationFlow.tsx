@@ -260,6 +260,7 @@ export function RegistrationFlow() {
         state: {
           participantId: created.id,
           participantFirstName: created.firstName,
+          participantLastName: created.lastName,
           participantSex: form.sex,
         },
       });

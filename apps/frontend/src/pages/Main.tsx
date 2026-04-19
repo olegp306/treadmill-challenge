@@ -28,12 +28,21 @@ type QueueCardItem = {
   status: string;
 };
 
-function splitNameLines(fullName: string): { nameLine1: string; nameLine2?: string } {
-  const text = fullName.trim();
-  if (!text) return { nameLine1: 'Участник' };
-  const parts = text.split(/\s+/);
-  if (parts.length <= 1) return { nameLine1: parts[0] };
-  return { nameLine1: parts[0], nameLine2: parts.slice(1).join(' ') };
+/** «Фамилия Имя Отчество?» из одной строки API — каждое поле рендерится отдельно для своего ellipsis. */
+function splitParticipantNameParts(fullName: string): {
+  surname: string;
+  firstName?: string;
+  patronymic?: string;
+} {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { surname: 'Участник' };
+  if (parts.length === 1) return { surname: parts[0] };
+  if (parts.length === 2) return { surname: parts[0], firstName: parts[1] };
+  return {
+    surname: parts[0],
+    firstName: parts[1],
+    patronymic: parts.slice(2).join(' '),
+  };
 }
 
 const ADMIN_TAP_SEQ = ['amazing', 'amazing', 'red', 'red', 'amazing', 'red'] as const;
@@ -288,7 +297,7 @@ export default function Main() {
                     <div className="ar-ozio-cards-scroll" style={styles.cardsRow}>
                       {queueCards.map((card, i) => {
                         const isActive = i === 0;
-                        const { nameLine1, nameLine2 } = splitNameLines(card.participantName);
+                        const nameParts = splitParticipantNameParts(card.participantName);
                         return (
                           <article
                             key={card.runSessionId}
@@ -311,13 +320,13 @@ export default function Main() {
                               </span>
                             </div>
                             <div style={styles.cardName}>
-                              <span>{nameLine1}</span>
-                              {nameLine2 != null && (
-                                <>
-                                  <br />
-                                  <span>{nameLine2}</span>
-                                </>
-                              )}
+                              <span style={styles.cardNameLine}>{nameParts.surname}</span>
+                              {nameParts.firstName != null ? (
+                                <span style={styles.cardNameLine}>{nameParts.firstName}</span>
+                              ) : null}
+                              {nameParts.patronymic != null && nameParts.patronymic.length > 0 ? (
+                                <span style={styles.cardNameLine}>{nameParts.patronymic}</span>
+                              ) : null}
                             </div>
                           </article>
                         );
@@ -580,10 +589,27 @@ const styles: Record<string, React.CSSProperties> = {
   cardName: {
     fontWeight: 400,
     fontSize: w(40),
-    lineHeight: 1.1,
+    lineHeight: 1,
     textTransform: 'uppercase',
     color: ui.color.text,
     textAlign: 'left',
+    minWidth: 0,
+    width: '100%',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0,
+    alignItems: 'stretch',
+  },
+  /** Одна строка ФИО: свой ellipsis; column flex + gap 0 без br между block-строками (br давал лишнюю высоту line-box). */
+  cardNameLine: {
+    flexShrink: 0,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: '100%',
+    lineHeight: 1.1,
   },
   bottomNav: {
     display: 'flex',

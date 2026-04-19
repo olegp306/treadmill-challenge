@@ -17,13 +17,23 @@ import { logEvent, setLoggedRunSessionId } from '../logging/logEvent';
 export type RunSelectLocationState = {
   participantId: string;
   participantFirstName: string;
+  /** Отдельно от имени — для приветствия на двух строках и обрезки по полям. */
+  participantLastName?: string;
   participantSex: 'male' | 'female';
 };
 
-function displayGreetingFirstName(raw: string): string {
+/** Максимум символов в строке приветствия до добавления «...» (имя и фамилия по отдельности). */
+const GREETING_NAME_FIELD_MAX = 15;
+
+function formatGreetingPart(raw: string, whenEmpty: string): string {
   const part = raw.trim();
-  if (!part) return 'участник';
+  if (!part) return whenEmpty;
   return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+}
+
+function truncateGreetingField(formatted: string): string {
+  if (formatted.length <= GREETING_NAME_FIELD_MAX) return formatted;
+  return `${formatted.slice(0, GREETING_NAME_FIELD_MAX)}...`;
 }
 
 export default function RunSelectionPage() {
@@ -33,9 +43,17 @@ export default function RunSelectionPage() {
 
   const participantId = state?.participantId ?? '';
   const participantSex = state?.participantSex ?? 'male';
-  const greetingName = useMemo(
-    () => displayGreetingFirstName(state?.participantFirstName ?? ''),
+  const greetingFirstLine = useMemo(
+    () =>
+      truncateGreetingField(formatGreetingPart(state?.participantFirstName ?? '', 'участник')),
     [state?.participantFirstName]
+  );
+  const greetingLastLine = useMemo(
+    () =>
+      state?.participantLastName != null && state.participantLastName.trim() !== ''
+        ? truncateGreetingField(formatGreetingPart(state.participantLastName, ''))
+        : null,
+    [state?.participantLastName]
   );
 
   const [selected, setSelected] = useState<RunTypeId>(2);
@@ -314,7 +332,18 @@ export default function RunSelectionPage() {
         >
           <div style={rs.runSelectTopBlock}>
             <p style={rs.greeting}>
-              Привет, <span style={reg.logoRed}>{greetingName}!</span>
+              Привет,
+              <br />
+              <span style={{ ...reg.logoRed, ...rs.greetingNameLine }}>
+                {greetingFirstLine}
+                {greetingLastLine != null ? (
+                  <>
+                    <br />
+                    {greetingLastLine}
+                  </>
+                ) : null}
+                !
+              </span>
             </p>
             <p style={rs.subtitle}>Выбери свой формат забега</p>
             {error ? <p style={{ ...reg.error, ...rs.subtitle, color: '#f85149' }}>{error}</p> : null}
