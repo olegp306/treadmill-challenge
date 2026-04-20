@@ -26,17 +26,6 @@ type RunPrepareLocationState = {
   immediateRunning?: boolean;
 };
 
-function formatPrepareCornerName(firstName: string, lastName: string): string {
-  const first = firstName.trim();
-  const last = lastName.trim();
-  if (!first && !last) return 'Участник';
-  const firstNormalized = first
-    ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase()
-    : 'Участник';
-  const lastInitial = last ? `${last.charAt(0).toUpperCase()}.` : '';
-  return lastInitial ? `${firstNormalized} ${lastInitial}` : firstNormalized;
-}
-
 export default function RunPreparePage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,7 +39,6 @@ export default function RunPreparePage() {
   const immediateRunning = Boolean(state?.immediateRunning);
 
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
-  const [cornerName, setCornerName] = useState('Участник');
   const [tdDemoMode, setTdDemoMode] = useState(false);
   const [demoMsg, setDemoMsg] = useState<string | null>(null);
   const [demoRank, setDemoRank] = useState<number | null>(null);
@@ -121,12 +109,10 @@ export default function RunPreparePage() {
         const p = await api.getParticipant(participantId);
         if (!cancelled) {
           setDisplayName(formatParticipantDisplayName(p.firstName, p.lastName));
-          setCornerName(formatPrepareCornerName(p.firstName, p.lastName));
         }
       } catch {
         if (!cancelled && state?.participantFirstName) {
           setDisplayName(formatParticipantDisplayName(state.participantFirstName, ''));
-          setCornerName(formatPrepareCornerName(state.participantFirstName, ''));
         }
       }
     })();
@@ -231,7 +217,6 @@ export default function RunPreparePage() {
   return (
     <RunQueueScreenShell
       participantDisplayName={displayName}
-      headerRightLabel={cornerName}
       centerAgainstSheet
       sheetStyle={rq.prepareSheet}
       overlay={<div style={rq.prepareSheetGlow} aria-hidden />}

@@ -7,6 +7,15 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.19] - 2026-04-20
+
+### Changed
+
+- **Top-right participant label (queue/prepare screens):** unified display via single shared helper with one rule for all related screens — `Имя Ф.` format, whitespace normalization, edge-case fallback (`Участник`), and global cap **35 chars + ellipsis**.
+- **Queue position intro screen (`/run/queue/position`):** fixed line wrapping so `Ваш номер в очереди: N` always stays on one line (number no longer drops to the next line).
+
+---
+
 ## [0.2.18] - 2026-04-20
 
 ### Added

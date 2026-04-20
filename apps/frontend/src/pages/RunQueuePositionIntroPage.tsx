@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { h } from '../arOzio/dimensions';
 import { api } from '../api/client';
 import { logEvent } from '../logging/logEvent';
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
@@ -80,9 +79,11 @@ export default function RunQueuePositionIntroPage() {
         </button>
       }
     >
-      <p style={{ ...rq.titleMain, margin: 0 }}>Ваш номер в очереди:</p>
-      <p style={{ ...rq.titleMain, margin: `${h(28)} 0 0`, lineHeight: 1 }} aria-live="polite">
-        <span style={rq.titleAccent}>{position}</span>
+      <p
+        style={{ ...rq.titleMain, margin: 0, whiteSpace: 'nowrap' }}
+        aria-live="polite"
+      >
+        Ваш номер в очереди: <span style={rq.titleAccent}>{position}</span>
       </p>
     </RunQueueScreenShell>
   );
