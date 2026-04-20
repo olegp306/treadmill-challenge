@@ -138,6 +138,7 @@ export function getQueue(
     queueNumber: number;
     participantId: string;
     participantName: string;
+    participantPhone: string;
     sex: Gender;
     competitionId: string;
     runTypeId: RunTypeId;
@@ -159,6 +160,7 @@ export function getQueue(
       queueNumber: r.runSession.queueNumber,
       participantId: r.runSession.participantId,
       participantName: r.participantName,
+      participantPhone: r.participantPhone,
       sex: r.sex,
       competitionId: r.runSession.competitionId,
       runTypeId: r.runSession.runTypeId,

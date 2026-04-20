@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.3.0] - 2026-04-20
+
+### Added
+
+- **Admin backup (JSON):** `GET /api/admin/data/export` (download snapshot with dated filename) and `POST /api/admin/data/import` (validated full replace in a transaction); service `apps/backend/src/services/dataSnapshot.ts`. **Настройки** админки: экспорт/импорт через UI.
+- **Manager queue history:** `GET /api/admin/manager/queue-history` — до 20 строк: `running`, затем `queued`, затем недавние `finished`; поля для поиска и **`displayTime`** (ISO под именем).
+
+### Changed
+
+- **`GET /api/run/queue`:** в каждой записи добавлено **`participantPhone`** (из `participants.phone`, без смены схемы БД).
+- **Manager (`/manager`) — вкладка «Очередь»:** заголовок «История очереди», поиск по имени/фамилии/телефону, время под ФИО; для **finished** только «Редактировать»; для **running** — «Сойти с забега» (`mark-cancelled`); для **queued** — прежние `-1` / `+1` / «В конец».
+- **`POST …/mark-cancelled`:** если отменена сессия со статусом **`running`**, после перенумерации вызывается **`promoteNextQueuedSessionAfterFinish`** (следующий в глобальной очереди может стартовать на TD / demo), как после завершения забега.
+
+---
+
 ## [0.2.23] - 2026-04-20
 
 ### Added

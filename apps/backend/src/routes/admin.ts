@@ -28,6 +28,12 @@ import {
   readVerificationPhotoBufferForRunSession,
 } from '../services/runSessionVerificationAdmin.js';
 import { getAppVersion } from '../version.js';
+import {
+  applyDataSnapshot,
+  buildDataSnapshot,
+  buildExportDownloadFilename,
+  validateDataSnapshot,
+} from '../services/dataSnapshot.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const x = request.headers['x-admin-pin'];
   if (typeof x === 'string' && x.length > 0) return x.trim();
@@ -154,6 +160,11 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         }
       }
       return { slots };
+    });
+
+    scoped.get('/api/admin/manager/queue-history', async () => {
+      const db = getDb();
+      return { entries: runSessions.listManagerQueueHistory(db, 20) };
     });
 
     scoped.post('/api/admin/competitions/start', async (request, reply) => {
@@ -507,8 +518,16 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const { cid, sid } = request.params as { cid: string; sid: string };
       const s = runSessions.getRunSessionById(db, sid);
       if (!s || s.competitionId !== cid) return reply.status(404).send({ error: 'Not found' });
+      const wasRunning = s.status === 'running';
       runSessions.setSessionStatus(db, sid, 'cancelled');
       runSessions.renumberQueuedSessions(db, cid);
+      if (wasRunning) {
+        await promoteNextQueuedSessionAfterFinish(touchDesignerAdapter, {
+          info: (o) => request.log.info(o),
+          warn: (o) => request.log.warn(o),
+          error: (o) => request.log.error(o),
+        });
+      }
       return reply.send({ ok: true });
     });
 
@@ -727,6 +746,37 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       }
       return reply.send({ ok: true });
     });
+
+    scoped.get('/api/admin/data/export', async (_request, reply) => {
+      const db = getDb();
+      const snapshot = buildDataSnapshot(db);
+      const body = JSON.stringify(snapshot, null, 2);
+      const filename = buildExportDownloadFilename();
+      return reply
+        .header('Content-Type', 'application/json; charset=utf-8')
+        .header('Content-Disposition', `attachment; filename="${filename}"`)
+        .send(body);
+    });
+
+    scoped.post<{ Body: unknown }>(
+      '/api/admin/data/import',
+      { bodyLimit: 52 * 1024 * 1024 },
+      async (request, reply) => {
+        const parsed = validateDataSnapshot(request.body);
+        if (!parsed.ok) {
+          return reply.status(400).send({ error: parsed.error });
+        }
+        try {
+          const db = getDb();
+          applyDataSnapshot(db, parsed.snapshot);
+          ensureActiveCompetitionsForAllSlots();
+          return reply.send({ ok: true, imported: true });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : 'Import failed';
+          return reply.status(500).send({ error: msg });
+        }
+      }
+    );
 
     scoped.post('/api/admin/test-data/reset', async (_request, reply) => {
       try {

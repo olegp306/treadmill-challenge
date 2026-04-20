@@ -100,6 +100,8 @@ export const api = {
         queueNumber: number;
         participantId: string;
         participantName: string;
+        /** Из `participants.phone` в том же JOIN, что и очередь. */
+        participantPhone: string;
         sex: Gender;
         competitionId: string;
         runTypeId: RunTypeId;
@@ -333,6 +335,26 @@ export const api = {
     }>('/admin/dashboard');
   },
 
+  /** Панель менеджера: до 20 строк — сначала running, затем queued, затем недавние finished. */
+  adminManagerQueueHistory() {
+    return adminRequest<{
+      entries: Array<{
+        runSessionId: string;
+        queueNumber: number;
+        participantId: string;
+        participantName: string;
+        participantFirstName: string;
+        participantLastName: string;
+        participantPhone: string;
+        runTypeId: RunTypeId;
+        runType: string;
+        status: 'queued' | 'running' | 'finished';
+        competitionId: string;
+        displayTime: string;
+      }>;
+    }>('/admin/manager/queue-history');
+  },
+
   adminStartCompetition(body: { runTypeId: RunTypeId; sex: Gender }) {
     return adminRequest<{ competition: unknown }>('/admin/competitions/start', {
       method: 'POST',
@@ -537,6 +559,42 @@ export const api = {
     showIntegrationInfoMessages: boolean;
   }>) {
     return adminRequest<{ ok: boolean }>('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
+  },
+
+  /** Скачивает JSON-снимок БД; имя файла приходит в `Content-Disposition`. */
+  async adminExportDataDownload(): Promise<void> {
+    const res = await fetch(`${API_BASE}/admin/data/export`, { headers: { ...adminHeaders() } });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? `Request failed: ${res.status}`);
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition') ?? '';
+    let filename = 'treadmill-export.json';
+    const quoted = cd.match(/filename="([^"]+)"/);
+    const bare = cd.match(/filename=([^;\s]+)/);
+    if (quoted?.[1]) filename = quoted[1];
+    else if (bare?.[1]) filename = bare[1].replace(/^"|"$/g, '');
+    const url = URL.createObjectURL(blob);
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  },
+
+  /** Полная замена данных на сервере по снимку (см. backend `dataSnapshot`). Тело — распарсенный JSON. */
+  adminImportData(snapshot: unknown) {
+    return adminRequest<{ ok: boolean; imported: boolean }>('/admin/data/import', {
+      method: 'POST',
+      body: JSON.stringify(snapshot),
+    });
   },
 
   getPublicSettings() {

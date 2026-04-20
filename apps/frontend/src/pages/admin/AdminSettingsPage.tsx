@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DEFAULT_MAX_GLOBAL_QUEUE_SIZE } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
 import { AdminLayout } from '../../features/admin/AdminLayout';
@@ -8,6 +8,9 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
+  const [dataToolBusy, setDataToolBusy] = useState(false);
+  const [dataToolMsg, setDataToolMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -190,6 +193,116 @@ export default function AdminSettingsPage() {
           >
             {saving ? 'Сохранение…' : 'Сохранить'}
           </button>
+
+          <div style={{ marginTop: 8, paddingTop: 16, borderTop: '1px solid #333' }}>
+            <p style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 600 }}>Резервная копия (JSON)</p>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#888', lineHeight: 1.45 }}>
+              Экспорт и импорт для переноса между версиями или бэкапа. В JSON попадают участники, соревнования, сессии,
+              результаты забегов, события и настройки админки. Файлы фото в архив не входят — только пути в БД; при
+              переносе скопируйте каталог <code style={{ color: '#ccc' }}>data/photos</code> отдельно, если нужны сами
+              снимки.
+            </p>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#c9a227', lineHeight: 1.45 }}>
+              Импорт: <strong>полная замена</strong> перечисленных таблиц текущей базы содержимым файла (транзакция).
+              Текущие данные будут удалены. Это не слияние и не upsert по отдельным строкам.
+            </p>
+            {dataToolMsg && (
+              <p style={{ margin: '0 0 10px', fontSize: 14, color: dataToolMsg.kind === 'ok' ? '#3fb950' : '#f85149' }}>
+                {dataToolMsg.text}
+              </p>
+            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+              <button
+                type="button"
+                disabled={saving || dataToolBusy}
+                onClick={async () => {
+                  setDataToolMsg(null);
+                  setDataToolBusy(true);
+                  try {
+                    await api.adminExportDataDownload();
+                    setDataToolMsg({ kind: 'ok', text: 'Файл экспорта скачан.' });
+                  } catch (e) {
+                    setDataToolMsg({
+                      kind: 'err',
+                      text: e instanceof Error ? e.message : 'Ошибка экспорта',
+                    });
+                  } finally {
+                    setDataToolBusy(false);
+                  }
+                }}
+                style={{
+                  minHeight: 48,
+                  fontSize: 16,
+                  padding: '0 16px',
+                  borderRadius: 10,
+                  border: '1px solid #444',
+                  background: '#1a1a1a',
+                  color: '#fff',
+                  cursor: saving || dataToolBusy ? 'wait' : 'pointer',
+                }}
+              >
+                Экспорт данных
+              </button>
+              <input
+                ref={importFileRef}
+                type="file"
+                accept="application/json,.json"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const input = e.target;
+                  const file = input.files?.[0];
+                  input.value = '';
+                  if (!file) return;
+                  void (async () => {
+                    const ok = window.confirm(
+                      'Импорт заменит все данные в базе (участники, соревнования, сессии, забеги, события, настройки). Продолжить?'
+                    );
+                    if (!ok) return;
+                    setDataToolMsg(null);
+                    setDataToolBusy(true);
+                    try {
+                      const text = await file.text();
+                      let parsed: unknown;
+                      try {
+                        parsed = JSON.parse(text) as unknown;
+                      } catch {
+                        setDataToolMsg({ kind: 'err', text: 'Некорректный JSON в файле.' });
+                        return;
+                      }
+                      await api.adminImportData(parsed);
+                      await load();
+                      setDataToolMsg({ kind: 'ok', text: 'Импорт выполнен, данные восстановлены.' });
+                    } catch (err) {
+                      setDataToolMsg({
+                        kind: 'err',
+                        text: err instanceof Error ? err.message : 'Ошибка импорта',
+                      });
+                    } finally {
+                      setDataToolBusy(false);
+                    }
+                  })();
+                }}
+              />
+              <button
+                type="button"
+                disabled={saving || dataToolBusy}
+                onClick={() => importFileRef.current?.click()}
+                style={{
+                  minHeight: 48,
+                  fontSize: 16,
+                  padding: '0 16px',
+                  borderRadius: 10,
+                  border: '1px solid #c9a227',
+                  background: 'transparent',
+                  color: '#c9a227',
+                  cursor: saving || dataToolBusy ? 'wait' : 'pointer',
+                }}
+              >
+                Импорт данных…
+              </button>
+            </div>
+          </div>
+
           <button
             type="button"
             disabled={saving}

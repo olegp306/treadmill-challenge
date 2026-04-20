@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeName } from '@treadmill-challenge/shared';
@@ -6,16 +6,9 @@ import { api } from '../../api/client';
 
 type ManagerTab = 'queue' | 'runs' | 'system';
 
-type QueueEntry = {
-  runSessionId: string;
-  queueNumber: number;
-  participantId: string;
-  participantName: string;
-  runTypeId: RunTypeId;
-  runType: string;
-  status: string;
-  competitionId: string;
-};
+type HistoryRow = Awaited<ReturnType<typeof api.adminManagerQueueHistory>>['entries'][number];
+
+type EditParticipantState = { id: string; firstName: string; lastName: string; phone: string };
 
 type Slot = {
   runTypeId: RunTypeId;
@@ -35,13 +28,27 @@ function slotLabel(slot: Slot): string {
   return `${sex} — ${getRunTypeName(slot.runTypeId)}`;
 }
 
+function formatHistoryDisplayTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function ManagerPanelPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<ManagerTab>('queue');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [queueRows, setQueueRows] = useState<QueueEntry[]>([]);
+  const [historyRows, setHistoryRows] = useState<HistoryRow[]>([]);
+  const [queueSearch, setQueueSearch] = useState('');
+  const [editParticipant, setEditParticipant] = useState<EditParticipantState | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<EditableParticipant[]>([]);
@@ -53,10 +60,19 @@ export default function ManagerPanelPage() {
   const maleSlots = useMemo(() => slots.filter((s) => s.sex === 'male'), [slots]);
   const femaleSlots = useMemo(() => slots.filter((s) => s.sex === 'female'), [slots]);
 
-  const loadQueue = async () => {
-    const q = await api.getRunQueue();
-    setQueueRows((q.entries as QueueEntry[]).slice().sort((a, b) => a.queueNumber - b.queueNumber));
-  };
+  const loadQueueHistory = useCallback(async () => {
+    const res = await api.adminManagerQueueHistory();
+    setHistoryRows(res.entries);
+  }, []);
+
+  const displayedRows = useMemo(() => {
+    const n = queueSearch.trim().toLowerCase();
+    if (!n) return historyRows;
+    return historyRows.filter((r) => {
+      const hay = `${r.participantFirstName} ${r.participantLastName} ${r.participantName} ${r.participantPhone}`.toLowerCase();
+      return hay.includes(n);
+    });
+  }, [historyRows, queueSearch]);
 
   const loadSlots = async () => {
     const dashboard = await api.adminDashboard();
@@ -85,20 +101,20 @@ export default function ManagerPanelPage() {
       setBusy(true);
       setError(null);
       try {
-        await Promise.all([loadQueue(), loadSlots()]);
+        await Promise.all([loadQueueHistory(), loadSlots()]);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Ошибка загрузки');
       } finally {
         setBusy(false);
       }
     })();
-  }, []);
+  }, [loadQueueHistory]);
 
   const refreshQueue = async () => {
     setBusy(true);
     setError(null);
     try {
-      await loadQueue();
+      await loadQueueHistory();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка обновления очереди');
     } finally {
@@ -106,15 +122,65 @@ export default function ManagerPanelPage() {
     }
   };
 
-  const moveQueue = async (row: QueueEntry, action: 'move-up' | 'move-down' | 'move-tail') => {
+  const saveHistoryParticipant = async () => {
+    if (!editParticipant) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.adminUpdateParticipant(editParticipant.id, {
+        firstName: editParticipant.firstName.trim(),
+        lastName: editParticipant.lastName.trim(),
+        phone: editParticipant.phone.trim(),
+      });
+      setEditParticipant(null);
+      await loadQueueHistory();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось сохранить');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const moveQueue = async (row: HistoryRow, action: 'move-up' | 'move-down' | 'move-tail') => {
     if (row.status !== 'queued') return;
     setBusy(true);
     setError(null);
     try {
       await api.adminQueueAction(row.competitionId, row.runSessionId, action);
-      await loadQueue();
+      await loadQueueHistory();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось изменить очередь');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openFinishedEdit = (row: HistoryRow) => {
+    if (row.status !== 'finished') return;
+    setEditParticipant({
+      id: row.participantId,
+      firstName: row.participantFirstName,
+      lastName: row.participantLastName,
+      phone: row.participantPhone,
+    });
+  };
+
+  const stopRunningSession = async (row: HistoryRow) => {
+    if (row.status !== 'running') return;
+    if (
+      !window.confirm(
+        'Остановить забег и убрать участника с дорожки? Следующий в очереди сможет начать (как после обычного завершения).'
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api.adminQueueAction(row.competitionId, row.runSessionId, 'mark-cancelled');
+      await loadQueueHistory();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось остановить забег');
     } finally {
       setBusy(false);
     }
@@ -199,11 +265,21 @@ export default function ManagerPanelPage() {
             </button>
           </div>
           <div style={styles.sectionHead}>
-            <h2 style={styles.h2}>Текущая очередь</h2>
+            <h2 style={styles.h2}>История очереди</h2>
             <button type="button" style={styles.refreshBtn} onClick={refreshQueue}>
               Обновить
             </button>
           </div>
+          <label style={styles.searchLabel}>
+            Поиск
+            <input
+              type="search"
+              value={queueSearch}
+              onChange={(e) => setQueueSearch(e.target.value)}
+              placeholder="Имя, фамилия или телефон (часть строки)"
+              style={styles.searchInput}
+            />
+          </label>
           <table style={styles.table}>
             <thead>
               <tr>
@@ -211,48 +287,141 @@ export default function ManagerPanelPage() {
                 <th style={styles.th}>Участник</th>
                 <th style={styles.th}>Забег</th>
                 <th style={styles.th}>Статус</th>
+                <th style={styles.th}>Телефон</th>
                 <th style={styles.th}>Действия</th>
               </tr>
             </thead>
             <tbody>
-              {queueRows.map((row) => (
-                <tr key={row.runSessionId} style={row.status === 'running' ? styles.runningRow : undefined}>
-                  <td style={styles.td}>{row.queueNumber}</td>
-                  <td style={styles.td}>{row.participantName}</td>
+              {displayedRows.map((row) => (
+                <tr
+                  key={row.runSessionId}
+                  style={
+                    row.status === 'running'
+                      ? styles.runningRow
+                      : row.status === 'finished'
+                        ? styles.finishedRow
+                        : undefined
+                  }
+                  onClick={() => openFinishedEdit(row)}
+                >
+                  <td style={styles.td}>{row.status === 'finished' ? '—' : row.queueNumber}</td>
+                  <td style={styles.td}>
+                    <div>{row.participantName}</div>
+                    <div style={styles.timeHint}>{formatHistoryDisplayTime(row.displayTime)}</div>
+                  </td>
                   <td style={styles.td}>{row.runType}</td>
                   <td style={styles.td}>{row.status}</td>
+                  <td style={styles.td}>{row.participantPhone ?? ''}</td>
                   <td style={styles.td}>
-                    <div style={styles.actions}>
+                    {row.status === 'finished' ? (
                       <button
                         type="button"
-                        style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
-                        disabled={busy || row.status !== 'queued'}
-                        onClick={() => moveQueue(row, 'move-up')}
+                        style={styles.editOnlyBtn}
+                        disabled={busy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openFinishedEdit(row);
+                        }}
                       >
-                        -1
+                        Редактировать
                       </button>
+                    ) : row.status === 'running' ? (
                       <button
                         type="button"
-                        style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
-                        disabled={busy || row.status !== 'queued'}
-                        onClick={() => moveQueue(row, 'move-down')}
+                        style={styles.stopRunBtn}
+                        disabled={busy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void stopRunningSession(row);
+                        }}
                       >
-                        +1
+                        Сойти с забега
                       </button>
-                      <button
-                        type="button"
-                        style={row.status === 'queued' ? styles.tailBtn : styles.tailBtnDisabled}
-                        disabled={busy || row.status !== 'queued'}
-                        onClick={() => moveQueue(row, 'move-tail')}
-                      >
-                        В конец
-                      </button>
-                    </div>
+                    ) : (
+                      <div style={styles.actions} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
+                          disabled={busy || row.status !== 'queued'}
+                          onClick={() => moveQueue(row, 'move-up')}
+                        >
+                          -1
+                        </button>
+                        <button
+                          type="button"
+                          style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
+                          disabled={busy || row.status !== 'queued'}
+                          onClick={() => moveQueue(row, 'move-down')}
+                        >
+                          +1
+                        </button>
+                        <button
+                          type="button"
+                          style={row.status === 'queued' ? styles.tailBtn : styles.tailBtnDisabled}
+                          disabled={busy || row.status !== 'queued'}
+                          onClick={() => moveQueue(row, 'move-tail')}
+                        >
+                          В конец
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {editParticipant ? (
+            <div
+              role="presentation"
+              style={styles.modalBackdrop}
+              onClick={() => !busy && setEditParticipant(null)}
+            >
+              <div role="dialog" style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{ margin: '0 0 12px', fontSize: 18 }}>Участник (завершил забег)</h3>
+                <p style={{ margin: '0 0 14px', fontSize: 13, color: '#888' }}>
+                  Изменяются только фамилия, имя и телефон. Нажмите строку в таблице снова после сохранения при
+                  необходимости.
+                </p>
+                <label style={styles.modalField}>
+                  Фамилия
+                  <input
+                    style={styles.input}
+                    value={editParticipant.lastName}
+                    onChange={(e) => setEditParticipant({ ...editParticipant, lastName: e.target.value })}
+                  />
+                </label>
+                <label style={styles.modalField}>
+                  Имя
+                  <input
+                    style={styles.input}
+                    value={editParticipant.firstName}
+                    onChange={(e) => setEditParticipant({ ...editParticipant, firstName: e.target.value })}
+                  />
+                </label>
+                <label style={styles.modalField}>
+                  Телефон
+                  <input
+                    style={styles.input}
+                    value={editParticipant.phone}
+                    onChange={(e) => setEditParticipant({ ...editParticipant, phone: e.target.value })}
+                  />
+                </label>
+                <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                  <button type="button" style={styles.saveBtn} disabled={busy} onClick={() => void saveHistoryParticipant()}>
+                    Сохранить
+                  </button>
+                  <button
+                    type="button"
+                    style={styles.refreshBtn}
+                    disabled={busy}
+                    onClick={() => setEditParticipant(null)}
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -475,6 +644,51 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff',
   },
   runningRow: { background: '#232323', color: '#9f9f9f' },
+  finishedRow: { background: '#161c18', cursor: 'pointer' },
+  searchLabel: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14, fontSize: 14, color: '#ccc', maxWidth: 720 },
+  timeHint: { fontSize: 11, color: '#6a6a6a', marginTop: 3, lineHeight: 1.2 },
+  editOnlyBtn: {
+    minHeight: 40,
+    padding: '8px 14px',
+    borderRadius: 8,
+    border: '1px solid #888',
+    background: '#2a2a2a',
+    color: '#eee',
+    fontSize: 14,
+    cursor: 'pointer',
+  },
+  stopRunBtn: {
+    minHeight: 40,
+    padding: '8px 14px',
+    borderRadius: 8,
+    border: '1px solid #c9a227',
+    background: '#2a2410',
+    color: '#f5e6a8',
+    fontSize: 14,
+    cursor: 'pointer',
+  },
+  searchInput: { minHeight: 44, borderRadius: 8, border: '1px solid #555', background: '#0f0f0f', color: '#fff', padding: '8px 10px', fontSize: 16 },
+  modalBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.65)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: 16,
+    boxSizing: 'border-box' as const,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    background: '#1a1a1a',
+    border: '1px solid #444',
+    borderRadius: 12,
+    padding: 20,
+    boxSizing: 'border-box' as const,
+  },
+  modalField: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12, fontSize: 14, color: '#ccc' },
   input: { width: '100%', minHeight: 34, borderRadius: 8, border: '1px solid #555', background: '#0f0f0f', color: '#fff', padding: '6px 8px', boxSizing: 'border-box' },
   saveBtn: { padding: '8px 12px', borderRadius: 8, border: '1px solid #e6233a', background: '#3a141a', color: '#fff' },
   systemCard: { display: 'grid', gap: 12, maxWidth: 420, background: '#1a1a1a', border: '1px solid #333', borderRadius: 12, padding: 16 },

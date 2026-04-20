@@ -158,6 +158,10 @@ export function listQueuedByRunTypeId(db: Db, runTypeId: RunTypeId): QueuedRow[]
 export interface ActiveQueueRow {
   runSession: RunSession;
   participantName: string;
+  participantFirstName: string;
+  participantLastName: string;
+  /** From `participants.phone` (same row as first/last name). */
+  participantPhone: string;
   sex: Gender;
 }
 
@@ -185,7 +189,7 @@ export function listActiveQueue(db: Db, runTypeId?: RunTypeId, sex?: Gender): Ac
     .prepare(
       `
     SELECT s.id, s.participantId, s.competitionId, s.runTypeId, s.runType, s.status, s.queueNumber, s.resultTime, s.resultDistance,
-           s.createdAt, s.startedAt, s.finishedAt, p.firstName as pf, p.lastName as pl, c.gender as cg
+           s.createdAt, s.startedAt, s.finishedAt, p.firstName as pf, p.lastName as pl, p.phone as pphone, c.gender as cg
     FROM run_sessions s
     JOIN competitions c ON c.id = s.competitionId
     JOIN participants p ON p.id = s.participantId
@@ -202,13 +206,130 @@ export function listActiveQueue(db: Db, runTypeId?: RunTypeId, sex?: Gender): Ac
     const sessionRow = { ...row };
     delete sessionRow.pf;
     delete sessionRow.pl;
+    delete sessionRow.pphone;
     delete sessionRow.cg;
     return {
       runSession: rowToSession(sessionRow),
       participantName: `${String(pf ?? '')} ${String(pl ?? '')}`.trim(),
+      participantFirstName: String(pf ?? '').trim(),
+      participantLastName: String(pl ?? '').trim(),
+      participantPhone: String(row.pphone ?? ''),
       sex: String(cg ?? 'male') as Gender,
     };
   });
+}
+
+/** Менеджерская «история очереди»: активные (running, затем queued) и недавние finished, всего не более `maxTotal`. */
+export type ManagerQueueHistoryRow = {
+  runSessionId: string;
+  queueNumber: number;
+  participantId: string;
+  participantName: string;
+  participantFirstName: string;
+  participantLastName: string;
+  participantPhone: string;
+  runTypeId: RunTypeId;
+  runType: string;
+  status: 'queued' | 'running' | 'finished';
+  competitionId: string;
+  /** ISO: finished → finishedAt или createdAt; running → startedAt или createdAt; queued → createdAt. */
+  displayTime: string;
+};
+
+function displayTimeForHistoryRow(status: 'queued' | 'running' | 'finished', s: RunSession): string {
+  if (status === 'finished') {
+    const f = s.finishedAt?.trim();
+    return f && f.length > 0 ? f : s.createdAt;
+  }
+  if (status === 'running') {
+    const st = s.startedAt?.trim();
+    return st && st.length > 0 ? st : s.createdAt;
+  }
+  return s.createdAt;
+}
+
+export function listManagerQueueHistory(db: Db, maxTotal: number): ManagerQueueHistoryRow[] {
+  const cap = Math.min(Math.max(1, maxTotal), 100);
+  const activeRows = listActiveQueue(db);
+  const running = activeRows
+    .filter((r) => r.runSession.status === 'running')
+    .sort((a, b) => {
+      const ta = `${a.runSession.startedAt ?? a.runSession.createdAt}\t${a.runSession.id}`;
+      const tb = `${b.runSession.startedAt ?? b.runSession.createdAt}\t${b.runSession.id}`;
+      return ta.localeCompare(tb);
+    });
+  const queued = activeRows
+    .filter((r) => r.runSession.status === 'queued')
+    .sort((a, b) => {
+      const ta = `${a.runSession.createdAt}\t${a.runSession.id}`;
+      const tb = `${b.runSession.createdAt}\t${b.runSession.id}`;
+      return ta.localeCompare(tb);
+    });
+  const activeOrdered = [...running, ...queued].slice(0, 4);
+
+  const toRow = (r: ActiveQueueRow): ManagerQueueHistoryRow => {
+    const st = r.runSession.status as 'queued' | 'running';
+    return {
+      runSessionId: r.runSession.id,
+      queueNumber: r.runSession.queueNumber,
+      participantId: r.runSession.participantId,
+      participantName: r.participantName,
+      participantFirstName: r.participantFirstName,
+      participantLastName: r.participantLastName,
+      participantPhone: r.participantPhone,
+      runTypeId: r.runSession.runTypeId,
+      runType: r.runSession.runType,
+      status: st,
+      competitionId: r.runSession.competitionId,
+      displayTime: displayTimeForHistoryRow(st, r.runSession),
+    };
+  };
+
+  const needFinished = Math.max(0, cap - activeOrdered.length);
+  const finished: ManagerQueueHistoryRow[] = [];
+  if (needFinished > 0) {
+    const fRows = db
+      .prepare(
+        `
+      SELECT s.id, s.participantId, s.competitionId, s.runTypeId, s.runType, s.status, s.queueNumber, s.resultTime, s.resultDistance,
+             s.createdAt, s.startedAt, s.finishedAt, p.firstName as pf, p.lastName as pl, p.phone as pphone
+      FROM run_sessions s
+      JOIN participants p ON p.id = s.participantId
+      WHERE s.status = 'finished'
+      ORDER BY
+        (CASE WHEN s.finishedAt IS NOT NULL AND TRIM(s.finishedAt) != '' THEN s.finishedAt ELSE s.createdAt END) DESC,
+        s.id DESC
+      LIMIT ?
+    `
+      )
+      .all(needFinished) as Record<string, unknown>[];
+
+    for (const row of fRows) {
+      const pf = row.pf;
+      const pl = row.pl;
+      const sessionRow = { ...row };
+      delete sessionRow.pf;
+      delete sessionRow.pl;
+      delete sessionRow.pphone;
+      const s = rowToSession(sessionRow);
+      finished.push({
+        runSessionId: s.id,
+        queueNumber: s.queueNumber,
+        participantId: s.participantId,
+        participantName: `${String(pf ?? '')} ${String(pl ?? '')}`.trim(),
+        participantFirstName: String(pf ?? '').trim(),
+        participantLastName: String(pl ?? '').trim(),
+        participantPhone: String(row.pphone ?? ''),
+        runTypeId: s.runTypeId,
+        runType: s.runType,
+        status: 'finished',
+        competitionId: s.competitionId,
+        displayTime: displayTimeForHistoryRow('finished', s),
+      });
+    }
+  }
+
+  return [...activeOrdered.map(toRow), ...finished];
 }
 
 /** Active global queue rows for export (queued + running), ordered by queue FIFO. */
