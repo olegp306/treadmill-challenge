@@ -17,6 +17,7 @@ import AdminCompetitionPage from '../pages/admin/AdminCompetitionPage';
 import AdminArchivePage from '../pages/admin/AdminArchivePage';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
 import AdminEventsPage from '../pages/admin/AdminEventsPage';
+import ManagerPanelPage from '../pages/manager/ManagerPanelPage';
 import { RequireAdmin } from '../features/admin/RequireAdmin';
 import TdWaitingLeaderboardPage from '../pages/td/TdWaitingLeaderboardPage';
 import TdResultLeaderboardPage from '../pages/td/TdResultLeaderboardPage';
@@ -44,6 +45,14 @@ export function AppRoutes() {
       <Route path="/td/leaderboard/waiting" element={<TdWaitingLeaderboardPage />} />
       <Route path="/td/leaderboard/result" element={<TdResultLeaderboardPage />} />
       <Route path="/dev/queue-control" element={<QueueControlPage />} />
+      <Route
+        path="/manager"
+        element={
+          <RequireAdmin>
+            <ManagerPanelPage />
+          </RequireAdmin>
+        }
+      />
       <Route
         path="/admin"
         element={

@@ -12,12 +12,17 @@ async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  // Важно: не разворачивать `...options` поверх `headers`, иначе при наличии `options.headers`
+  // (например X-Admin-Pin) объект headers целиком перезапишется и пропадёт Content-Type для JSON-тела —
+  // backend получит пустой body, PUT /admin/participants/:id перестаёт обновлять поля.
+  const { headers: incomingHeaders, ...rest } = options;
+  const mergedHeaders: HeadersInit = {
+    ...(hasNonEmptyRequestBody(rest.body) ? { 'Content-Type': 'application/json' } : {}),
+    ...(incomingHeaders ?? {}),
+  };
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      ...(hasNonEmptyRequestBody(options.body) ? { 'Content-Type': 'application/json' } : {}),
-      ...options.headers,
-    },
-    ...options,
+    ...rest,
+    headers: mergedHeaders,
   });
 
   const data = await res.json().catch(() => ({}));
@@ -430,7 +435,7 @@ export const api = {
   adminQueueAction(
     competitionId: string,
     sessionId: string,
-    action: 'remove' | 'move-up' | 'move-down' | 'mark-running' | 'mark-finished' | 'mark-cancelled',
+    action: 'remove' | 'move-up' | 'move-down' | 'move-tail' | 'mark-running' | 'mark-finished' | 'mark-cancelled',
     body?: { resultTime?: number; distance?: number }
   ) {
     return adminRequest<{ ok: boolean }>(`/admin/competitions/${competitionId}/queue/${sessionId}/${action}`, {
@@ -631,5 +636,12 @@ export const api = {
         payloadPreview: string;
       }>;
     }>(`/admin/events${qs ? `?${qs}` : ''}`);
+  },
+
+  adminSystemRestart(pin: string) {
+    return adminRequest<{ ok: boolean; restarting: boolean }>('/admin/system/restart', {
+      method: 'POST',
+      body: JSON.stringify({ pin }),
+    });
   },
 };

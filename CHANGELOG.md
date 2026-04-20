@@ -7,6 +7,24 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.20] - 2026-04-20
+
+### Added
+
+- **Manager panel (`/manager`):** entry from home via **three taps on “Red”** in the logo, then PIN; tabs **Queue** (global list with `-1` / `+1` / **В конец** for queued rows; running row greyed, actions disabled), **Забеги** (six run-slot buttons with selection highlight; edit **фамилия / имя / телефон** per participant and save), **Система** (restart with PIN + confirm). Uses existing admin auth headers.
+- **Handoff doc:** `docs/system-handoff-ru.md` (project overview for transfer).
+
+### Changed
+
+- **Admin PIN policy:** `POST /api/admin/login` and admin-scoped routes accept both the **legacy** PIN `555555` and **`332277`**, in addition to the PIN stored in settings; default DB fallback for admin PIN updated to `332277`.
+- **Queue reorder (admin/manager):** `move-up` / `move-down` now reorder by swapping **`createdAt`** (FIFO source of truth) instead of only `queueNumber`; `move-tail` uses global tail bump + renumber.
+
+### Fixed
+
+- **Frontend `fetch` helper (`api/client.ts`):** merged `Content-Type: application/json` with `X-Admin-Pin` correctly so **PUT** bodies (e.g. `PUT /api/admin/participants/:id`) are parsed and **participant edits persist**.
+
+---
+
 ## [0.2.19] - 2026-04-20
 
 ### Changed

@@ -18,7 +18,7 @@ export function setSetting(db: Db, key: string, value: string): void {
 }
 
 export function getAdminPin(db: Db): string {
-  return getSetting(db, 'adminPin') ?? '555555';
+  return getSetting(db, 'adminPin') ?? '332277';
 }
 
 /** When true, run start skips real TouchDesigner send; client shows demo finish flow. */

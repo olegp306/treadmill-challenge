@@ -48,8 +48,6 @@ function splitParticipantNameParts(fullName: string): {
   };
 }
 
-const ADMIN_TAP_SEQ = ['amazing', 'amazing', 'red', 'red', 'amazing', 'red'] as const;
-
 /** Set only from this page when navigating to `/register/queue-full` after a synchronous full-queue check. */
 const QUEUE_FULL_ENTRY_STATE = { fromMainParticipateQueueFull: true as const };
 
@@ -62,7 +60,7 @@ export default function Main() {
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [showUiVersion, setShowUiVersion] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
-  const adminTapIdx = useRef(0);
+  const redManagerTapRef = useRef(0);
   /** Triple consecutive taps on AMAZING (RED resets) reveal build version — independent of admin tap sequence. */
   const amazingVersionTapRef = useRef(0);
 
@@ -187,15 +185,10 @@ export default function Main() {
     [navigate]
   );
 
-  const onAdminTap = (zone: 'amazing' | 'red') => {
-    const expected = ADMIN_TAP_SEQ[adminTapIdx.current];
-    if (zone !== expected) {
-      adminTapIdx.current = 0;
-      return;
-    }
-    adminTapIdx.current += 1;
-    if (adminTapIdx.current >= ADMIN_TAP_SEQ.length) {
-      adminTapIdx.current = 0;
+  const onRedManagerTap = () => {
+    redManagerTapRef.current += 1;
+    if (redManagerTapRef.current >= 3) {
+      redManagerTapRef.current = 0;
       setPinModalOpen(true);
     }
   };
@@ -206,12 +199,12 @@ export default function Main() {
       amazingVersionTapRef.current = 0;
       setShowUiVersion(true);
     }
-    onAdminTap('amazing');
+    redManagerTapRef.current = 0;
   };
 
   const onRedPointer = () => {
     amazingVersionTapRef.current = 0;
-    onAdminTap('red');
+    onRedManagerTap();
   };
 
   return (
@@ -391,7 +384,7 @@ export default function Main() {
             </Link>
           </nav>
         </ScreenContainer>
-      <AdminPinModal open={pinModalOpen} onClose={() => setPinModalOpen(false)} />
+      <AdminPinModal open={pinModalOpen} onClose={() => setPinModalOpen(false)} nextPath="/manager" />
     </ArOzioViewport>
   );
 }

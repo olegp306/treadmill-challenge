@@ -5,9 +5,10 @@ import { api } from '../../api/client';
 type Props = {
   open: boolean;
   onClose: () => void;
+  nextPath?: string;
 };
 
-export function AdminPinModal({ open, onClose }: Props) {
+export function AdminPinModal({ open, onClose, nextPath = '/admin' }: Props) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const [pin, setPin] = useState('');
@@ -36,7 +37,7 @@ export function AdminPinModal({ open, onClose }: Props) {
       await api.adminLogin(pin);
       sessionStorage.setItem('adminPin', pin);
       onClose();
-      navigate('/admin');
+      navigate(nextPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка');
     } finally {
@@ -71,7 +72,7 @@ export function AdminPinModal({ open, onClose }: Props) {
         }}
       >
         <h2 id="admin-pin-title" style={{ margin: '0 0 16px', color: '#fff', fontSize: 22 }}>
-          Панель оператора
+          Панель менеджера
         </h2>
         <p style={{ margin: '0 0 16px', color: '#aaa', fontSize: 15 }}>Введите PIN (6 цифр)</p>
         <input
