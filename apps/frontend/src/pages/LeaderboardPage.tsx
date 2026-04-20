@@ -26,7 +26,6 @@ const CAROUSEL_ORDER: Array<{ runTypeId: RunTypeId; sex: Gender }> = [
   { runTypeId: 2, sex: 'female' },
 ];
 
-const CAROUSEL_INTERVAL_MS = 6000;
 const CAROUSEL_FADE_MS = 220;
 
 function parseLeaderboardScope(searchParams: URLSearchParams): { runTypeId: RunTypeId; sex: Gender } | null {
@@ -85,8 +84,6 @@ export default function LeaderboardPage() {
     runTypeId: RunTypeId;
     sex: Gender;
   } | null>(null);
-  /** Пауза автоповорота при открытии с runSessionId (чтобы остаться на зачёте участника). */
-  const [pauseCarousel, setPauseCarousel] = useState(false);
   const [isCarouselFading, setIsCarouselFading] = useState(false);
 
   const highlightRef = useRef<HTMLDivElement | null>(null);
@@ -138,7 +135,6 @@ export default function LeaderboardPage() {
         if (idx >= 0) setCarouselIndex(idx);
         setHighlightParticipantId(session.participantId);
         setResolvedHighlightScope({ runTypeId: session.runTypeId, sex: participant.sex });
-        setPauseCarousel(true);
       } catch {
         if (!cancelled) {
           setHighlightParticipantId(undefined);
@@ -227,7 +223,6 @@ export default function LeaderboardPage() {
   const shiftCarousel = useCallback((delta: -1 | 1) => {
     const next = (carouselIndex + delta + 6) % 6;
     switchCarouselWithFade(next);
-    setPauseCarousel(false);
   }, [carouselIndex, switchCarouselWithFade]);
 
   const setGenderTab = useCallback((sex: Gender) => {
@@ -235,19 +230,8 @@ export default function LeaderboardPage() {
     const idx = CAROUSEL_ORDER.findIndex((s) => s.runTypeId === rt && s.sex === sex);
     if (idx >= 0) {
       switchCarouselWithFade(idx);
-      setPauseCarousel(false);
     }
   }, [centerScope.runTypeId, switchCarouselWithFade]);
-
-  /** Автосмена тоже через fade, чтобы избежать резкого переключения. */
-  useEffect(() => {
-    if (pauseCarousel) return;
-    const id = window.setInterval(() => {
-      const next = (carouselIndex + 1) % 6;
-      switchCarouselWithFade(next);
-    }, CAROUSEL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [carouselIndex, pauseCarousel, switchCarouselWithFade]);
 
   const centerLoading = slides[centerIdx]?.loading ?? true;
   const centerError = slides[centerIdx]?.error ?? null;

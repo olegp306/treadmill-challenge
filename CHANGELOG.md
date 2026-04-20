@@ -7,6 +7,15 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.16] - 2026-04-20
+
+### Fixed
+
+- **Registration wizard broken glyph artifacts:** removed expiring external Figma MCP asset links used by shared wizard backdrop and back button icon. Replaced with stable local rendering (inline SVG arrow + CSS backdrop layers), which restores the **Назад** arrow and removes widespread `?` placeholder squares on forms.
+- **Main leaderboard (`/leaderboard`) rotation behavior:** disabled automatic background carousel switching; leaderboard now changes only by explicit user navigation.
+
+---
+
 ## [0.2.15] - 2026-04-20
 
 ### Changed

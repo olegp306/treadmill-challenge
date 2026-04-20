@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { CSSProperties, ReactNode } from 'react';
 import { h, w } from '../../arOzio/dimensions';
-import { WIZARD_ASSETS } from './registrationWizardAssets';
 import { reg } from './registrationStyles';
 import { WizardCardBackdrop } from './WizardCardBackdrop';
 import { LogoMark } from '../../ui/components/LogoMark';
@@ -36,12 +35,20 @@ export function WizardStepShell({ onBack, variant, children, footer, ...rest }: 
               style={reg.ageFigmaPill}
               onClick={onBack}
             >
-              <img
-                src={WIZARD_ASSETS.arrowLeft}
-                alt=""
-                className="ar-reg-wizard-back-arrow"
-                style={{ width: w(24), height: w(24) }}
-              />
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                style={{ width: w(24), height: w(24), display: 'block', flexShrink: 0 }}
+              >
+                <path
+                  d="M15.5 5.5L9 12l6.5 6.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               Назад
             </button>
             <LogoMark aria-label="AMAZING RED" style={reg.ageFigmaLogo} />

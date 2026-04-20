@@ -289,14 +289,6 @@ button {
   transform: scale(0.985);
 }
 
-.ar-reg-wizard-back-arrow {
-  display: block;
-  flex-shrink: 0;
-  /* Figma asset is oriented “down”; rotate clockwise to point left (←) */
-  transform: rotate(90deg);
-  transform-origin: center center;
-}
-
 /* Wizard header pills — Назад / Выйти */
 .ar-reg-wizard-pill-btn,
 a.ar-reg-wizard-pill-link {
