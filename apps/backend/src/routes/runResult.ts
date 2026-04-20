@@ -2,7 +2,11 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { generateDemoMetrics, type RunSessionResultDto } from '@treadmill-challenge/shared';
 import { adminSettings, getDb, runSessions } from '../db/index.js';
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
-import { getExistingResultByRunSessionId, submitRunSessionResult } from '../services/runResultService.js';
+import {
+  ensurePromoteAfterDuplicateFinishIfIdle,
+  getExistingResultByRunSessionId,
+  submitRunSessionResult,
+} from '../services/runResultService.js';
 import { validateRunSessionResultBody } from '../utils/validation.js';
 
 function readTdTokenFromRequest(request: FastifyRequest): string {
@@ -128,6 +132,11 @@ export default async function runResultRoutes(app: FastifyInstance): Promise<voi
             source: opts.source,
             runSessionId: existing.runSessionId,
             runId: existing.runId,
+          });
+          await ensurePromoteAfterDuplicateFinishIfIdle(existing.runSessionId, touchDesignerAdapter, {
+            info: (o) => request.log.info(o),
+            warn: (o) => request.log.warn(o),
+            error: (o) => request.log.error(o),
           });
           return reply.status(200).send({ ...existing, duplicate: true });
         }

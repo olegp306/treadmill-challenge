@@ -6,6 +6,8 @@ Interactive treadmill challenge installation for a retail store. Local-first: Re
 
 **Интеграция TouchDesigner (RU):** полный цикл OSC/HTTP, URL лидербордов — [docs/touchdesigner-integration-ru.md](docs/touchdesigner-integration-ru.md). Совместимость **ack / runState / HTTP** и таймауты — [docs/touchdesigner-compat-ru.md](docs/touchdesigner-compat-ru.md).
 
+**Передача проекта / операторка (RU):** админка (JSON между версиями), менеджер `/manager`, ключевые экраны и файлы — [docs/system-handoff-ru.md](docs/system-handoff-ru.md) (раздел **5a**).
+
 ---
 
 ## Quick start (simple guide)

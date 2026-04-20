@@ -146,10 +146,20 @@ function handleRunStateMessage(args: unknown[], normalizedAddr: string): void {
     return;
   }
 
-  void handler(parsed.dto).catch((e: unknown) => {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error(`[TouchDesigner OSC] runState stop submit failed: ${msg}`, e);
-  });
+  void handler(parsed.dto)
+    .then(() => {
+      console.log(
+        JSON.stringify({
+          msg: 'td_runstate_stop_submit_completed',
+          runSessionId: parsed.dto.runSessionId,
+          ts: new Date().toISOString(),
+        })
+      );
+    })
+    .catch((e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`[TouchDesigner OSC] runState stop submit failed: ${msg}`, e);
+    });
 }
 
 function handleLegacyAckMessage(args: unknown[], normalizedAddr: string): void {

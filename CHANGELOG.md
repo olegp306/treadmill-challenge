@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.3.1] - 2026-04-20
+
+### Fixed
+
+- **Backend global queue after run result:** `submitRunSessionResult` now **awaits** promotion (no `void promote…`): guarded `Promise.race` with **`RUN_RESULT_PROMOTE_GUARD_MS`** (default 15s, clamped 2s–120s), optional second `promoteNextQueuedSessionAfterFinish` after guard timeout, **serialized** finish-promote chain to avoid overlapping HTTP/OSC/duplicate calls, **duplicate finish (200)** path calls **`ensurePromoteAfterDuplicateFinishIfIdle`** so a retried request can recover when the pool is idle but FIFO still has queued sessions. Added structured logs (`run_result_received`, `run_session_marked_finished`, `global_queue_*`, idle-with-queued warning). OSC stop handler logs **`td_runstate_stop_submit_completed`** when the async submit chain settles (UDP callback still non-blocking).
+
+### Changed
+
+- **Docs:** `docs/system-handoff-ru.md` — операторка (раздел 5a): JSON export/import в полной админке, панель менеджера `/manager`; `README.md` — ссылка на handoff; `docs/touchdesigner-integration-ru.md` — раздел про гонки finish/promote приведён в соответствие с текущим backend-поведением.
+
+---
+
 ## [0.3.0] - 2026-04-20
 
 ### Added

@@ -234,6 +234,47 @@ runSessionId	participantId	firstName	lastName	phone	runTypeId	runTypeName	status
 
 ---
 
+## Гонки: результат забега и продвижение очереди (для TD и backend)
+
+### Симптом со стороны TD
+
+В один момент отправляется **результат** текущего участника (`POST …/run-result` и/или OSC **`runState` stop**), а параллельно в TD или в другом потоке читается **очередь** (`GET /api/run/queue`, `queue.tsv`) или шлётся логика «есть ли следующий / кого стартовать». После этого возможны «залипание»: **старт следующему больше не уходит**, в очереди остаются люди, помогает только перезапуск.
+
+### Как устроено на backend (с v0.3.1, упрощённо)
+
+1. Приём результата (`runResultService.submitRunSessionResult`): в SQLite создаётся строка **run**, сессия переводится в **`finished`**, вызывается **`renumberGlobalQueuedSessions`**.
+2. **Старт следующего** — в **`promoteNextQueuedSessionAfterFinish`** (OSC **`/treadmill/runSession`** на TD, в demo — без ожидания TD; ack — см. `TD_OSC_ACK_TIMEOUT_MS` в `oscTouchDesignerAck.ts`).
+3. **Связка finish → promote:** после записи результата backend **ждёт** цепочку продвижения: **`await`** внутри общей **сериализованной** очереди (чтобы не пересекались два finish/duplicate), внешний **`Promise.race`** с таймаутом **`RUN_RESULT_PROMOTE_GUARD_MS`** (по умолчанию 15 с; при срабатывании — повторный вызов `promote…` без второго race). HTTP **201** уходит **после** этой цепочки (надёжность важнее минимальной задержки ответа).
+4. **Повторный finish** (200 `duplicate`): если в пуле **нет** `running`, но в FIFO ещё есть **queued**, вызывается **`ensurePromoteAfterDuplicateFinishIfIdle`** — та же guarded-цепочка (восстановление после сбоя/гонки).
+
+Файлы: `apps/backend/src/services/runResultService.ts`, `apps/backend/src/services/runSessionPromotion.ts`, вход: `apps/backend/src/routes/runResult.ts`, OSC stop: `apps/backend/src/integrations/touchdesigner/oscTouchDesignerAck.ts`.
+
+### Какие гонки ещё возможны (и почему это не только «баг TD»)
+
+| Фактор | Следствие |
+|--------|-----------|
+| **Внешний опрос очереди** пока запрос результата ещё в полёте | **`GET /api/run/queue`** всё ещё снимок; окно между «отправили POST» и «получили 201» стало меньше по смыслу (201 ближе к стабильному promote), но атомарности «один запрос ко всем клиентам» нет. |
+| **Два канала finish** (HTTP + OSC stop) почти одновременно | Цепочка сериализована; второй запрос чаще уйдёт в duplicate или отфильтруется по статусу сессии — но договорённость «один канал на инсталляцию» по-прежнему снижает шум. |
+| **TD решает «кого стартовать» по очереди** | Источник правды — **backend**; опрос очереди в TD не заменяет контракт «старт пришёл с backend по OSC `/treadmill/runSession`». |
+| **TD busy / ошибка OSC после promote** | Сессия может остаться **queued** при уже отправленном старте; в логах — `global_queue_next_promote_td_failed` / `…_td_busy`, плюс предупреждение **`global_queue_idle_with_queued_after_promote`** при подозрительном простое пула. |
+
+Итог: классический **race** «закрыли забег / кто на дорожке» смягчён **await + guard + duplicate ensure**, но **снимок** очереди и **внешняя** логика TD по-прежнему требуют дисциплины на стороне сети и TD.
+
+### Рекомендации для TD (контракт поведения)
+
+1. **Сериализовать** шаги: сначала **дождаться успешного** `POST …/run-result` (201 или осмысленный 200 duplicate), **затем** (с небольшой задержкой или по отдельному сигналу из backend) опрос очереди — не наоборот в одном кадре сети.
+2. **Не** принимать решение «стартовать следующего» только по `GET /api/run/queue`, если только что ушёл результат: для «кто сейчас на дорожке» ориентироваться на **`runSessionId`**, который вернул backend при старте, и на ответ приёма результата.
+3. **Не** дублировать finish одной сессией двумя каналами одновременно (HTTP и OSC stop с теми же метриками) без согласования — лучше один канал по договорённости.
+4. При **timeout** на HTTP результат — не шлите параллельно второй «исправляющий» finish с другими данными без idempotency: backend уже мог перевести сессию в `finished`.
+
+### Рекомендации для backend (куда развивать дальше)
+
+1. **Транзакционный / DB-lock критический участок** `finished` + смена `running` при необходимости (сейчас логика надёжнее на уровне процесса, но не жёсткий `BEGIN IMMEDIATE` на весь promote).
+2. В ответ **`POST /run-result`** — поле вроде **`queueTransition`** или версия очереди для TD.
+3. Метрики и алерт по логам: `global_queue_promote_guard_timeout`, `global_queue_idle_with_queued_after_promote`, `global_queue_next_promote_td_failed`.
+
+---
+
 ## См. также
 
 - Кратко про **новый канал `/treadmill/runState`**, таймаут и обратную совместимость: [touchdesigner-compat-ru.md](touchdesigner-compat-ru.md)
