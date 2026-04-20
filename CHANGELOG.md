@@ -7,6 +7,15 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.22] - 2026-04-20
+
+### Changed
+
+- **Full admin (`/admin/*`):** enter only by **opening the URL** in the browser — full-screen PIN gate (`AdminGodLoginScreen` + `GodAdminRoute`). Legacy path «god admin from the kiosk home» is gone on purpose; PIN `555555` / DB-configured god PIN via `POST /api/admin/login`.
+- **Home logo gesture:** triple tap **RED** still opens the **manager** modal only (`AdminPinModal` → `managerLogin` → `/manager`); it no longer branches into a god-admin modal.
+
+---
+
 ## [0.2.21] - 2026-04-20
 
 ### Fixed

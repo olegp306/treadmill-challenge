@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 
 type Props = {
-  open: boolean;
-  onClose: () => void;
-  /** Default `/manager`. Full admin (`/admin`) is URL + PIN only — not from this modal. */
-  nextPath?: string;
+  onLoggedIn: () => void;
 };
 
-export function AdminPinModal({ open, onClose, nextPath = '/manager' }: Props) {
+/** Full-screen PIN gate for god-admin routes (`/admin/*`). Not reachable from the kiosk home gesture. */
+export function AdminGodLoginScreen({ onLoggedIn }: Props) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const [pin, setPin] = useState('');
@@ -17,14 +15,9 @@ export function AdminPinModal({ open, onClose, nextPath = '/manager' }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-    setPin('');
-    setError(null);
     const t = window.setTimeout(() => inputRef.current?.focus(), 50);
     return () => window.clearTimeout(t);
-  }, [open]);
-
-  if (!open) return null;
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,11 +28,10 @@ export function AdminPinModal({ open, onClose, nextPath = '/manager' }: Props) {
     }
     setLoading(true);
     try {
-      await api.managerLogin(pin);
+      await api.adminLogin(pin);
       sessionStorage.setItem('adminPin', pin);
-      sessionStorage.setItem('adminRole', 'manager');
-      onClose();
-      navigate(nextPath);
+      sessionStorage.setItem('adminRole', 'god_admin');
+      onLoggedIn();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка');
     } finally {
@@ -50,18 +42,14 @@ export function AdminPinModal({ open, onClose, nextPath = '/manager' }: Props) {
   return (
     <div
       style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1000,
-        background: 'rgba(0,0,0,0.75)',
+        minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
+        background: '#0d0d0d',
+        boxSizing: 'border-box',
       }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="admin-pin-title"
     >
       <form
         onSubmit={handleSubmit}
@@ -73,9 +61,7 @@ export function AdminPinModal({ open, onClose, nextPath = '/manager' }: Props) {
           border: '1px solid #333',
         }}
       >
-        <h2 id="admin-pin-title" style={{ margin: '0 0 16px', color: '#fff', fontSize: 22 }}>
-          Панель менеджера
-        </h2>
+        <h1 style={{ margin: '0 0 16px', color: '#fff', fontSize: 22 }}>Панель администратора</h1>
         <p style={{ margin: '0 0 16px', color: '#aaa', fontSize: 15 }}>Введите PIN (6 цифр)</p>
         <input
           ref={inputRef}
@@ -105,7 +91,7 @@ export function AdminPinModal({ open, onClose, nextPath = '/manager' }: Props) {
         <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => navigate('/', { replace: true })}
             style={{
               flex: 1,
               minHeight: 52,
@@ -116,7 +102,7 @@ export function AdminPinModal({ open, onClose, nextPath = '/manager' }: Props) {
               color: '#ccc',
             }}
           >
-            Отмена
+            На главную
           </button>
           <button
             type="submit"

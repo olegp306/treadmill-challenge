@@ -185,6 +185,7 @@ export default function Main() {
     [navigate]
   );
 
+  /** Triple tap «RED» — только панель менеджера (`/manager`). Полная админка — отдельный URL `/admin` + PIN. */
   const onRedManagerTap = () => {
     redManagerTapRef.current += 1;
     if (redManagerTapRef.current >= 3) {
@@ -384,12 +385,7 @@ export default function Main() {
             </Link>
           </nav>
         </ScreenContainer>
-      <AdminPinModal
-        open={pinModalOpen}
-        onClose={() => setPinModalOpen(false)}
-        nextPath="/manager"
-        access="manager"
-      />
+      <AdminPinModal open={pinModalOpen} onClose={() => setPinModalOpen(false)} />
     </ArOzioViewport>
   );
 }

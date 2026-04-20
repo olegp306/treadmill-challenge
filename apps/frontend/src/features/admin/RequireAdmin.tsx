@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-type AdminRole = 'manager' | 'god_admin';
-
-export function RequireAdmin({ children, role }: { children: React.ReactNode; role: AdminRole }) {
+/** Manager panel (`/manager`) — opened from home via logo gesture + `managerLogin`. Full admin uses `GodAdminRoute` + `/admin` URL. */
+export function RequireAdmin({ children, role = 'manager' }: { children: React.ReactNode; role?: 'manager' }) {
   const navigate = useNavigate();
 
   useEffect(() => {

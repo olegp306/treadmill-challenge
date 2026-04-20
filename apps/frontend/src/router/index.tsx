@@ -19,6 +19,7 @@ import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
 import AdminEventsPage from '../pages/admin/AdminEventsPage';
 import ManagerPanelPage from '../pages/manager/ManagerPanelPage';
 import { RequireAdmin } from '../features/admin/RequireAdmin';
+import { GodAdminRoute } from '../features/admin/GodAdminRoute';
 import TdWaitingLeaderboardPage from '../pages/td/TdWaitingLeaderboardPage';
 import TdResultLeaderboardPage from '../pages/td/TdResultLeaderboardPage';
 import QueueControlPage from '../pages/dev/QueueControlPage';
@@ -48,7 +49,7 @@ export function AppRoutes() {
       <Route
         path="/manager"
         element={
-          <RequireAdmin role="manager">
+          <RequireAdmin>
             <ManagerPanelPage />
           </RequireAdmin>
         }
@@ -56,41 +57,41 @@ export function AppRoutes() {
       <Route
         path="/admin"
         element={
-          <RequireAdmin role="god_admin">
+          <GodAdminRoute>
             <AdminDashboardPage />
-          </RequireAdmin>
+          </GodAdminRoute>
         }
       />
       <Route
         path="/admin/competition/:id"
         element={
-          <RequireAdmin role="god_admin">
+          <GodAdminRoute>
             <AdminCompetitionPage />
-          </RequireAdmin>
+          </GodAdminRoute>
         }
       />
       <Route
         path="/admin/archive"
         element={
-          <RequireAdmin role="god_admin">
+          <GodAdminRoute>
             <AdminArchivePage />
-          </RequireAdmin>
+          </GodAdminRoute>
         }
       />
       <Route
         path="/admin/settings"
         element={
-          <RequireAdmin role="god_admin">
+          <GodAdminRoute>
             <AdminSettingsPage />
-          </RequireAdmin>
+          </GodAdminRoute>
         }
       />
       <Route
         path="/admin/events"
         element={
-          <RequireAdmin role="god_admin">
+          <GodAdminRoute>
             <AdminEventsPage />
-          </RequireAdmin>
+          </GodAdminRoute>
         }
       />
     </Routes>
