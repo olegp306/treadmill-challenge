@@ -1,17 +1,71 @@
 /*
  * Font setup
- * - Druk Wide Cyr: bundled local file in /public/assets/fonts.
+ * - Druk Wide Cyr: woff2 per weight in /public/assets/fonts (see fonts/README.md).
  * - Proxima Nova: declared for used weights (400/700). Tries local installed faces first.
- *   If kiosk must be deterministic, add matching woff2 files into /public/assets/fonts and
- *   extend src with url(...) entries.
  * - Oswald: self-hosted via @fontsource/oswald (imported in main.tsx), used as fallback.
  */
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-100.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-200.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-300.woff2') format('woff2');
+}
 @font-face {
   font-family: 'Druk Wide Cyr';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
   src: url('/assets/fonts/DrukWideCyr-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-800.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-900.woff2') format('woff2');
 }
 
 @font-face {

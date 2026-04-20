@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.23] - 2026-04-20
+
+### Added
+
+- **Druk Wide Cyr:** `@font-face` for weights **100–900** (`apps/frontend/src/index.css`) with matching `public/assets/fonts/DrukWideCyr-*.woff2` (placeholders duplicate Regular until replaced per `public/assets/fonts/README.md`).
+
+### Changed
+
+- **Home (`/`):** build **`v…`** always visible top-right at **half** the previous tap-reveal size; **triple tap «AMAZING»** opens **`/admin`** (god PIN gate) instead of toggling version visibility. **Triple tap «RED»** unchanged for manager modal.
+- **`docs/VERSIONING.md`:** updated where version is shown and how to open full admin from the kiosk.
+
+---
+
 ## [0.2.22] - 2026-04-20
 
 ### Changed

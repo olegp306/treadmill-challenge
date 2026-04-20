@@ -58,11 +58,10 @@ export default function Main() {
   const [queueBlockVisible, setQueueBlockVisible] = useState(false);
   const [heroFullLoaded, setHeroFullLoaded] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
-  const [showUiVersion, setShowUiVersion] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const redManagerTapRef = useRef(0);
-  /** Triple consecutive taps on AMAZING (RED resets) reveal build version — independent of admin tap sequence. */
-  const amazingVersionTapRef = useRef(0);
+  /** Triple consecutive taps on AMAZING (RED resets) → `/admin`, затем PIN «бога» (`GodAdminRoute`). */
+  const amazingGodAdminTapRef = useRef(0);
 
   useLayoutEffect(() => {
     const v = heroVideoRef.current;
@@ -185,7 +184,7 @@ export default function Main() {
     [navigate]
   );
 
-  /** Triple tap «RED» — только панель менеджера (`/manager`). Полная админка — отдельный URL `/admin` + PIN. */
+  /** Triple tap «RED» — только панель менеджера (`/manager`). */
   const onRedManagerTap = () => {
     redManagerTapRef.current += 1;
     if (redManagerTapRef.current >= 3) {
@@ -195,16 +194,16 @@ export default function Main() {
   };
 
   const onAmazingPointer = () => {
-    amazingVersionTapRef.current += 1;
-    if (amazingVersionTapRef.current >= 3) {
-      amazingVersionTapRef.current = 0;
-      setShowUiVersion(true);
+    amazingGodAdminTapRef.current += 1;
+    if (amazingGodAdminTapRef.current >= 3) {
+      amazingGodAdminTapRef.current = 0;
+      navigate('/admin');
     }
     redManagerTapRef.current = 0;
   };
 
   const onRedPointer = () => {
-    amazingVersionTapRef.current = 0;
+    amazingGodAdminTapRef.current = 0;
     onRedManagerTap();
   };
 
@@ -257,29 +256,27 @@ export default function Main() {
               />
             </div>
 
-            {showUiVersion ? (
-              <div
-                role="status"
-                aria-live="polite"
-                style={{
-                  position: 'absolute',
-                  top: h(28),
-                  right: w(40),
-                  zIndex: 10,
-                  fontSize: w(22),
-                  lineHeight: 1.2,
-                  fontWeight: 400,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  color: 'rgba(255,255,255,0.42)',
-                  pointerEvents: 'none',
-                  maxWidth: '50%',
-                  textAlign: 'right',
-                }}
-              >
-                v{APP_VERSION}
-              </div>
-            ) : null}
+            <div
+              role="status"
+              aria-label={`Версия ${APP_VERSION}`}
+              style={{
+                position: 'absolute',
+                top: h(28),
+                right: w(40),
+                zIndex: 10,
+                fontSize: w(11),
+                lineHeight: 1.2,
+                fontWeight: 400,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.42)',
+                pointerEvents: 'none',
+                maxWidth: '50%',
+                textAlign: 'right',
+              }}
+            >
+              v{APP_VERSION}
+            </div>
 
             <div style={styles.heroForeground}>
               <div
