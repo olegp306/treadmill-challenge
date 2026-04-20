@@ -7,6 +7,15 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.15] - 2026-04-20
+
+### Changed
+
+- **Main leaderboard (`/leaderboard`):** added smooth fade out/in transition for carousel switching (auto-rotation, arrows, and gender tab switch) to avoid abrupt visual jumps.
+- **TouchDesigner integration docs:** clarified waiting leaderboards as two explicit routes — male and female (`/td/leaderboard/waiting?sex=male|female`) with updated examples/checklist.
+
+---
+
 ## [0.2.14] - 2026-04-20
 
 ### Changed

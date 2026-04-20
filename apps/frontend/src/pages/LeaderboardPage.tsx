@@ -27,6 +27,7 @@ const CAROUSEL_ORDER: Array<{ runTypeId: RunTypeId; sex: Gender }> = [
 ];
 
 const CAROUSEL_INTERVAL_MS = 6000;
+const CAROUSEL_FADE_MS = 220;
 
 function parseLeaderboardScope(searchParams: URLSearchParams): { runTypeId: RunTypeId; sex: Gender } | null {
   const rt = searchParams.get('runTypeId');
@@ -86,9 +87,11 @@ export default function LeaderboardPage() {
   } | null>(null);
   /** Пауза автоповорота при открытии с runSessionId (чтобы остаться на зачёте участника). */
   const [pauseCarousel, setPauseCarousel] = useState(false);
+  const [isCarouselFading, setIsCarouselFading] = useState(false);
 
   const highlightRef = useRef<HTMLDivElement | null>(null);
   const urlScopeSynced = useRef(false);
+  const fadeTimerRef = useRef<number | null>(null);
 
   /** Загрузка шести зачётов одним батчем. */
   useEffect(() => {
@@ -163,14 +166,28 @@ export default function LeaderboardPage() {
     }
   }, [searchParams]);
 
-  /** Автоповорот карусели между шестью зачётами. */
+  const switchCarouselWithFade = useCallback((nextIndex: number) => {
+    if (nextIndex === carouselIndex) return;
+    if (fadeTimerRef.current !== null) {
+      window.clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = null;
+    }
+    setIsCarouselFading(true);
+    fadeTimerRef.current = window.setTimeout(() => {
+      setCarouselIndex(nextIndex);
+      setIsCarouselFading(false);
+      fadeTimerRef.current = null;
+    }, CAROUSEL_FADE_MS);
+  }, [carouselIndex]);
+
   useEffect(() => {
-    if (pauseCarousel) return;
-    const id = window.setInterval(() => {
-      setCarouselIndex((i) => (i + 1) % 6);
-    }, CAROUSEL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [pauseCarousel]);
+    return () => {
+      if (fadeTimerRef.current !== null) {
+        window.clearTimeout(fadeTimerRef.current);
+        fadeTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const leftIdx = (carouselIndex + 5) % 6;
   const centerIdx = carouselIndex;
@@ -208,18 +225,29 @@ export default function LeaderboardPage() {
   }, [showHighlight, centerEntries, carouselIndex]);
 
   const shiftCarousel = useCallback((delta: -1 | 1) => {
-    setCarouselIndex((i) => (i + delta + 6) % 6);
+    const next = (carouselIndex + delta + 6) % 6;
+    switchCarouselWithFade(next);
     setPauseCarousel(false);
-  }, []);
+  }, [carouselIndex, switchCarouselWithFade]);
 
   const setGenderTab = useCallback((sex: Gender) => {
     const rt = centerScope.runTypeId;
     const idx = CAROUSEL_ORDER.findIndex((s) => s.runTypeId === rt && s.sex === sex);
     if (idx >= 0) {
-      setCarouselIndex(idx);
+      switchCarouselWithFade(idx);
       setPauseCarousel(false);
     }
-  }, [centerScope.runTypeId]);
+  }, [centerScope.runTypeId, switchCarouselWithFade]);
+
+  /** Автосмена тоже через fade, чтобы избежать резкого переключения. */
+  useEffect(() => {
+    if (pauseCarousel) return;
+    const id = window.setInterval(() => {
+      const next = (carouselIndex + 1) % 6;
+      switchCarouselWithFade(next);
+    }, CAROUSEL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [carouselIndex, pauseCarousel, switchCarouselWithFade]);
 
   const centerLoading = slides[centerIdx]?.loading ?? true;
   const centerError = slides[centerIdx]?.error ?? null;
@@ -279,7 +307,13 @@ export default function LeaderboardPage() {
 
             <p style={styles.pageTitle}>Лидерборд</p>
 
-            <div style={styles.leaderboardRow}>
+            <div
+              style={{
+                ...styles.leaderboardRow,
+                opacity: isCarouselFading ? 0.14 : 1,
+                transition: `opacity ${CAROUSEL_FADE_MS}ms ease`,
+              }}
+            >
               <button
                 type="button"
                 aria-label="Предыдущий зачёт"

@@ -173,13 +173,15 @@
 
 | Тип | Назначение | URL (относительно origin фронта, например `http://localhost:5173`) |
 |-----|------------|-------------------------------------------------------------------|
-| **Ожидание** | Топ по каждому формату, смена пола male/female, обновление по опросу API | `/td/leaderboard/waiting` |
+| **Ожидание (мужской зачет)** | Топ по каждому формату для мужчин, обновление по опросу API | `/td/leaderboard/waiting?sex=male` |
+| **Ожидание (женский зачет)** | Топ по каждому формату для женщин, обновление по опросу API | `/td/leaderboard/waiting?sex=female` |
 | **Завершение** | Лидерборд по **тому же** забегу, подсветка текущего участника; до `finished` опрашивается состояние сессии | `/td/leaderboard/result?runSessionId=<UUID>` |
 
 Примеры полных URL:
 
 ```text
-http://localhost:5173/td/leaderboard/waiting
+http://localhost:5173/td/leaderboard/waiting?sex=male
+http://localhost:5173/td/leaderboard/waiting?sex=female
 http://localhost:5173/td/leaderboard/result?runSessionId=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
@@ -195,7 +197,7 @@ http://localhost:5173/td/leaderboard/result?runSessionId=xxxxxxxx-xxxx-xxxx-xxxx
 2. Принимать **`/treadmill/runSession`** — запускать сцену забега, запоминать `runSessionId`.
 3. Отправлять **`/treadmill/ack`** на `127.0.0.1:7001` (или иной хост/порт бэкенда) с тем же `runSessionId` и статусом `free` или `busy`.
 4. По окончании забега отправить **`POST /api/run-result`** (или защищённый `/api/touchdesigner/run-result`) с `runSessionId`, `resultTime`, `distance`, при необходимости — **`verificationPhotoBase64`** (JPEG одного забега, см. п. 3.1).
-5. Для больших экранов вывести веб-клиент: **ожидание** — `/td/leaderboard/waiting`, **после забега** — `/td/leaderboard/result?runSessionId=...`.
+5. Для больших экранов вывести веб-клиент: **ожидание (мужской)** — `/td/leaderboard/waiting?sex=male`, **ожидание (женский)** — `/td/leaderboard/waiting?sex=female`, **после забега** — `/td/leaderboard/result?runSessionId=...`.
 
 ---
 
