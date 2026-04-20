@@ -1,6 +1,10 @@
 /*
- * Druk Wide Cyr: local woff2 in /public/assets/fonts (bundled as static asset).
- * Oswald: self-hosted via @fontsource/oswald (imported in main.tsx).
+ * Font setup
+ * - Druk Wide Cyr: bundled local file in /public/assets/fonts.
+ * - Proxima Nova: declared for used weights (400/700). Tries local installed faces first.
+ *   If kiosk must be deterministic, add matching woff2 files into /public/assets/fonts and
+ *   extend src with url(...) entries.
+ * - Oswald: self-hosted via @fontsource/oswald (imported in main.tsx), used as fallback.
  */
 @font-face {
   font-family: 'Druk Wide Cyr';
@@ -8,6 +12,28 @@
   font-weight: 400;
   font-display: swap;
   src: url('/assets/fonts/DrukWideCyr-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('Proxima Nova Regular'),
+    local('ProximaNova-Regular'),
+    local('Proxima Nova');
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local('Proxima Nova Bold'),
+    local('ProximaNova-Bold'),
+    local('Proxima Nova');
 }
 
 .ar-ozio-ipad {

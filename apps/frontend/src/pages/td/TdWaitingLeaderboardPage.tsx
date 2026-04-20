@@ -58,9 +58,10 @@ export default function TdWaitingLeaderboardPage() {
   const sideLabel = gender === 'female' ? 'женский зачет' : 'мужской зачет';
   const sideBadgeBase = {
     position: 'absolute' as const,
-    top: 374,
+    top: '50%',
+    transform: 'translateY(-50%)',
     color: td.red,
-    fontFamily: '"Proxima Nova", "Oswald", system-ui, sans-serif',
+    fontFamily: td.fontProxima,
     fontWeight: 400,
     fontSize: 25.6,
     letterSpacing: 7.16,

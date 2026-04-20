@@ -14,18 +14,41 @@ import type { LeaderboardEntry } from '../../hooks/useLeaderboard';
 const POLL_PENDING_MS = 450;
 const POLL_IDLE_MS = 2500;
 
-function sliceAround(entries: LeaderboardEntry[], highlightParticipantId: string): LeaderboardEntry[] {
+function buildVisibleRows(entries: LeaderboardEntry[], highlightParticipantId: string): {
+  windowStart: number;
+  rowsAbove: LeaderboardEntry[];
+  highlightRow: LeaderboardEntry | null;
+  rowsBelow: LeaderboardEntry[];
+} {
+  const WINDOW_SIZE = 7;
   const idx = entries.findIndex((e) => e.participantId === highlightParticipantId);
-  if (idx < 0) return entries.slice(0, 12);
-  const before = 3;
-  const after = 3;
-  const start = Math.max(0, idx - before);
-  const end = Math.min(entries.length, idx + after + 1);
-  return entries.slice(start, end);
+  if (idx < 0) {
+    return {
+      windowStart: 0,
+      rowsAbove: entries.slice(0, WINDOW_SIZE),
+      highlightRow: null,
+      rowsBelow: [],
+    };
+  }
+
+  // 7-row sliding window:
+  // idx 0..3 -> red row stays on line 1..4
+  // idx >=4  -> red row stays on line 4 (local index 3)
+  const desiredLocalIdx = Math.min(idx, 3);
+  const maxStart = Math.max(0, entries.length - WINDOW_SIZE);
+  const start = Math.max(0, Math.min(idx - desiredLocalIdx, maxStart));
+  const end = Math.min(entries.length, start + WINDOW_SIZE);
+  const visible = entries.slice(start, end);
+  const localIdx = idx - start;
+
+  return {
+    windowStart: start,
+    rowsAbove: visible.slice(0, localIdx),
+    highlightRow: visible[localIdx] ?? null,
+    rowsBelow: visible.slice(localIdx + 1),
+  };
 }
 
-/** Local `DrukWideCyr-400.woff2` — keep weight 400 so the real face applies (no faux bold). */
-const fontDruk = "'Druk Wide Cyr', Oswald, system-ui, sans-serif";
 /** Figma card column; highlight bar uses a wider inner track. */
 const COL_W_CARDS = 970;
 const COL_W_HIGHLIGHT = 1200;
@@ -116,25 +139,17 @@ export default function TdResultLeaderboardPage() {
     };
   }, [runSessionId]);
 
-  const visible = useMemo(() => {
-    if (!participantId || entries.length === 0) return [];
-    return sliceAround(entries, participantId);
+  const { windowStart, rowsAbove, highlightRow, rowsBelow } = useMemo(() => {
+    if (!participantId || entries.length === 0) {
+      return {
+        windowStart: 0,
+        rowsAbove: [] as LeaderboardEntry[],
+        highlightRow: null as LeaderboardEntry | null,
+        rowsBelow: [] as LeaderboardEntry[],
+      };
+    }
+    return buildVisibleRows(entries, participantId);
   }, [entries, participantId]);
-
-  const { rowsAbove, highlightRow, rowsBelow } = useMemo(() => {
-    if (!participantId || visible.length === 0) {
-      return { rowsAbove: [] as LeaderboardEntry[], highlightRow: null as LeaderboardEntry | null, rowsBelow: [] as LeaderboardEntry[] };
-    }
-    const hi = visible.findIndex((e) => e.participantId === participantId);
-    if (hi < 0) {
-      return { rowsAbove: visible, highlightRow: null, rowsBelow: [] };
-    }
-    return {
-      rowsAbove: visible.slice(0, hi),
-      highlightRow: visible[hi] ?? null,
-      rowsBelow: visible.slice(hi + 1),
-    };
-  }, [visible, participantId]);
 
   const title = runTypeId != null ? getRunTypeShortName(runTypeId).toUpperCase() : '—';
 
@@ -149,7 +164,7 @@ export default function TdResultLeaderboardPage() {
         <div
           style={{
             color: td.text,
-            fontFamily: fontDruk,
+            fontFamily: td.fontDruk,
             fontSize: 32,
             padding: 40,
           }}
@@ -173,7 +188,7 @@ export default function TdResultLeaderboardPage() {
               left: 80,
               top: 80,
               color: td.red,
-              fontFamily: fontDruk,
+              fontFamily: td.fontDruk,
               fontSize: 24,
               zIndex: 2,
             }}
@@ -190,7 +205,7 @@ export default function TdResultLeaderboardPage() {
               top: '50%',
               transform: 'translate(-50%, -50%)',
               color: 'rgba(255,255,255,0.85)',
-              fontFamily: fontDruk,
+              fontFamily: td.fontDruk,
               fontSize: 36,
               textTransform: 'uppercase',
               zIndex: 1,
@@ -200,7 +215,7 @@ export default function TdResultLeaderboardPage() {
           </div>
         )}
 
-        {runTypeId != null && visible.length > 0 && participantId && (
+        {runTypeId != null && entries.length > 0 && participantId && (
           <>
             <div
               style={{
@@ -241,7 +256,7 @@ export default function TdResultLeaderboardPage() {
               >
                 <span
                   style={{
-                    fontFamily: fontDruk,
+                    fontFamily: td.fontDruk,
                     fontWeight: 400,
                     fontSize: 30,
                     color: '#fff',
@@ -269,7 +284,7 @@ export default function TdResultLeaderboardPage() {
               }}
             >
               <div style={{ width: COL_W_CARDS, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {rowsAbove.map((e) => (
+                {rowsAbove.map((e, i) => (
                   <div
                     key={e.runId}
                     style={{
@@ -281,20 +296,22 @@ export default function TdResultLeaderboardPage() {
                       alignItems: 'center',
                       color: td.text,
                       textTransform: 'uppercase',
-                      fontFamily: fontDruk,
+                      fontFamily: td.fontDruk,
                       fontWeight: 400,
                       fontSize: 26,
                       lineHeight: 1.2,
                       fontSynthesis: 'none',
                     }}
                   >
-                    <span style={{ width: 45, flexShrink: 0, fontFamily: fontDruk, fontWeight: 400 }}>{e.rank ?? '—'}</span>
+                    <span style={{ width: 45, flexShrink: 0, fontFamily: td.fontDruk, fontWeight: 400 }}>
+                      {e.rank ?? windowStart + i + 1}
+                    </span>
                     <span style={{ flex: 1, minWidth: 0, paddingLeft: 10 }}>{e.participantName}</span>
                     <span
                       style={{
                         width: 141,
                         textAlign: 'right',
-                        fontFamily: fontDruk,
+                        fontFamily: td.fontDruk,
                         fontWeight: 400,
                         fontSize: 32,
                         letterSpacing: 3.2,
@@ -325,7 +342,7 @@ export default function TdResultLeaderboardPage() {
                       justifyContent: 'space-between',
                       gap: 24,
                       color: '#fff',
-                      fontFamily: fontDruk,
+                      fontFamily: td.fontDruk,
                       fontWeight: 400,
                       fontSize: 48,
                       lineHeight: 1.2,
@@ -334,8 +351,8 @@ export default function TdResultLeaderboardPage() {
                     }}
                   >
                     <div style={{ display: 'flex', gap: 40, alignItems: 'center', flex: 1, minWidth: 0 }}>
-                      <span style={{ flexShrink: 0, letterSpacing: '-0.96px', fontFamily: fontDruk, fontWeight: 400 }}>
-                        {highlightRow.rank ?? '—'}
+                      <span style={{ flexShrink: 0, letterSpacing: '-0.96px', fontFamily: td.fontDruk, fontWeight: 400 }}>
+                        {highlightRow.rank ?? windowStart + rowsAbove.length + 1}
                       </span>
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
                         {highlightRow.participantName}
@@ -343,7 +360,7 @@ export default function TdResultLeaderboardPage() {
                     </div>
                     <span
                       style={{
-                        fontFamily: fontDruk,
+                        fontFamily: td.fontDruk,
                         fontWeight: 400,
                         letterSpacing: 3.84,
                         flexShrink: 0,
@@ -359,7 +376,7 @@ export default function TdResultLeaderboardPage() {
               ) : null}
 
               <div style={{ width: COL_W_CARDS, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {rowsBelow.map((e) => (
+                {rowsBelow.map((e, i) => (
                   <div
                     key={e.runId}
                     style={{
@@ -371,20 +388,22 @@ export default function TdResultLeaderboardPage() {
                       alignItems: 'center',
                       color: td.text,
                       textTransform: 'uppercase',
-                      fontFamily: fontDruk,
+                      fontFamily: td.fontDruk,
                       fontWeight: 400,
                       fontSize: 26,
                       lineHeight: 1.2,
                       fontSynthesis: 'none',
                     }}
                   >
-                    <span style={{ width: 45, flexShrink: 0, fontFamily: fontDruk, fontWeight: 400 }}>{e.rank ?? '—'}</span>
+                    <span style={{ width: 45, flexShrink: 0, fontFamily: td.fontDruk, fontWeight: 400 }}>
+                      {e.rank ?? windowStart + rowsAbove.length + i + 2}
+                    </span>
                     <span style={{ flex: 1, minWidth: 0, paddingLeft: 10 }}>{e.participantName}</span>
                     <span
                       style={{
                         width: 141,
                         textAlign: 'right',
-                        fontFamily: fontDruk,
+                        fontFamily: td.fontDruk,
                         fontWeight: 400,
                         fontSize: 32,
                         letterSpacing: 3.2,

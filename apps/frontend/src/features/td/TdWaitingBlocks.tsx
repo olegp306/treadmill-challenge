@@ -10,7 +10,7 @@ const rowStyle: CSSProperties = {
   width: '100%',
   color: td.text,
   textTransform: 'uppercase',
-  fontFamily: '"Druk Wide Cyr", "Oswald", system-ui, sans-serif',
+  fontFamily: td.fontDruk,
   fontWeight: 400,
   fontSize: 26,
   lineHeight: 1.1,
@@ -57,7 +57,7 @@ export function TdWaitingRunBlock({
       >
         <span
           style={{
-            fontFamily: '"Druk Wide Cyr", "Oswald", system-ui, sans-serif',
+            fontFamily: td.fontDruk,
             fontWeight: 400,
             fontSize: 26,
             lineHeight: 1.05,
@@ -95,7 +95,7 @@ export function TdWaitingRunBlock({
                   width: 141,
                   flexShrink: 0,
                   textAlign: 'right',
-                  fontFamily: '"Proxima Nova", "Oswald", system-ui, sans-serif',
+                  fontFamily: td.fontProxima,
                   fontWeight: 700,
                   fontSize: 32,
                   letterSpacing: 3.2,

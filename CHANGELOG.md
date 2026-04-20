@@ -7,6 +7,17 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.14] - 2026-04-20
+
+### Changed
+
+- **TD final leaderboard (`/td/leaderboard/result`):** reworked highlighted-runner placement to a deterministic **7-row sliding window**: rank 1/2/3/4 appears on row 1/2/3/4 respectively, and rank 5+ keeps the red row fixed on row 4 while surrounding rows slide.
+- **Final leaderboard rank fallback:** when API rank is missing for synthetic highlighted row, displayed place is now derived from sliding-window position instead of `—`.
+- **TD waiting leaderboard (`/td/leaderboard/waiting`):** side badges are vertically centered on screen for both `sex=male` and `sex=female`.
+- **Typography configuration:** standardized TD font stacks via shared tokens (`td.fontDruk` / `td.fontProxima`) and declared `@font-face` for used Proxima Nova weights (400/700) with Oswald fallback.
+
+---
+
 ## [0.2.13] - 2026-04-20
 
 ### Changed
@@ -14,6 +25,16 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 - **TD waiting leaderboard (`/td/leaderboard/waiting`):** side badges (`мужской зачет` / `женский зачет`) tuned to Figma style with Proxima Nova typography, lighter/smaller corner frame elements, and increased internal label padding.
 - **TD waiting leaderboard names:** participant full name (`Фамилия Имя`) is now hard-capped to **23 characters + ellipsis** to keep one-line rendering stable and prevent row/layout shifts.
 - **TD result leaderboard (`/td/leaderboard/result`):** highlight strip vertical thickness adjusted to design (`padding: 30px 20px`).
+
+### Notes
+
+- **Available leaderboards (URLs):**
+  - `/leaderboard` — main carousel leaderboard (all formats, male/female).
+  - `/td/leaderboard/waiting?sex=male|female` — TD waiting leaderboard by gender.
+  - `/td/leaderboard/result?runSessionId=<id>` — TD finish/result leaderboard for a run session.
+- **URL params (examples):**
+  - `sex`: `male` or `female` (example: `/td/leaderboard/waiting?sex=female`).
+  - `runSessionId`: run session identifier (example: `/td/leaderboard/result?runSessionId=abc123`).
 
 ---
 
