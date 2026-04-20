@@ -312,7 +312,7 @@ export default function TdResultLeaderboardPage() {
                   style={{
                     width: '100%',
                     background: td.red,
-                    padding: '36px 20px',
+                    padding: '30px 20px',
                     boxSizing: 'border-box',
                   }}
                 >

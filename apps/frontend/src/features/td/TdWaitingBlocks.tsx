@@ -10,11 +10,17 @@ const rowStyle: CSSProperties = {
   width: '100%',
   color: td.text,
   textTransform: 'uppercase',
-  fontFamily: '"Oswald", sans-serif',
-  fontWeight: 500,
+  fontFamily: '"Druk Wide Cyr", "Oswald", system-ui, sans-serif',
+  fontWeight: 400,
   fontSize: 26,
-  lineHeight: 1,
+  lineHeight: 1.1,
 };
+
+function formatWaitingDisplayName(fullName: string): string {
+  const normalized = fullName.trim().replace(/\s+/g, ' ');
+  if (normalized.length <= 23) return normalized;
+  return `${normalized.slice(0, 23)}…`;
+}
 
 export function TdWaitingRunBlock({
   runTypeId,
@@ -24,6 +30,7 @@ export function TdWaitingRunBlock({
   entries: LeaderboardEntry[];
 }) {
   const top = entries.slice(0, 3);
+  const slots = Array.from({ length: 3 }, (_, i) => top[i] ?? null);
   return (
     <div
       style={{
@@ -50,9 +57,11 @@ export function TdWaitingRunBlock({
       >
         <span
           style={{
-            fontFamily: '"Oswald", sans-serif',
-            fontWeight: 500,
+            fontFamily: '"Druk Wide Cyr", "Oswald", system-ui, sans-serif',
+            fontWeight: 400,
             fontSize: 26,
+            lineHeight: 1.05,
+            letterSpacing: '0.01em',
             color: '#fff',
             textTransform: 'uppercase',
             textAlign: 'center',
@@ -61,23 +70,48 @@ export function TdWaitingRunBlock({
           {runTypeHeaderUpper(runTypeId)}
         </span>
       </div>
-      {top.map((e, i) => (
-        <div key={e.runId} style={rowStyle}>
-          <span style={{ width: 45, flexShrink: 0 }}>{e.rank ?? i + 1}</span>
-          <span style={{ flex: 1, minWidth: 0 }}>{e.participantName}</span>
-          <span
-            style={{
-              width: 141,
-              flexShrink: 0,
-              textAlign: 'right',
-              fontFamily: '"Oswald", sans-serif',
-              fontWeight: 700,
-              fontSize: 32,
-              letterSpacing: 3.2,
-            }}
-          >
-            {formatTdMetric(e, runTypeId)}
-          </span>
+      {slots.map((e, i) => (
+        <div
+          key={e?.runId ?? `placeholder-${runTypeId}-${i}`}
+          style={{ ...rowStyle, minHeight: 32 }}
+          aria-hidden={e ? undefined : true}
+        >
+          {e ? (
+            <>
+              <span style={{ width: 45, flexShrink: 0 }}>{e.rank ?? i + 1}</span>
+              <span
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'clip',
+                }}
+              >
+                {formatWaitingDisplayName(e.participantName)}
+              </span>
+              <span
+                style={{
+                  width: 141,
+                  flexShrink: 0,
+                  textAlign: 'right',
+                  fontFamily: '"Proxima Nova", "Oswald", system-ui, sans-serif',
+                  fontWeight: 700,
+                  fontSize: 32,
+                  letterSpacing: 3.2,
+                  lineHeight: 1,
+                }}
+              >
+                {formatTdMetric(e, runTypeId)}
+              </span>
+            </>
+          ) : (
+            <>
+              <span style={{ width: 45, flexShrink: 0, opacity: 0 }}>0</span>
+              <span style={{ flex: 1, minWidth: 0, opacity: 0 }}>placeholder</span>
+              <span style={{ width: 141, flexShrink: 0, opacity: 0 }}>00:00</span>
+            </>
+          )}
         </div>
       ))}
     </div>
