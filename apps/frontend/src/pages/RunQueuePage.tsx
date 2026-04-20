@@ -61,7 +61,6 @@ export default function RunQueuePage() {
   /** По глобальной очереди (FIFO): сколько человек и минут суммарно перед этой сессией. */
   const [queueAheadPeople, setQueueAheadPeople] = useState(0);
   const [queueWaitMinutes, setQueueWaitMinutes] = useState(0);
-  const [resultPendingLong, setResultPendingLong] = useState(false);
   const resultPendingLoggedRef = useRef(false);
   const waitingTdReportedRef = useRef(false);
   const finishNavigateScheduledRef = useRef(false);
@@ -71,7 +70,6 @@ export default function RunQueuePage() {
     resultPendingLoggedRef.current = false;
     waitingTdReportedRef.current = false;
     finishNavigateScheduledRef.current = false;
-    setResultPendingLong(false);
     setLiveOtherRunning(Boolean(state?.initialOtherSessionRunning));
     setQueueAheadPeople(0);
     setQueueWaitMinutes(0);
@@ -117,6 +115,13 @@ export default function RunQueuePage() {
       cancelled = true;
     };
   }, [participantId, runSessionId, runTypeId, navigate, state?.participantFirstName]);
+
+  /** Screen «Вы на дорожке. Забег идет.» is removed from flow: running -> go home immediately. */
+  useEffect(() => {
+    if (liveStatus === 'running') {
+      navigate('/', { replace: true });
+    }
+  }, [liveStatus, navigate]);
 
   const prepareAck = Boolean(state?.prepareAcknowledged);
 
@@ -191,7 +196,6 @@ export default function RunQueuePage() {
         if (s.status === 'running' && s.startedAt && !demoEnabled) {
           const elapsed = Date.now() - new Date(s.startedAt).getTime();
           const long = elapsed >= RESULT_CALLBACK_PENDING_MS;
-          setResultPendingLong(long);
           if (long && !resultPendingLoggedRef.current) {
             resultPendingLoggedRef.current = true;
             logEvent(
@@ -204,8 +208,6 @@ export default function RunQueuePage() {
               }
             );
           }
-        } else {
-          setResultPendingLong(false);
         }
         const prepareAcknowledged = Boolean(state?.prepareAcknowledged);
         const qp = s.queuePosition ?? 0;
@@ -341,13 +343,11 @@ export default function RunQueuePage() {
   const demoEnabled = demoMode && tdDemoMode;
   const showDevFinish = import.meta.env.DEV && tdDemoMode;
   const viewMode =
-    liveStatus === 'running'
-      ? 'running'
-      : livePosition === 1 && prepareAck
-        ? 'waiting'
-        : livePosition === 1 && !prepareAck && !liveOtherRunning
-          ? 'prepare'
-          : 'queue';
+    livePosition === 1 && prepareAck
+      ? 'waiting'
+      : livePosition === 1 && !prepareAck && !liveOtherRunning
+        ? 'prepare'
+        : 'queue';
   return (
     <RunQueueScreenShell
       participantDisplayName={displayName}
@@ -378,16 +378,7 @@ export default function RunQueuePage() {
         </>
       }
     >
-      {viewMode === 'running' ? (
-        <>
-          <p style={{ ...rq.titleMain, margin: 0 }}>Вы на дорожке. Забег идет.</p>
-          {resultPendingLong ? (
-            <p style={{ ...rq.subtitle, marginTop: h(16), textAlign: 'center', maxWidth: w(900), marginLeft: 'auto', marginRight: 'auto' }}>
-              Результат ещё не получен. Ожидаем ответ TouchDesigner…
-            </p>
-          ) : null}
-        </>
-      ) : viewMode === 'prepare' ? (
+      {viewMode === 'prepare' ? (
         <GoToTreadmillContent />
       ) : viewMode === 'waiting' ? (
         <>

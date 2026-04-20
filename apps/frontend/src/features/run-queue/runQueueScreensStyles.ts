@@ -28,6 +28,18 @@ export const rq: Record<string, CSSProperties> = {
     pointerEvents: 'none',
     background: 'radial-gradient(ellipse 80% 55% at 85% 95%, rgba(230, 35, 58, 0.22), transparent 55%)',
   },
+  /** Prepare screen (718:828): cooler blue tint. */
+  prepareSheet: {
+    background:
+      'radial-gradient(ellipse 70% 48% at 78% 92%, rgba(89, 126, 255, 0.24), rgba(13, 20, 48, 0) 60%), #111216',
+  },
+  prepareSheetGlow: {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    background:
+      'radial-gradient(ellipse 80% 56% at 84% 95%, rgba(86, 132, 255, 0.28), transparent 58%)',
+  },
   headerRow: {
     display: 'flex',
     flexDirection: 'row',

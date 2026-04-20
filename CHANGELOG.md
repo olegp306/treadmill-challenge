@@ -7,6 +7,17 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.17] - 2026-04-20
+
+### Changed
+
+- **Prepare screen (`/run/prepare`) polish:** right-top participant label now uses `Имя Ф.` format (e.g. `Олег П.`), background tuned to cooler blue Figma variant, and `Ок` button removed.
+- **Prepare close behavior:** full form area is now tappable/clickable to close immediately to home; existing 10-second auto-close remains.
+- **Run queue flow:** removed `Вы на дорожке. Забег идет.` state screen from kiosk path — when session becomes `running`, app now transitions directly to home.
+- **Run queue shell reuse:** `RunQueueScreenShell` now supports optional right label override, optional footer, and prepare-specific sheet/overlay styling without affecting other queue screens.
+
+---
+
 ## [0.2.16] - 2026-04-20
 
 ### Fixed

@@ -26,6 +26,17 @@ type RunPrepareLocationState = {
   immediateRunning?: boolean;
 };
 
+function formatPrepareCornerName(firstName: string, lastName: string): string {
+  const first = firstName.trim();
+  const last = lastName.trim();
+  if (!first && !last) return 'Участник';
+  const firstNormalized = first
+    ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase()
+    : 'Участник';
+  const lastInitial = last ? `${last.charAt(0).toUpperCase()}.` : '';
+  return lastInitial ? `${firstNormalized} ${lastInitial}` : firstNormalized;
+}
+
 export default function RunPreparePage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,6 +50,7 @@ export default function RunPreparePage() {
   const immediateRunning = Boolean(state?.immediateRunning);
 
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
+  const [cornerName, setCornerName] = useState('Участник');
   const [tdDemoMode, setTdDemoMode] = useState(false);
   const [demoMsg, setDemoMsg] = useState<string | null>(null);
   const [demoRank, setDemoRank] = useState<number | null>(null);
@@ -47,7 +59,7 @@ export default function RunPreparePage() {
   const closedRef = useRef(false);
   const prevStatusRef = useRef<string | null>(immediateRunning ? 'running' : null);
   const { report } = useIntegrationInfo();
-  const autoCloseEnabled = !demoMode;
+  const autoCloseEnabled = true;
 
   const closeToMain = () => {
     if (closedRef.current) return;
@@ -109,10 +121,12 @@ export default function RunPreparePage() {
         const p = await api.getParticipant(participantId);
         if (!cancelled) {
           setDisplayName(formatParticipantDisplayName(p.firstName, p.lastName));
+          setCornerName(formatPrepareCornerName(p.firstName, p.lastName));
         }
       } catch {
         if (!cancelled && state?.participantFirstName) {
           setDisplayName(formatParticipantDisplayName(state.participantFirstName, ''));
+          setCornerName(formatPrepareCornerName(state.participantFirstName, ''));
         }
       }
     })();
@@ -217,48 +231,13 @@ export default function RunPreparePage() {
   return (
     <RunQueueScreenShell
       participantDisplayName={displayName}
+      headerRightLabel={cornerName}
       centerAgainstSheet
-      footer={
-        demoMode ? (
-          <button
-            type="button"
-            style={rq.btnWideSolid}
-            onClick={() =>
-              navigate('/run/queue', {
-                replace: true,
-                state: {
-                  ...state,
-                  position: 1,
-                  prepareAcknowledged: true,
-                  initialSessionStatus: immediateRunning ? 'running' : undefined,
-                },
-              })
-            }
-          >
-            Ок
-          </button>
-        ) : null
-      }
+      sheetStyle={rq.prepareSheet}
+      overlay={<div style={rq.prepareSheetGlow} aria-hidden />}
+      onSheetClick={autoCloseEnabled ? closeToMain : undefined}
     >
-      <div
-        onClick={() => {
-          if (!autoCloseEnabled) return;
-          closeToMain();
-        }}
-        role={autoCloseEnabled ? 'button' : undefined}
-        aria-label={autoCloseEnabled ? 'Закрыть экран и вернуться на главную' : undefined}
-        tabIndex={autoCloseEnabled ? 0 : undefined}
-        onKeyDown={(e) => {
-          if (!autoCloseEnabled) return;
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            closeToMain();
-          }
-        }}
-        style={{ width: '100%', cursor: autoCloseEnabled ? 'pointer' : 'default' }}
-      >
-        <GoToTreadmillContent />
-      </div>
+      <GoToTreadmillContent />
       {demoEnabled && demoMetrics ? (
         <div style={{ marginTop: 24, width: '100%', maxWidth: 980, marginLeft: 'auto', marginRight: 'auto' }}>
           <div
