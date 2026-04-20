@@ -11,7 +11,7 @@ import { formatParticipantDisplayName } from '../features/run-queue/participantD
 import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
 import { logEvent } from '../logging/logEvent';
 import { ui } from '../ui/tokens';
-import { tdLeaderboardResultPath } from '../features/td/tdLeaderboardRoutes';
+import { postRunFinishNavigatePath } from '../features/td/postRunFinishNavigatePath';
 
 type RunPrepareLocationState = {
   participantId: string;
@@ -192,7 +192,7 @@ export default function RunPreparePage() {
             report('result_received', { autoHideMs: 4500 });
             saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
             window.setTimeout(() => {
-              navigate(tdLeaderboardResultPath(runSessionId), { replace: true });
+              navigate(postRunFinishNavigatePath(runSessionId), { replace: true });
             }, 480);
           }
           return;
@@ -283,7 +283,7 @@ export default function RunPreparePage() {
                   }
                 );
                 saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
-                navigate(tdLeaderboardResultPath(runSessionId), { replace: true });
+                navigate(postRunFinishNavigatePath(runSessionId), { replace: true });
               } catch (e) {
                 const msg = e instanceof Error ? e.message : 'Ошибка';
                 setDemoMsg(msg);

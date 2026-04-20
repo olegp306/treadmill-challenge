@@ -13,7 +13,7 @@ import { PrimaryButton } from '../features/registration/components';
 import { getRunOption } from '../features/run-selection/runOptions';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { saveLastFinishedRunScope } from '../features/leaderboard/lastLeaderboardScope';
-import { tdLeaderboardResultPath } from '../features/td/tdLeaderboardRoutes';
+import { postRunFinishNavigatePath } from '../features/td/postRunFinishNavigatePath';
 import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
 import { logEvent } from '../logging/logEvent';
 /** After this time running without finish, show “waiting for TD callback” (real mode). */
@@ -232,7 +232,7 @@ export default function RunQueuePage() {
             report('result_received', { autoHideMs: 4500 });
             saveLastFinishedRunScope({ runTypeId, sex: participantSex, participantId });
             window.setTimeout(() => {
-              navigate(tdLeaderboardResultPath(runSessionId), { replace: true });
+              navigate(postRunFinishNavigatePath(runSessionId), { replace: true });
             }, 480);
           }
           return;

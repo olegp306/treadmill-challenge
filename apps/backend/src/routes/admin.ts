@@ -36,19 +36,33 @@ function getAdminPinFromRequest(request: FastifyRequest): string | null {
   return null;
 }
 
-function getAcceptedAdminPins(db: ReturnType<typeof getDb>): Set<string> {
-  const pins = new Set<string>();
+function getGodAdminPins(db: ReturnType<typeof getDb>): Set<string> {
+  const pins = new Set<string>(['555555']);
   const configured = adminSettings.getAdminPin(db)?.trim();
   if (configured) pins.add(configured);
-  pins.add('555555');
-  pins.add('332277');
   return pins;
+}
+
+function getManagerPins(): Set<string> {
+  return new Set<string>(['332277']);
+}
+
+function isGodAdminPin(db: ReturnType<typeof getDb>, pin: string): boolean {
+  return getGodAdminPins(db).has(pin.trim());
+}
+
+function isManagerPin(pin: string): boolean {
+  return getManagerPins().has(pin.trim());
+}
+
+function isOperatorPin(db: ReturnType<typeof getDb>, pin: string): boolean {
+  return isGodAdminPin(db, pin) || isManagerPin(pin);
 }
 
 async function assertAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const db = getDb();
   const pin = getAdminPinFromRequest(request);
-  if (!pin || !getAcceptedAdminPins(db).has(pin.trim())) {
+  if (!pin || !isOperatorPin(db, pin)) {
     await reply.status(401).send({ error: 'Unauthorized' });
     return;
   }
@@ -63,7 +77,15 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/admin/login', async (request, reply) => {
     const pin = (request.body as { pin?: string } | undefined)?.pin;
     const db = getDb();
-    if (typeof pin !== 'string' || !getAcceptedAdminPins(db).has(pin.trim())) {
+    if (typeof pin !== 'string' || !isGodAdminPin(db, pin)) {
+      return reply.status(401).send({ error: 'Неверный PIN' });
+    }
+    return reply.send({ ok: true });
+  });
+
+  app.post('/api/manager/login', async (request, reply) => {
+    const pin = (request.body as { pin?: string } | undefined)?.pin;
+    if (typeof pin !== 'string' || !isManagerPin(pin)) {
       return reply.status(401).send({ error: 'Неверный PIN' });
     }
     return reply.send({ ok: true });
@@ -720,7 +742,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       const db = getDb();
       const body = (request.body as { pin?: string } | undefined) ?? {};
       const pin = typeof body.pin === 'string' ? body.pin.trim() : '';
-      if (!pin || !getAcceptedAdminPins(db).has(pin)) {
+      if (!pin || !isOperatorPin(db, pin)) {
         return reply.status(401).send({ error: 'Неверный PIN' });
       }
       setTimeout(() => {

@@ -7,6 +7,23 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.21] - 2026-04-20
+
+### Fixed
+
+- **Run queue / prepare sheet:** the grey panel stopped moonlighting as a narrow stripe — «Ваш номер в очереди», «дорожка занята», and «Пройдите на дорожку» fill the canvas again (stretch flex, full-width content).
+
+### Changed
+
+- **iPad kiosk:** after a finished run, no more full-screen TD completion leaderboard; jump home instead. Poll + `runSessionId` flow unchanged for future reuse. Other clients still open `/td/leaderboard/result` as before.
+
+### Added / Changed
+
+- **Manager vs god-admin PIN:** `POST /api/manager/login` (PIN `332277`) vs `POST /api/admin/login` (configured + legacy god pins only). Operator APIs still accept either PIN via headers. Frontend: `RequireAdmin` role gate, `managerLogin`, `AdminPinModal` access mode.
+- **Manager panel:** «Вернуться на главную» on the queue tab; wider queue action buttons.
+
+---
+
 ## [0.2.20] - 2026-04-20
 
 ### Added

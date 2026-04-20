@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeName } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
@@ -35,6 +36,7 @@ function slotLabel(slot: Slot): string {
 }
 
 export default function ManagerPanelPage() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<ManagerTab>('queue');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -191,6 +193,11 @@ export default function ManagerPanelPage() {
 
       {tab === 'queue' ? (
         <section>
+          <div style={styles.homeMainWrap}>
+            <button type="button" style={styles.btnHomeMain} onClick={() => navigate('/')}>
+              Вернуться на главную
+            </button>
+          </div>
           <div style={styles.sectionHead}>
             <h2 style={styles.h2}>Текущая очередь</h2>
             <button type="button" style={styles.refreshBtn} onClick={refreshQueue}>
@@ -390,31 +397,73 @@ const styles: Record<string, React.CSSProperties> = {
   h3: { margin: '20px 0 12px', fontSize: 18 },
   info: { margin: '8px 0', color: '#b8b8b8' },
   error: { margin: '8px 0', color: '#ff7b7b' },
+  homeMainWrap: {
+    display: 'flex',
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  btnHomeMain: {
+    width: '100%',
+    maxWidth: 560,
+    minHeight: 56,
+    padding: '14px 20px',
+    borderRadius: 14,
+    border: '1px solid #e6233a',
+    background: '#e6233a',
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 600,
+    cursor: 'pointer',
+    boxSizing: 'border-box' as const,
+  },
   sectionHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   refreshBtn: { padding: '8px 12px', borderRadius: 8, border: '1px solid #555', background: '#1e1e1e', color: '#fff' },
   table: { width: '100%', borderCollapse: 'collapse', background: '#171717' },
   th: { textAlign: 'left', padding: 10, borderBottom: '1px solid #333', fontSize: 14, color: '#ccc' },
   td: { padding: 10, borderBottom: '1px solid #2a2a2a', verticalAlign: 'middle' },
-  actions: { display: 'flex', gap: 8, flexWrap: 'wrap' },
-  smallBtn: { minWidth: 56, padding: '7px 10px', borderRadius: 8, border: '1px solid #666', background: '#202020', color: '#fff' },
-  smallBtnDisabled: {
-    minWidth: 56,
-    padding: '7px 10px',
+  actions: { display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' },
+  smallBtn: {
+    minWidth: 112,
+    padding: '10px 18px',
     borderRadius: 8,
-    border: '1px solid #555',
-    background: '#2a2a2a',
-    color: '#8f8f8f',
-    cursor: 'not-allowed',
+    border: '1px solid #666',
+    background: '#202020',
+    color: '#fff',
+    fontSize: 15,
+    boxSizing: 'border-box' as const,
   },
-  tailBtn: { minWidth: 90, padding: '7px 10px', borderRadius: 8, border: '1px solid #e6233a', background: '#331217', color: '#fff' },
-  tailBtnDisabled: {
-    minWidth: 90,
-    padding: '7px 10px',
+  smallBtnDisabled: {
+    minWidth: 112,
+    padding: '10px 18px',
     borderRadius: 8,
     border: '1px solid #555',
     background: '#2a2a2a',
     color: '#8f8f8f',
     cursor: 'not-allowed',
+    fontSize: 15,
+    boxSizing: 'border-box' as const,
+  },
+  tailBtn: {
+    minWidth: 180,
+    padding: '10px 18px',
+    borderRadius: 8,
+    border: '1px solid #e6233a',
+    background: '#331217',
+    color: '#fff',
+    fontSize: 15,
+    boxSizing: 'border-box' as const,
+  },
+  tailBtnDisabled: {
+    minWidth: 180,
+    padding: '10px 18px',
+    borderRadius: 8,
+    border: '1px solid #555',
+    background: '#2a2a2a',
+    color: '#8f8f8f',
+    cursor: 'not-allowed',
+    fontSize: 15,
+    boxSizing: 'border-box' as const,
   },
   slotGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginBottom: 10 },
   slotBtn: { padding: '12px 10px', borderRadius: 10, border: '1px solid #444', background: '#1a1a1a', color: '#fff' },

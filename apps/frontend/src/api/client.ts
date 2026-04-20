@@ -297,6 +297,10 @@ export const api = {
     return request<{ ok: boolean }>('/admin/login', { method: 'POST', body: JSON.stringify({ pin }) });
   },
 
+  managerLogin(pin: string) {
+    return request<{ ok: boolean }>('/manager/login', { method: 'POST', body: JSON.stringify({ pin }) });
+  },
+
   adminDashboard() {
     return adminRequest<{
       slots: Array<{

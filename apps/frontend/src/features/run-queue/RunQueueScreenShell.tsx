@@ -63,11 +63,15 @@ export function RunQueueScreenShell({
         <div
           onClick={onSheetClick}
           style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
             width: '100%',
             maxWidth: w(2120),
             marginLeft: 'auto',
             marginRight: 'auto',
-            alignSelf: 'center',
+            alignSelf: 'stretch',
             cursor: onSheetClick ? 'pointer' : 'default',
           }}
         >

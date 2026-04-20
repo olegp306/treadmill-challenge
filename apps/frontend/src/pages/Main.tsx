@@ -384,7 +384,12 @@ export default function Main() {
             </Link>
           </nav>
         </ScreenContainer>
-      <AdminPinModal open={pinModalOpen} onClose={() => setPinModalOpen(false)} nextPath="/manager" />
+      <AdminPinModal
+        open={pinModalOpen}
+        onClose={() => setPinModalOpen(false)}
+        nextPath="/manager"
+        access="manager"
+      />
     </ArOzioViewport>
   );
 }

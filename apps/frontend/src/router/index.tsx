@@ -48,7 +48,7 @@ export function AppRoutes() {
       <Route
         path="/manager"
         element={
-          <RequireAdmin>
+          <RequireAdmin role="manager">
             <ManagerPanelPage />
           </RequireAdmin>
         }
@@ -56,7 +56,7 @@ export function AppRoutes() {
       <Route
         path="/admin"
         element={
-          <RequireAdmin>
+          <RequireAdmin role="god_admin">
             <AdminDashboardPage />
           </RequireAdmin>
         }
@@ -64,7 +64,7 @@ export function AppRoutes() {
       <Route
         path="/admin/competition/:id"
         element={
-          <RequireAdmin>
+          <RequireAdmin role="god_admin">
             <AdminCompetitionPage />
           </RequireAdmin>
         }
@@ -72,7 +72,7 @@ export function AppRoutes() {
       <Route
         path="/admin/archive"
         element={
-          <RequireAdmin>
+          <RequireAdmin role="god_admin">
             <AdminArchivePage />
           </RequireAdmin>
         }
@@ -80,7 +80,7 @@ export function AppRoutes() {
       <Route
         path="/admin/settings"
         element={
-          <RequireAdmin>
+          <RequireAdmin role="god_admin">
             <AdminSettingsPage />
           </RequireAdmin>
         }
@@ -88,7 +88,7 @@ export function AppRoutes() {
       <Route
         path="/admin/events"
         element={
-          <RequireAdmin>
+          <RequireAdmin role="god_admin">
             <AdminEventsPage />
           </RequireAdmin>
         }
