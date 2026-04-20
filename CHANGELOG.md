@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.2.18] - 2026-04-20
+
+### Added
+
+- **Queue export endpoint:** added `GET /api/run/queue.tsv` for TouchDesigner/external consumers. Response is `text/tab-separated-values` with columns: `runSessionId`, `participantId`, `firstName`, `lastName`, `phone`, `runTypeId`, `runTypeName`, `status`, `createdAt`; includes only active sessions (`queued` + `running`) in FIFO order (`createdAt ASC`, `id ASC`).
+
+### Documentation
+
+- Updated `README.md` with `/api/run/queue.tsv` format, sorting/filtering rules, and current kiosk flow notes.
+- Updated `docs/touchdesigner-integration-ru.md` with TSV queue export section and current prepare/running UI-flow behavior.
+
+---
+
 ## [0.2.17] - 2026-04-20
 
 ### Changed

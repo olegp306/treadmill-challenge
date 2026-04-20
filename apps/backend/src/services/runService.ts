@@ -169,6 +169,47 @@ export function getQueue(
   };
 }
 
+function tsvSafe(v: unknown): string {
+  return String(v ?? '').replace(/\r\n|\r|\n/g, ' ').replace(/\t/g, ' ');
+}
+
+export function getQueueTsv(): string {
+  const db = getDb();
+  const rows = runSessions.listActiveQueueForExport(db);
+  const header = [
+    'runSessionId',
+    'participantId',
+    'firstName',
+    'lastName',
+    'phone',
+    'runTypeId',
+    'runTypeName',
+    'status',
+    'createdAt',
+  ].join('\t');
+  if (rows.length === 0) return `${header}\n`;
+
+  const body = rows
+    .map((r) =>
+      [
+        r.runSession.id,
+        r.runSession.participantId,
+        r.firstName,
+        r.lastName,
+        r.phone,
+        r.runSession.runTypeId,
+        getRunTypeName(r.runSession.runTypeId),
+        r.runSession.status,
+        r.runSession.createdAt,
+      ]
+        .map(tsvSafe)
+        .join('\t')
+    )
+    .join('\n');
+
+  return `${header}\n${body}\n`;
+}
+
 export function getRunSessionState(runSessionId: string): {
   runSessionId: string;
   participantId: string;

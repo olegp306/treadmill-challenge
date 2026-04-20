@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import {
   devFinishLatestQueuedRun,
   getQueue,
+  getQueueTsv,
   getRunSessionState,
   leaveRunSession,
   startRunSession,
@@ -101,6 +102,17 @@ export default async function runRoutes(app: FastifyInstance): Promise<void> {
     } catch (err) {
       request.log.error(err);
       return reply.status(500).send({ error: 'Failed to load queue' });
+    }
+  });
+
+  app.get('/api/run/queue.tsv', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const tsv = getQueueTsv();
+      reply.header('content-type', 'text/tab-separated-values; charset=utf-8');
+      return reply.status(200).send(tsv);
+    } catch (err) {
+      request.log.error(err);
+      return reply.status(500).send({ error: 'Failed to export queue' });
     }
   });
 

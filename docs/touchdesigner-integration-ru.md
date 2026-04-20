@@ -191,6 +191,39 @@ http://localhost:5173/td/leaderboard/result?runSessionId=xxxxxxxx-xxxx-xxxx-xxxx
 
 ---
 
+### 6. Экспорт очереди для внешнего потребителя (TSV)
+
+Новый endpoint для TouchDesigner/внешних интеграций:
+
+- **`GET /api/run/queue.tsv`**
+- **Content-Type:** `text/tab-separated-values; charset=utf-8`
+
+Возвращает **header + строки** в таком порядке колонок:
+
+```text
+runSessionId	participantId	firstName	lastName	phone	runTypeId	runTypeName	status	createdAt
+```
+
+Правила:
+
+- Включаются только активные сессии со статусами: `queued`, `running`
+- Не включаются: `finished`, `cancelled` и другие неактивные статусы
+- Порядок строк: queue/FIFO (`createdAt ASC`, затем `id ASC`)
+- Если очередь пустая — возвращается только header
+
+---
+
+### 7. Актуальные правила UI-flow (киоск)
+
+- Экран **`/run/prepare`** («Пройдите на дорожку»):
+  - закрывается по тапу/клику в любую точку формы,
+  - автоматически закрывается через 10 секунд,
+  - после закрытия — переход на главную.
+- Экран **«Вы на дорожке. Забег идет.»** удален из текущего киоск-flow:
+  - при переходе сессии в `running` пользователь сразу возвращается на главную форму.
+
+---
+
 ## Краткий чеклист для TD
 
 1. Принимать **`/treadmill/start`** при регистрации (опционально для визуала).

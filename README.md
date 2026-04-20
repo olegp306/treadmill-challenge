@@ -159,9 +159,44 @@ The script `start-app.bat` runs `npm run dev` from the project folder. Make sure
 |--------|------|-------------|
 | POST   | `/api/register` | Register participant (body: `{ name, phone, sex?, runMode?, runName? }`) |
 | GET    | `/api/leaderboard` | Top runs with participant names |
+| GET    | `/api/run/queue` | Active global queue (`queued` + `running`) in JSON |
+| GET    | `/api/run/queue.tsv` | Active global queue export in TSV (`text/tab-separated-values`) |
 | GET    | `/api/participants/:id` | Participant details and runs |
 | POST   | `/api/run-result` | Submit run result (body: `{ participantId, resultTime, distance, speed }`) |
 | GET    | `/api/touchdesigner/run-result` | Get run result data from TouchDesigner (204 if none) |
+
+### `/api/run/queue.tsv` format
+
+TSV export returns **header + rows** in this strict column order:
+
+```text
+runSessionId	participantId	firstName	lastName	phone	runTypeId	runTypeName	status	createdAt
+```
+
+Rules:
+
+- Includes only active sessions: `queued` and `running`
+- Excludes `finished`, `cancelled`, and other non-active statuses
+- Uses queue/FIFO order: `createdAt ASC, id ASC`
+- If queue is empty, returns only header row
+
+Example:
+
+```text
+runSessionId	participantId	firstName	lastName	phone	runTypeId	runTypeName	status	createdAt
+2f1f6f1d-2a4d-4af2-a7f9-5b6d4f6e5b1a	9d7fcd8e-e1f2-4a6c-9f7a-1f0d2b8e3c10	Олег	Петров	+79990001122	1	Золотой километр	running	2026-04-20T18:12:10.123Z
+6df8a3f9-3b5d-4f5a-b2c1-4d8f9a2e7b12	a2b9c3d4-e5f6-47a8-b9c0-1234567890ab	Иван	Сидоров	+79990003344	0	Максимум за 5 минут	queued	2026-04-20T18:13:41.552Z
+```
+
+## Current kiosk flow notes
+
+- **Prepare screen (`/run/prepare`)**:
+  - top-right label format is `Имя Ф.` (example: `Олег П.`),
+  - closes by tap/click on any point of the form,
+  - auto-closes after 10 seconds to home,
+  - no `Ок` button.
+- **Running state screen** (`Вы на дорожке. Забег идет.`) is removed from kiosk flow:
+  - when session becomes `running`, app navigates directly to home.
 
 ## End-to-end flow
 

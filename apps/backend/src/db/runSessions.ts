@@ -161,6 +161,13 @@ export interface ActiveQueueRow {
   sex: Gender;
 }
 
+export interface ActiveQueueExportRow {
+  runSession: RunSession;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
 export function listActiveQueue(db: Db, runTypeId?: RunTypeId, sex?: Gender): ActiveQueueRow[] {
   const conditions = [`c.status = 'active'`, `s.status IN ('queued', 'running')`];
   const params: unknown[] = [];
@@ -200,6 +207,38 @@ export function listActiveQueue(db: Db, runTypeId?: RunTypeId, sex?: Gender): Ac
       runSession: rowToSession(sessionRow),
       participantName: `${String(pf ?? '')} ${String(pl ?? '')}`.trim(),
       sex: String(cg ?? 'male') as Gender,
+    };
+  });
+}
+
+/** Active global queue rows for export (queued + running), ordered by queue FIFO. */
+export function listActiveQueueForExport(db: Db): ActiveQueueExportRow[] {
+  const rows = db
+    .prepare(
+      `
+    SELECT s.id, s.participantId, s.competitionId, s.runTypeId, s.runType, s.status, s.queueNumber, s.resultTime, s.resultDistance,
+           s.createdAt, s.startedAt, s.finishedAt, p.firstName as pf, p.lastName as pl, p.phone as pphone
+    FROM run_sessions s
+    JOIN participants p ON p.id = s.participantId
+    WHERE s.status IN ('queued', 'running')
+    ORDER BY s.createdAt ASC, s.id ASC
+  `
+    )
+    .all() as Record<string, unknown>[];
+
+  return rows.map((row) => {
+    const pf = String(row.pf ?? '');
+    const pl = String(row.pl ?? '');
+    const phone = String(row.pphone ?? '');
+    const sessionRow = { ...row };
+    delete sessionRow.pf;
+    delete sessionRow.pl;
+    delete sessionRow.pphone;
+    return {
+      runSession: rowToSession(sessionRow),
+      firstName: pf,
+      lastName: pl,
+      phone,
     };
   });
 }
