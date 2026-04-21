@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.3.3] - 2026-04-21
+
+### Fixed
+
+- **TD result leaderboard metric wrapping:** distance is now rendered with a non-breaking space (`1001 м`) and result metric cells use `white-space: nowrap`, so value and unit stay on one line on the finish leaderboard.
+- **Queue prepare copy alignment:** subtitle “Забег сейчас начнется!” is centered as a full-width line on the “Пройдите на дорожку” screen.
+- **Age gate blocked text readability:** the two warning lines now have a larger font (+25%) and a small vertical gap between lines.
+
+### Changed
+
+- **README:** added a short release note block describing backup scheduler, XLSX leaderboard export, and queue reliability improvements.
+
+---
+
 ## [0.3.2] - 2026-04-21
 
 ### Added

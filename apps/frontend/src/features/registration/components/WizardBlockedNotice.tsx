@@ -28,7 +28,7 @@ export function WizardBlockedNotice({ lines, onBack, children, ...rest }: Props)
       <StepBody variant="tall">
         <p style={reg.ageFigmaBlockedText}>
           {lines.map((line, i) => (
-            <span key={i} style={{ display: 'block' }}>
+            <span key={i} style={{ display: 'block', marginTop: i === 0 ? 0 : 8 }}>
               {line}
             </span>
           ))}

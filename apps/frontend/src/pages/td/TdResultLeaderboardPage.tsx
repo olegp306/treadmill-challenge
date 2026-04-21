@@ -311,6 +311,7 @@ export default function TdResultLeaderboardPage() {
                       style={{
                         width: 141,
                         textAlign: 'right',
+                        whiteSpace: 'nowrap',
                         fontFamily: td.fontDruk,
                         fontWeight: 400,
                         fontSize: 32,
@@ -366,6 +367,7 @@ export default function TdResultLeaderboardPage() {
                         flexShrink: 0,
                         width: 160,
                         textAlign: 'right',
+                        whiteSpace: 'nowrap',
                         fontSynthesis: 'none',
                       }}
                     >
@@ -403,6 +405,7 @@ export default function TdResultLeaderboardPage() {
                       style={{
                         width: 141,
                         textAlign: 'right',
+                        whiteSpace: 'nowrap',
                         fontFamily: td.fontDruk,
                         fontWeight: 400,
                         fontSize: 32,

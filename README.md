@@ -10,6 +10,15 @@ Interactive treadmill challenge installation for a retail store. Local-first: Re
 
 ---
 
+## Release note (v0.3.2)
+
+- Добавлен автоматический hourly backup JSON-снимка БД: `backup/YYYY-MM-DD/backup-HH-mm.json` (настраивается через env, безопасная запись через temp + rename).
+- Добавлен экспорт лидербордов в один `.xlsx` файл с вкладками по активным слотам (муж/жен × тип забега), корректными числовыми полями для сортировки в Excel/Google Sheets.
+- В manager (`/manager`) и god-admin (`/admin`) добавлена кнопка `Download Excel` для скачивания общего файла лидербордов.
+- Для finish-flow ранее введён более надёжный promote-path с guarded await и duplicate ensure-promote, чтобы снизить риск soft-lock очереди.
+
+---
+
 ## Quick start (simple guide)
 
 ### 1. Set up your environment

@@ -10,7 +10,7 @@ export function formatTimeMmSs(sec: number): string {
 }
 
 export function formatTdMetric(entry: LeaderboardEntry, runTypeId: RunTypeId): string {
-  if (runTypeId === 0) return `${Math.round(entry.distance)} м`;
+  if (runTypeId === 0) return `${Math.round(entry.distance)}\u00A0м`;
   return formatTimeMmSs(entry.resultTime);
 }
 

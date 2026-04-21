@@ -120,6 +120,8 @@ export const rq: Record<string, CSSProperties> = {
   },
   subtitle: {
     margin: `${h(20)} 0 0`,
+    marginLeft: 'auto',
+    marginRight: 'auto',
     textAlign: 'center',
     fontSize: w(40),
     lineHeight: 1.5,
@@ -127,6 +129,8 @@ export const rq: Record<string, CSSProperties> = {
     color: 'rgba(255,255,255,0.6)',
     textTransform: 'uppercase',
     maxWidth: w(1400),
+    width: '100%',
+    boxSizing: 'border-box',
   },
   subtitleStrong: {
     color: ui.color.text,
