@@ -15,6 +15,7 @@ import { getAppVersion } from './version.js';
 import { registerTouchDesignerOscRunResultHandler } from './integrations/touchdesigner/oscTouchDesignerAck.js';
 import { touchDesignerAdapter } from './integrations/touchdesigner/adapter.js';
 import { submitRunSessionResult } from './services/runResultService.js';
+import { startDataSnapshotBackupScheduler } from './services/dataSnapshotBackup.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -69,6 +70,15 @@ async function main() {
   await app.register(eventsRoutes);
   await app.register(adminRoutes);
   await app.register(devQueueControlRoutes);
+
+  const backupScheduler = startDataSnapshotBackupScheduler({
+    info: (o) => app.log.info(o),
+    warn: (o) => app.log.warn(o),
+    error: (o) => app.log.error(o),
+  });
+  app.addHook('onClose', async () => {
+    backupScheduler.stop();
+  });
 
   app.get('/health', async () => ({ status: 'ok' }));
   app.get('/api/version', async () => ({

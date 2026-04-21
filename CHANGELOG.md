@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.3.2] - 2026-04-21
+
+### Added
+
+- **Automatic JSON backup scheduler:** backend now writes hourly snapshots using the existing `dataSnapshot` export shape into `backup/YYYY-MM-DD/backup-HH-mm.json` (configurable via `DATA_SNAPSHOT_BACKUP_DIR`, `DATA_SNAPSHOT_BACKUP_INTERVAL_MINUTES`, `DATA_SNAPSHOT_BACKUP_ENABLED`). Write path is safe (`*.tmp` + atomic rename) with operational logs and startup auto-resume.
+- **Leaderboard Excel export (`.xlsx`):** new admin endpoint `GET /api/admin/leaderboards/export-xlsx` builds one workbook with separate sheets per active leaderboard slot (male/female × run type), numeric sort column, run IDs, timestamps, and manager-readable headers.
+
+### Changed
+
+- **Admin UI and manager UI:** added `Download Excel` action in both `/admin` dashboard and `/manager` queue view to download one multi-sheet leaderboard workbook.
+
+---
+
 ## [0.3.1] - 2026-04-20
 
 ### Fixed

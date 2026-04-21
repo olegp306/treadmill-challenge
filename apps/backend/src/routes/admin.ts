@@ -34,6 +34,10 @@ import {
   buildExportDownloadFilename,
   validateDataSnapshot,
 } from '../services/dataSnapshot.js';
+import {
+  buildLeaderboardsExportFilename,
+  buildLeaderboardsWorkbookXlsxBuffer,
+} from '../services/leaderboardExcelExport.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const x = request.headers['x-admin-pin'];
   if (typeof x === 'string' && x.length > 0) return x.trim();
@@ -756,6 +760,21 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         .header('Content-Type', 'application/json; charset=utf-8')
         .header('Content-Disposition', `attachment; filename="${filename}"`)
         .send(body);
+    });
+
+    scoped.get('/api/admin/leaderboards/export-xlsx', async (request, reply) => {
+      const { buffer, sheetCount } = buildLeaderboardsWorkbookXlsxBuffer();
+      const filename = buildLeaderboardsExportFilename();
+      request.log.info({
+        msg: 'admin_leaderboards_export_xlsx_created',
+        filename,
+        sheetCount,
+        bytes: buffer.length,
+      });
+      return reply
+        .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        .header('Content-Disposition', `attachment; filename="${filename}"`)
+        .send(buffer);
     });
 
     scoped.post<{ Body: unknown }>(

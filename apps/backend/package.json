@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
@@ -11,15 +11,16 @@
     "test": "tsx --test src/globalQueueLimit.test.ts"
   },
   "dependencies": {
+    "@fastify/cors": "^8.5.0",
     "@treadmill-challenge/shared": "*",
     "fastify": "^4.24.3",
-    "@fastify/cors": "^8.5.0",
     "osc": "^2.4.5",
-    "sql.js": "^1.10.2"
+    "sql.js": "^1.10.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "typescript": "^5.3.3",
-    "tsx": "^4.6.2"
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3"
   }
 }

@@ -237,6 +237,18 @@ export default function ManagerPanelPage() {
     }
   };
 
+  const exportLeaderboardsXlsx = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.adminExportLeaderboardsXlsxDownload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось экспортировать лидерборды');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main style={styles.page}>
       <header style={styles.header}>
@@ -266,9 +278,14 @@ export default function ManagerPanelPage() {
           </div>
           <div style={styles.sectionHead}>
             <h2 style={styles.h2}>История очереди</h2>
-            <button type="button" style={styles.refreshBtn} onClick={refreshQueue}>
-              Обновить
-            </button>
+            <div style={styles.headActions}>
+              <button type="button" style={styles.downloadBtn} onClick={() => void exportLeaderboardsXlsx()} disabled={busy}>
+                Download Excel
+              </button>
+              <button type="button" style={styles.refreshBtn} onClick={refreshQueue} disabled={busy}>
+                Обновить
+              </button>
+            </div>
           </div>
           <label style={styles.searchLabel}>
             Поиск
@@ -587,7 +604,16 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: 'border-box' as const,
   },
   sectionHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  headActions: { display: 'flex', alignItems: 'center', gap: 8 },
   refreshBtn: { padding: '8px 12px', borderRadius: 8, border: '1px solid #555', background: '#1e1e1e', color: '#fff' },
+  downloadBtn: {
+    padding: '8px 12px',
+    borderRadius: 8,
+    border: '1px solid #2e6fdb',
+    background: '#13294f',
+    color: '#d7e7ff',
+    fontWeight: 600,
+  },
   table: { width: '100%', borderCollapse: 'collapse', background: '#171717' },
   th: { textAlign: 'left', padding: 10, borderBottom: '1px solid #333', fontSize: 14, color: '#ccc' },
   td: { padding: 10, borderBottom: '1px solid #2a2a2a', verticalAlign: 'middle' },

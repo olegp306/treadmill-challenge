@@ -597,6 +597,35 @@ export const api = {
     });
   },
 
+  /** Download one XLSX file with all active leaderboard sheets. */
+  async adminExportLeaderboardsXlsxDownload(): Promise<void> {
+    const res = await fetch(`${API_BASE}/admin/leaderboards/export-xlsx`, { headers: { ...adminHeaders() } });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? `Request failed: ${res.status}`);
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition') ?? '';
+    let filename = 'treadmill-leaderboards.xlsx';
+    const quoted = cd.match(/filename="([^"]+)"/);
+    const bare = cd.match(/filename=([^;\s]+)/);
+    if (quoted?.[1]) filename = quoted[1];
+    else if (bare?.[1]) filename = bare[1].replace(/^"|"$/g, '');
+
+    const url = URL.createObjectURL(blob);
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  },
+
   getPublicSettings() {
     return request<{
       heartbeatIntervalMin: 5 | 10 | 30 | 60;

@@ -197,6 +197,17 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const exportLeaderboardsXlsx = async () => {
+    setBusy('export-xlsx');
+    try {
+      await api.adminExportLeaderboardsXlsxDownload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось экспортировать лидерборды');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const renderRow = (label: string, rowSlots: Slot[]) => (
     <section style={{ marginBottom: 28 }}>
       <h2
@@ -252,6 +263,21 @@ export default function AdminDashboardPage() {
       {error && <p style={{ color: '#f85149' }}>{error}</p>}
       {!loading && (
         <>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={() => void exportLeaderboardsXlsx()}
+              style={{
+                ...touchBtn(!!busy, false),
+                minHeight: 46,
+                padding: '0 16px',
+                background: !!busy ? '#2a2a2a' : '#17396b',
+              }}
+            >
+              Download Excel
+            </button>
+          </div>
           {renderRow('Мужчины', maleSlots)}
           {renderRow('Женщины', femaleSlots)}
         </>
