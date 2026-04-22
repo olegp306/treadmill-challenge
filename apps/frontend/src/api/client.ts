@@ -355,6 +355,29 @@ export const api = {
     }>('/admin/manager/queue-history');
   },
 
+  adminManagerQueueRecoveryState() {
+    return adminRequest<{
+      runningCount: number;
+      queuedCount: number;
+      canStart: boolean;
+    }>('/admin/manager/queue-recovery-state');
+  },
+
+  adminManagerQueueStart() {
+    return adminRequest<{
+      ok: boolean;
+      status: 'success' | 'skipped_has_running' | 'skipped_empty_queue';
+      message: string;
+      runSessionId?: string;
+      treadmillStatus?: string;
+      runningCount?: number;
+      queuedCount?: number;
+    }>('/admin/manager/queue-start', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+
   adminStartCompetition(body: { runTypeId: RunTypeId; sex: Gender }) {
     return adminRequest<{ competition: unknown }>('/admin/competitions/start', {
       method: 'POST',

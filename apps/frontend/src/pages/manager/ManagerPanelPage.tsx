@@ -23,6 +23,12 @@ type EditableParticipant = {
   phone: string;
 };
 
+type QueueRecoveryState = {
+  runningCount: number;
+  queuedCount: number;
+  canStart: boolean;
+};
+
 function slotLabel(slot: Slot): string {
   const sex = slot.sex === 'male' ? 'Мужчины' : 'Женщины';
   return `${sex} — ${getRunTypeName(slot.runTypeId)}`;
@@ -47,6 +53,12 @@ export default function ManagerPanelPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [historyRows, setHistoryRows] = useState<HistoryRow[]>([]);
+  const [queueRecovery, setQueueRecovery] = useState<QueueRecoveryState>({
+    runningCount: 0,
+    queuedCount: 0,
+    canStart: false,
+  });
+  const [queueRecoveryHint, setQueueRecoveryHint] = useState<string | null>(null);
   const [queueSearch, setQueueSearch] = useState('');
   const [editParticipant, setEditParticipant] = useState<EditParticipantState | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -64,6 +76,18 @@ export default function ManagerPanelPage() {
     const res = await api.adminManagerQueueHistory();
     setHistoryRows(res.entries);
   }, []);
+
+  const loadQueueRecovery = useCallback(async () => {
+    const res = await api.adminManagerQueueRecoveryState();
+    setQueueRecovery(res);
+  }, []);
+
+  const queueRecoveryReason = useMemo(() => {
+    if (queueRecovery.runningCount > 0) return '';
+    if (queueRecovery.queuedCount === 0) return 'Очередь пуста';
+    return 'Тренажер свободен, можно запустить первого в очереди';
+  }, [queueRecovery]);
+  const showQueueStartedOnButton = queueRecoveryHint === 'Очередь запущена';
 
   const displayedRows = useMemo(() => {
     const n = queueSearch.trim().toLowerCase();
@@ -101,22 +125,40 @@ export default function ManagerPanelPage() {
       setBusy(true);
       setError(null);
       try {
-        await Promise.all([loadQueueHistory(), loadSlots()]);
+        await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSlots()]);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Ошибка загрузки');
       } finally {
         setBusy(false);
       }
     })();
-  }, [loadQueueHistory]);
+  }, [loadQueueHistory, loadQueueRecovery]);
 
   const refreshQueue = async () => {
     setBusy(true);
     setError(null);
     try {
-      await loadQueueHistory();
+      await Promise.all([loadQueueHistory(), loadQueueRecovery()]);
+      setQueueRecoveryHint(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка обновления очереди');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const manualStartQueue = async () => {
+    if (!queueRecovery.canStart || busy) return;
+    setBusy(true);
+    setError(null);
+    setQueueRecoveryHint(null);
+    try {
+      const res = await api.adminManagerQueueStart();
+      setQueueRecoveryHint(res.message);
+      await Promise.all([loadQueueHistory(), loadQueueRecovery()]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось запустить очередь');
+      await loadQueueRecovery().catch(() => undefined);
     } finally {
       setBusy(false);
     }
@@ -279,6 +321,17 @@ export default function ManagerPanelPage() {
           <div style={styles.sectionHead}>
             <h2 style={styles.h2}>История очереди</h2>
             <div style={styles.headActions}>
+              <button
+                type="button"
+                style={queueRecovery.canStart && !busy ? styles.downloadBtn : styles.downloadBtnDisabled}
+                disabled={busy || !queueRecovery.canStart}
+                onClick={() => void manualStartQueue()}
+              >
+                <span style={styles.recoveryBtnMainText}>Запустить очередь</span>
+                {showQueueStartedOnButton ? (
+                  <span style={styles.recoveryBtnSubText}>очередь запущена</span>
+                ) : null}
+              </button>
               <button type="button" style={styles.downloadBtn} onClick={() => void exportLeaderboardsXlsx()} disabled={busy}>
                 Download Excel
               </button>
@@ -286,6 +339,9 @@ export default function ManagerPanelPage() {
                 Обновить
               </button>
             </div>
+          </div>
+          <div style={styles.recoveryWrap}>
+            {queueRecoveryReason ? <p style={styles.recoveryReason}>{queueRecoveryReason}</p> : null}
           </div>
           <label style={styles.searchLabel}>
             Поиск
@@ -605,6 +661,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sectionHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   headActions: { display: 'flex', alignItems: 'center', gap: 8 },
+  recoveryWrap: { marginBottom: 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 },
+  downloadBtnDisabled: {
+    padding: '8px 12px',
+    borderRadius: 8,
+    border: '1px solid #4b4b4b',
+    background: '#2b2b2b',
+    color: '#9a9a9a',
+    fontWeight: 600,
+    cursor: 'not-allowed',
+  },
+  recoveryBtnMainText: { display: 'block', lineHeight: 1.1 },
+  recoveryBtnSubText: { display: 'block', lineHeight: 1.1, fontSize: 11, fontWeight: 500, marginTop: 2, opacity: 0.95 },
+  recoveryReason: { margin: 0, color: '#a9a9a9', fontSize: 13 },
   refreshBtn: { padding: '8px 12px', borderRadius: 8, border: '1px solid #555', background: '#1e1e1e', color: '#fff' },
   downloadBtn: {
     padding: '8px 12px',
@@ -619,7 +688,7 @@ const styles: Record<string, React.CSSProperties> = {
   td: { padding: 10, borderBottom: '1px solid #2a2a2a', verticalAlign: 'middle' },
   actions: { display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' },
   smallBtn: {
-    minWidth: 112,
+    minWidth: 56,
     padding: '10px 18px',
     borderRadius: 8,
     border: '1px solid #666',
@@ -629,7 +698,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: 'border-box' as const,
   },
   smallBtnDisabled: {
-    minWidth: 112,
+    minWidth: 56,
     padding: '10px 18px',
     borderRadius: 8,
     border: '1px solid #555',

@@ -132,6 +132,12 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<{ runSessionId: string; url: string } | null>(null);
+  const [queueRecovery, setQueueRecovery] = useState<{ runningCount: number; queuedCount: number; canStart: boolean }>({
+    runningCount: 0,
+    queuedCount: 0,
+    canStart: false,
+  });
+  const [queueRecoveryHint, setQueueRecoveryHint] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -157,14 +163,21 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.adminDashboard();
+      const [data, recovery] = await Promise.all([api.adminDashboard(), api.adminManagerQueueRecoveryState()]);
       setSlots(data.slots);
+      setQueueRecovery(recovery);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const queueRecoveryReason = useMemo(() => {
+    if (queueRecovery.runningCount > 0) return 'Очередь уже запущена';
+    if (queueRecovery.queuedCount === 0) return 'Очередь пуста';
+    return 'Тренажер свободен, можно запустить первого в очереди';
+  }, [queueRecovery]);
 
   useEffect(() => {
     void load();
@@ -203,6 +216,22 @@ export default function AdminDashboardPage() {
       await api.adminExportLeaderboardsXlsxDownload();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось экспортировать лидерборды');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const manualStartQueue = async () => {
+    if (!queueRecovery.canStart || !!busy) return;
+    setBusy('manual-queue-start');
+    setQueueRecoveryHint(null);
+    try {
+      const res = await api.adminManagerQueueStart();
+      setQueueRecoveryHint(res.message);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось запустить очередь');
+      await load();
     } finally {
       setBusy(null);
     }
@@ -264,19 +293,39 @@ export default function AdminDashboardPage() {
       {!loading && (
         <>
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              disabled={!!busy}
-              onClick={() => void exportLeaderboardsXlsx()}
-              style={{
-                ...touchBtn(!!busy, false),
-                minHeight: 46,
-                padding: '0 16px',
-                background: !!busy ? '#2a2a2a' : '#17396b',
-              }}
-            >
-              Download Excel
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={() => void exportLeaderboardsXlsx()}
+                style={{
+                  ...touchBtn(!!busy, false),
+                  minHeight: 46,
+                  padding: '0 16px',
+                  background: !!busy ? '#2a2a2a' : '#17396b',
+                }}
+              >
+                Download Excel
+              </button>
+              <button
+                type="button"
+                disabled={!!busy || !queueRecovery.canStart}
+                onClick={() => void manualStartQueue()}
+                style={{
+                  ...touchBtn(!!busy || !queueRecovery.canStart, false),
+                  minHeight: 54,
+                  padding: '0 18px',
+                  fontSize: 20,
+                  background: !!busy || !queueRecovery.canStart ? '#2a2a2a' : '#1f7a33',
+                  border: '1px solid',
+                  borderColor: !!busy || !queueRecovery.canStart ? '#4b4b4b' : '#2f9e44',
+                }}
+              >
+                Запустить очередь
+              </button>
+              <p style={{ margin: 0, color: '#a9a9a9', fontSize: 13 }}>{queueRecoveryReason}</p>
+              {queueRecoveryHint ? <p style={{ margin: 0, color: '#8fdb9c', fontSize: 13 }}>{queueRecoveryHint}</p> : null}
+            </div>
           </div>
           {renderRow('Мужчины', maleSlots)}
           {renderRow('Женщины', femaleSlots)}

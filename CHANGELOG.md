@@ -7,6 +7,27 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.3.6] - 2026-04-22
+
+### Added
+
+- **Manual queue recovery action:** added a prominent **«Запустить очередь»** control in manager/admin panels to recover the queue when it is idle (`running = 0`) but has waiting participants (`queued > 0`).
+- **Queue recovery API:** new admin endpoints provide state and safe manual start:
+  - `GET /api/admin/manager/queue-recovery-state`
+  - `POST /api/admin/manager/queue-start`
+
+### Changed
+
+- **Queue recovery UX:** recovery button is shown near `Download Excel`; it is disabled in invalid states and communicates recovery readiness/status without starting a second running session.
+- **Manager queue controls:** `+1` / `-1` buttons are made narrower for denser queue actions layout.
+- **Data export (JSON backup):** export snapshot no longer includes event log payloads (`events`), reducing backup size while preserving business recovery data (`participants`, `competitions`, `runSessions`, `runs`, `adminSettings`).
+
+### Fixed
+
+- **Import compatibility:** JSON import remains backward-compatible with older backups that still contain `events`, and works with new lean exports where `events` is omitted.
+
+---
+
 ## [0.3.5] - 2026-04-22
 
 ### Fixed

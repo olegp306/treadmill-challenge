@@ -11,6 +11,7 @@ import {
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 import { promoteNextQueuedSessionAfterFinish } from '../services/runSessionPromotion.js';
 import { adminSettings, competitions, getDb, participants, runs, runSessions } from '../db/index.js';
+import { promoteNextQueuedToRunning } from '../services/devQueueControlService.js';
 import * as events from '../db/events.js';
 import { resetTestData } from '../services/adminService.js';
 import {
@@ -169,6 +170,91 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     scoped.get('/api/admin/manager/queue-history', async () => {
       const db = getDb();
       return { entries: runSessions.listManagerQueueHistory(db, 20) };
+    });
+
+    scoped.get('/api/admin/manager/queue-recovery-state', async () => {
+      const db = getDb();
+      const runningCount = runSessions.getCurrentRunningSessionGlobal(db) ? 1 : 0;
+      const queuedCount = runSessions.listGlobalQueuedSessionsOrdered(db).length;
+      return {
+        runningCount,
+        queuedCount,
+        canStart: runningCount === 0 && queuedCount > 0,
+      };
+    });
+
+    scoped.post('/api/admin/manager/queue-start', async (request, reply) => {
+      const db = getDb();
+      const runningCount = runSessions.getCurrentRunningSessionGlobal(db) ? 1 : 0;
+      const queuedCount = runSessions.listGlobalQueuedSessionsOrdered(db).length;
+      request.log.info({
+        msg: 'manual_queue_start_requested',
+        runningCount,
+        queuedCount,
+      });
+
+      if (runningCount > 0) {
+        request.log.warn({
+          msg: 'manual_queue_start_skipped_has_running',
+          runningCount,
+          queuedCount,
+        });
+        return reply.send({
+          ok: true,
+          status: 'skipped_has_running' as const,
+          message: 'Очередь уже запущена',
+          runningCount,
+          queuedCount,
+        });
+      }
+
+      if (queuedCount <= 0) {
+        request.log.warn({
+          msg: 'manual_queue_start_skipped_empty_queue',
+          runningCount,
+          queuedCount,
+        });
+        return reply.send({
+          ok: true,
+          status: 'skipped_empty_queue' as const,
+          message: 'Очередь пуста',
+          runningCount,
+          queuedCount,
+        });
+      }
+
+      try {
+        const result = await promoteNextQueuedToRunning(touchDesignerAdapter, {
+          info: (o) => request.log.info(o),
+          warn: (o) => request.log.warn(o),
+          error: (o) => request.log.error(o),
+        });
+        request.log.info({
+          msg: 'manual_queue_start_success',
+          promotedRunSessionId: result.runSessionId,
+          treadmillStatus: result.treadmillStatus,
+        });
+        return reply.send({
+          ok: true,
+          status: 'success' as const,
+          runSessionId: result.runSessionId,
+          treadmillStatus: result.treadmillStatus,
+          message: 'Очередь запущена',
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        request.log.error({
+          msg: 'manual_queue_start_failed',
+          error: message,
+        });
+        if (message === 'Already running') {
+          return reply.status(409).send({ error: 'Очередь уже запущена' });
+        }
+        if (message === 'Queue is empty') {
+          return reply.status(409).send({ error: 'Очередь пуста' });
+        }
+        return reply.status(500).send({ error: 'Не удалось запустить очередь вручную' });
+      }
     });
 
     scoped.post('/api/admin/competitions/start', async (request, reply) => {

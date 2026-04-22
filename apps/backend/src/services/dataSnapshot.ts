@@ -21,7 +21,8 @@ export type DataSnapshotV1 = {
   competitions: Record<string, unknown>[];
   runSessions: Record<string, unknown>[];
   runs: Record<string, unknown>[];
-  events: Record<string, unknown>[];
+  /** Optional for backward compatibility with old exports; ignored in new export payloads. */
+  events?: Record<string, unknown>[];
   adminSettings: { key: string; value: string }[];
 };
 
@@ -48,7 +49,6 @@ export function buildDataSnapshot(db: Db): DataSnapshotV1 {
     competitions: selectAll(db, 'competitions'),
     runSessions: selectAll(db, 'run_sessions'),
     runs: selectAll(db, 'runs'),
-    events: selectAll(db, 'events'),
     adminSettings: selectAll(db, 'admin_settings').map((r) => ({
       key: String(r.key),
       value: String(r.value),
@@ -74,8 +74,11 @@ export function validateDataSnapshot(input: unknown): { ok: true; snapshot: Data
   if (Number(meta.schemaVersion) !== DATA_SNAPSHOT_SCHEMA_VERSION) {
     return err(`Неподдерживаемый schemaVersion (ожидается ${DATA_SNAPSHOT_SCHEMA_VERSION})`);
   }
-  for (const key of ['participants', 'competitions', 'runSessions', 'runs', 'events', 'adminSettings'] as const) {
+  for (const key of ['participants', 'competitions', 'runSessions', 'runs', 'adminSettings'] as const) {
     if (!Array.isArray(input[key])) return err(`Отсутствует или не массив: ${key}`);
+  }
+  if (input.events != null && !Array.isArray(input.events)) {
+    return err('Некорректное поле events: ожидается массив');
   }
   const snap = input as DataSnapshotV1;
   for (const p of snap.participants) {
@@ -108,10 +111,12 @@ export function validateDataSnapshot(input: unknown): { ok: true; snapshot: Data
     }
     if (r.resultTime == null || r.distance == null || r.speed == null) return err(`runs: нужны resultTime, distance, speed для ${r.id}`);
   }
-  for (const e of snap.events) {
-    if (!isRecord(e)) return err('Некорректная строка events');
-    for (const f of ['id', 'sessionId', 'type', 'payload', 'createdAt']) {
-      if (e[f] == null || String(e[f]).trim() === '') return err(`events: отсутствует поле ${f}`);
+  if (Array.isArray(snap.events)) {
+    for (const e of snap.events) {
+      if (!isRecord(e)) return err('Некорректная строка events');
+      for (const f of ['id', 'sessionId', 'type', 'payload', 'createdAt']) {
+        if (e[f] == null || String(e[f]).trim() === '') return err(`events: отсутствует поле ${f}`);
+      }
     }
   }
   for (const a of snap.adminSettings) {
@@ -216,21 +221,23 @@ export function applyDataSnapshot(db: Db, snapshot: DataSnapshotV1): void {
       );
     }
 
-    const insE = db.prepare(`
-      INSERT INTO events (id, sessionId, participantId, runSessionId, type, payload, readableMessage, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    for (const r of snapshot.events) {
-      insE.run(
-        r.id,
-        r.sessionId,
-        r.participantId ?? null,
-        r.runSessionId ?? null,
-        r.type,
-        r.payload,
-        r.readableMessage != null ? String(r.readableMessage) : '',
-        r.createdAt
-      );
+    if (Array.isArray(snapshot.events)) {
+      const insE = db.prepare(`
+        INSERT INTO events (id, sessionId, participantId, runSessionId, type, payload, readableMessage, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const r of snapshot.events) {
+        insE.run(
+          r.id,
+          r.sessionId,
+          r.participantId ?? null,
+          r.runSessionId ?? null,
+          r.type,
+          r.payload,
+          r.readableMessage != null ? String(r.readableMessage) : '',
+          r.createdAt
+        );
+      }
     }
 
     const insA = db.prepare(`INSERT INTO admin_settings (key, value) VALUES (?, ?)`);
