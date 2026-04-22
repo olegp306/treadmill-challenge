@@ -9,22 +9,22 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ## [0.3.6] - 2026-04-22
 
-### Added
+### Добавлено
 
-- **Manual queue recovery action:** added a prominent **«Запустить очередь»** control in manager/admin panels to recover the queue when it is idle (`running = 0`) but has waiting participants (`queued > 0`).
-- **Queue recovery API:** new admin endpoints provide state and safe manual start:
+- **Ручное восстановление очереди:** в панелях manager/admin добавлена заметная кнопка **«Запустить очередь»** для восстановления в состоянии, когда дорожка свободна (`running = 0`), но в очереди есть участники (`queued > 0`).
+- **API восстановления очереди:** добавлены новые admin endpoint'ы для проверки состояния и безопасного ручного запуска:
   - `GET /api/admin/manager/queue-recovery-state`
   - `POST /api/admin/manager/queue-start`
 
-### Changed
+### Изменено
 
-- **Queue recovery UX:** recovery button is shown near `Download Excel`; it is disabled in invalid states and communicates recovery readiness/status without starting a second running session.
-- **Manager queue controls:** `+1` / `-1` buttons are made narrower for denser queue actions layout.
-- **Data export (JSON backup):** export snapshot no longer includes event log payloads (`events`), reducing backup size while preserving business recovery data (`participants`, `competitions`, `runSessions`, `runs`, `adminSettings`).
+- **UX восстановления очереди:** кнопка находится рядом с `Download Excel`; в невалидных состояниях она disabled и показывает корректное состояние без риска запуска второго `running`.
+- **Кнопки управления очередью в manager:** `+1` / `-1` сделаны уже для более компактного интерфейса.
+- **Экспорт данных (JSON backup):** из export snapshot удалены payload'ы логов (`events`), чтобы уменьшить размер файла при сохранении бизнес-данных восстановления (`participants`, `competitions`, `runSessions`, `runs`, `adminSettings`).
 
-### Fixed
+### Исправлено
 
-- **Import compatibility:** JSON import remains backward-compatible with older backups that still contain `events`, and works with new lean exports where `events` is omitted.
+- **Совместимость импорта:** JSON import остается обратно совместимым со старыми backup-файлами, где есть `events`, и корректно работает с новым компактным экспортом без `events`.
 
 ---
 
