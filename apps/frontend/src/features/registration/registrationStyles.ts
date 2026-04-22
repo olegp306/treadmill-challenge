@@ -898,33 +898,43 @@ export const reg: Record<string, CSSProperties> = {
   consentCardsRow: {
     display: 'flex',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'stretch',
-    gap: w(40),
+    gap: w(24),
     width: '100%',
     maxWidth: w(2000),
     marginLeft: 'auto',
     marginRight: 'auto',
     boxSizing: 'border-box',
   },
-  /** Single style for both consent cards (rules + personal data). */
+  /** Общая «плитка» карточки; ширина задаётся consentCardRow*Layout в ConsentCheckboxRow. */
   consentCard: {
-    flex: '1 1 0',
-    minWidth: w(680),
-    maxWidth: w(980),
     minHeight: 0,
     backgroundColor: 'rgba(217,217,217,0.1)',
     borderRadius: w(40),
-    padding: `${h(22)} ${w(36)} ${h(22)} ${w(28)}`,
+    padding: `${h(22)} ${w(24)} ${h(22)} ${w(20)}`,
     boxSizing: 'border-box',
     overflow: 'hidden',
     alignSelf: 'stretch',
+  },
+  /** «Правила участия» — как раньше, в пределах макса Figma. */
+  consentCardParticipationLayout: {
+    flex: '1 1 280px',
+    minWidth: w(720),
+    maxWidth: w(980),
+  },
+  /** «Обработка перс. данных» — ширина карточки под длину строки (кегль не меняется). */
+  consentCardPersonalDataLayout: {
+    flex: '0 0 auto',
+    minWidth: 'max-content',
+    maxWidth: 'none',
   },
   consentCardInner: {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: w(30),
+    gap: w(16),
     minHeight: 0,
   },
   /** Figma 717:550 / 744:270 — 120×120, r36; unchecked = empty well; checked = red tile + check (718:570). */
@@ -980,6 +990,11 @@ export const reg: Record<string, CSSProperties> = {
     minWidth: 0,
     flex: '1 1 auto',
   },
+  /** Колонка заголовка ПДн не сжимается flex’ом родителя — иначе обрезается nowrap-строка. */
+  consentCardTextColPersonalData: {
+    flex: '0 0 auto',
+    minWidth: 'max-content',
+  },
   consentCardTitle: {
     margin: 0,
     fontSize: w(36),
@@ -988,7 +1003,12 @@ export const reg: Record<string, CSSProperties> = {
     color: '#ffffff',
     textTransform: 'uppercase',
     textAlign: 'left',
+    maxWidth: '100%',
+  },
+  /** Подпись ПДн — одна строка, кегль как у «Правила участия» (только вёрстка + NBSP в тексте). */
+  consentCardTitlePersonalData: {
     whiteSpace: 'nowrap',
+    maxWidth: 'none',
   },
   consentReadBtn: {
     display: 'inline-flex',

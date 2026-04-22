@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { RegistrationFormData } from '../types';
 import { ConsentLegalModal } from '../ConsentLegalModal';
 import { ConsentCheckboxRow, PrimaryButton } from '../components';
+import { CONSENT_PARTICIPATION_LEGAL_RU } from '../consentParticipationLegalRu';
+import { PARTICIPATION_RULES_LEGAL_RU } from '../participationRulesLegalRu';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 
@@ -16,6 +18,9 @@ type Props = {
 };
 
 type DocModal = 'rules' | 'privacy' | null;
+
+/** Неразрывные пробелы — без переноса внутри «перс. данных». */
+const CONSENT_TITLE_PERSONAL_DATA = 'Обработка\u00a0перс.\u00a0данных';
 
 /** Figma 691:2835 / 718:570 / 952:1341 — согласия + модалки «Ознакомиться». */
 export function ConsentStep({
@@ -75,7 +80,7 @@ export function ConsentStep({
             checked={form.consentPersonalData}
             onChange={onChange}
             field="consentPersonalData"
-            title="Обработка персональных данных"
+            title={CONSENT_TITLE_PERSONAL_DATA}
             checkAriaLabel="Согласие на обработку персональных данных"
             onRead={() => setDocModal('privacy')}
           />
@@ -84,11 +89,8 @@ export function ConsentStep({
 
       <ConsentLegalModal
         open={docModal !== null}
-        title={
-          docModal === 'privacy'
-            ? 'Политика обработки персональных данных'
-            : 'Правила участия'
-        }
+        title={docModal === 'privacy' ? CONSENT_TITLE_PERSONAL_DATA : 'Правила участия'}
+        content={docModal === 'privacy' ? CONSENT_PARTICIPATION_LEGAL_RU : PARTICIPATION_RULES_LEGAL_RU}
         onClose={() => setDocModal(null)}
       />
     </WizardStepShell>

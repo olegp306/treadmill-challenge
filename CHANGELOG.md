@@ -7,6 +7,32 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.3.5] - 2026-04-22
+
+### Fixed
+
+- **Consent legal docs split:** registration now opens **different modal content** for each «Ознакомиться» button — «Правила участия» shows participation rules, while «Обработка перс. данных» shows the personal-data consent text.
+- **Consent text source update:** replaced consent body with the latest approved wording and removed imported page markers/artifacts from the source text before publishing.
+
+### Changed
+
+- **Legal content structure:** moved participation rules into a dedicated source file (`participationRulesLegalRu.ts`) and updated `ConsentLegalModal` to accept injected content, so doc mapping is explicit and maintainable.
+
+---
+
+## [0.3.4] - 2026-04-21
+
+### Added
+
+- **Registration — consent legal text:** full Russian «Согласие на участие и обработку персональных данных…» for the «Ознакомиться» modal (`consentParticipationLegalRu.ts`), rendered in **Druk Wide Cyr** with **uppercase** body copy; body font size is driven by **`CONSENT_PARTICIPATION_LEGAL_FONT_SIZE_PX`** (18px).
+
+### Changed
+
+- **Consent step (register):** checkbox label **«Обработка перс. данных»** with non-breaking spaces; personal-data card uses **content-based width** so the full title stays on **one line** without reducing the card title font size; consent cards row **flex-wrap** and tighter padding/gaps where needed.
+- **`ConsentLegalModal`:** scrollable body (**touch / iPad**), portal overlay unchanged.
+
+---
+
 ## [0.3.3] - 2026-04-21
 
 ### Fixed

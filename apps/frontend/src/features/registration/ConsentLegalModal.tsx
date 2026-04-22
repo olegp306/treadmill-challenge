@@ -1,20 +1,28 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ui } from '../../ui/tokens';
+import { CONSENT_PARTICIPATION_LEGAL_FONT_SIZE_PX } from './consentParticipationLegalRu';
+
+const FONT_DRUK = "'Druk Wide Cyr', 'Oswald', system-ui, sans-serif";
 
 type Props = {
   open: boolean;
   title: string;
+  content: string;
   onClose: () => void;
 };
 
 /**
- * Placeholder legal / rules viewer (Figma 952:1341+).
- * Overlay + panel + close; body content to be filled later.
+ * Модалка «Ознакомиться» с правилами / согласием (Figma 952:1341+).
+ * Прокрутка: flex + minHeight:0 + overflow; touch для iPad.
  */
-export function ConsentLegalModal({ open, title, onClose }: Props) {
+export function ConsentLegalModal({ open, title, content, onClose }: Props) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const paragraphs = content
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   useEffect(() => {
     if (!open) return;
@@ -41,7 +49,6 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
     const prevHtmlOverflow = html.style.overflow;
     const prevHtmlOverscroll = html.style.overscrollBehavior;
 
-    // Keep background fixed while modal is open; restore exactly on close.
     body.style.overflow = 'hidden';
     body.style.overscrollBehavior = 'none';
     body.style.touchAction = 'none';
@@ -87,6 +94,7 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
           width: 'min(2120px, 90vw)',
           maxWidth: '100%',
           maxHeight: 'min(1337px, 82vh)',
+          minHeight: 0,
           height: 'auto',
           backgroundColor: '#121213',
           borderRadius: 50,
@@ -165,29 +173,36 @@ export function ConsentLegalModal({ open, title, onClose }: Props) {
           </button>
         </header>
         <div
+          className="ar-reg-consent-modal-scroll"
           style={{
-            flex: 1,
+            flex: '1 1 0%',
             minHeight: 0,
-            overflow: 'auto',
-            padding: `0 clamp(24px, 2.5vw, 48px) clamp(24px, 2.5vw, 48px)`,
+            overflowY: 'scroll',
+            overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain',
+            overscrollBehaviorY: 'contain',
             touchAction: 'pan-y',
+            padding: `0 clamp(24px, 2.5vw, 48px) clamp(24px, 2.5vw, 48px)`,
           }}
         >
-          <p
-            style={{
-              margin: 0,
-              fontSize: 'clamp(18px, 1.6vw, 28px)',
-              lineHeight: 1.5,
-              color: 'rgba(255, 255, 255, 0.82)',
-              textTransform: 'none',
-              fontWeight: 400,
-              fontFamily: 'system-ui, sans-serif',
-            }}
-          >
-            Текст документа будет добавлен позже.
-          </p>
+          {paragraphs.map((block, i) => (
+            <p
+              key={i}
+              style={{
+                margin: i === paragraphs.length - 1 ? 0 : '0 0 1.1em',
+                fontSize: CONSENT_PARTICIPATION_LEGAL_FONT_SIZE_PX,
+                lineHeight: 1.35,
+                color: 'rgba(255, 255, 255, 0.92)',
+                textTransform: 'uppercase',
+                fontWeight: 400,
+                fontFamily: FONT_DRUK,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {block}
+            </p>
+          ))}
         </div>
       </div>
     </div>,

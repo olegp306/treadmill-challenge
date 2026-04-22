@@ -40,17 +40,13 @@ export function ConsentCheckboxRow({
 }: Props) {
   const applyToggle = (next: boolean) => {
     onChange({ [field]: next } as Partial<RegistrationFormData>);
-    const label =
-      field === 'consentParticipation'
-        ? 'Правила участия'
-        : 'Обработка персональных данных';
     logEvent(
       'consent_toggle',
       { field, checked: next },
       {
         readableMessage: next
-          ? `Пользователь отметил согласие: «${label}»`
-          : `Пользователь снял отметку: «${label}»`,
+          ? `Пользователь отметил согласие: «${title}»`
+          : `Пользователь снял отметку: «${title}»`,
       }
     );
   };
@@ -74,7 +70,12 @@ export function ConsentCheckboxRow({
 
   return (
     <div
-      style={reg.consentCard}
+      style={{
+        ...reg.consentCard,
+        ...(field === 'consentPersonalData'
+          ? reg.consentCardPersonalDataLayout
+          : reg.consentCardParticipationLayout),
+      }}
       role="checkbox"
       aria-checked={checked}
       tabIndex={0}
@@ -100,8 +101,20 @@ export function ConsentCheckboxRow({
             ) : null}
           </span>
         </label>
-        <div style={reg.consentCardTextCol}>
-          <p style={reg.consentCardTitle}>{title}</p>
+        <div
+          style={{
+            ...reg.consentCardTextCol,
+            ...(field === 'consentPersonalData' ? reg.consentCardTextColPersonalData : {}),
+          }}
+        >
+          <p
+            style={{
+              ...reg.consentCardTitle,
+              ...(field === 'consentPersonalData' ? reg.consentCardTitlePersonalData : {}),
+            }}
+          >
+            {title}
+          </p>
           <button
             type="button"
             className="ar-reg-wizard-consent-read"
