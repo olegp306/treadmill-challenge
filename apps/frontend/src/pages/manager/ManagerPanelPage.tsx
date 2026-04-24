@@ -4,11 +4,19 @@ import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeName } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
 
-type ManagerTab = 'queue' | 'runs' | 'system';
+type ManagerTab = 'queue' | 'runs' | 'system' | 'suspension';
 
 type HistoryRow = Awaited<ReturnType<typeof api.adminManagerQueueHistory>>['entries'][number];
 
-type EditParticipantState = { id: string; firstName: string; lastName: string; phone: string };
+type EditParticipantState = {
+  id: string;
+  runSessionId: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  resultTime: string;
+  resultDistance: string;
+};
 
 type Slot = {
   runTypeId: RunTypeId;
@@ -29,6 +37,9 @@ type QueueRecoveryState = {
   canStart: boolean;
 };
 
+type QuickRunTypeFilter = RunTypeId | null;
+type QuickSexFilter = Gender | null;
+
 function slotLabel(slot: Slot): string {
   const sex = slot.sex === 'male' ? 'Мужчины' : 'Женщины';
   return `${sex} — ${getRunTypeName(slot.runTypeId)}`;
@@ -46,7 +57,7 @@ function formatHistoryDisplayTime(iso: string): string {
   });
 }
 
-export default function ManagerPanelPage() {
+export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager' | 'admin' }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState<ManagerTab>('queue');
   const [busy, setBusy] = useState(false);
@@ -60,6 +71,8 @@ export default function ManagerPanelPage() {
   });
   const [queueRecoveryHint, setQueueRecoveryHint] = useState<string | null>(null);
   const [queueSearch, setQueueSearch] = useState('');
+  const [quickRunTypeFilter, setQuickRunTypeFilter] = useState<QuickRunTypeFilter>(null);
+  const [quickSexFilter, setQuickSexFilter] = useState<QuickSexFilter>(null);
   const [editParticipant, setEditParticipant] = useState<EditParticipantState | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(null);
@@ -68,6 +81,8 @@ export default function ManagerPanelPage() {
 
   const [restartPin, setRestartPin] = useState('');
   const [restartConfirm, setRestartConfirm] = useState(false);
+  const [suspensionState, setSuspensionState] = useState<{ backupPath: string; createdAt: string } | null>(null);
+  const [suspensionBusy, setSuspensionBusy] = useState(false);
 
   const maleSlots = useMemo(() => slots.filter((s) => s.sex === 'male'), [slots]);
   const femaleSlots = useMemo(() => slots.filter((s) => s.sex === 'female'), [slots]);
@@ -76,6 +91,12 @@ export default function ManagerPanelPage() {
     const res = await api.adminManagerQueueHistory();
     setHistoryRows(res.entries);
   }, []);
+
+  const loadSuspensionState = useCallback(async () => {
+    if (mode !== 'admin') return;
+    const res = await api.adminSuspensionState();
+    setSuspensionState(res.state);
+  }, [mode]);
 
   const loadQueueRecovery = useCallback(async () => {
     const res = await api.adminManagerQueueRecoveryState();
@@ -91,12 +112,22 @@ export default function ManagerPanelPage() {
 
   const displayedRows = useMemo(() => {
     const n = queueSearch.trim().toLowerCase();
-    if (!n) return historyRows;
     return historyRows.filter((r) => {
       const hay = `${r.participantFirstName} ${r.participantLastName} ${r.participantName} ${r.participantPhone}`.toLowerCase();
-      return hay.includes(n);
+      const matchesSearch = !n || hay.includes(n);
+      const matchesRunType = quickRunTypeFilter === null || r.runTypeId === quickRunTypeFilter;
+      const matchesSex = quickSexFilter === null || r.sex === quickSexFilter;
+      return matchesSearch && matchesRunType && matchesSex;
     });
-  }, [historyRows, queueSearch]);
+  }, [historyRows, queueSearch, quickRunTypeFilter, quickSexFilter]);
+
+  const toggleRunTypeFilter = useCallback((runTypeId: RunTypeId) => {
+    setQuickRunTypeFilter((prev) => (prev === runTypeId ? null : runTypeId));
+  }, []);
+
+  const toggleSexFilter = useCallback((sex: Gender) => {
+    setQuickSexFilter((prev) => (prev === sex ? null : sex));
+  }, []);
 
   const loadSlots = async () => {
     const dashboard = await api.adminDashboard();
@@ -125,14 +156,14 @@ export default function ManagerPanelPage() {
       setBusy(true);
       setError(null);
       try {
-        await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSlots()]);
+        await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSlots(), loadSuspensionState()]);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Ошибка загрузки');
       } finally {
         setBusy(false);
       }
     })();
-  }, [loadQueueHistory, loadQueueRecovery]);
+  }, [loadQueueHistory, loadQueueRecovery, loadSuspensionState]);
 
   const refreshQueue = async () => {
     setBusy(true);
@@ -174,6 +205,16 @@ export default function ManagerPanelPage() {
         lastName: editParticipant.lastName.trim(),
         phone: editParticipant.phone.trim(),
       });
+      if (mode === 'admin') {
+        const t = Number(editParticipant.resultTime);
+        const d = Number(editParticipant.resultDistance);
+        if (Number.isFinite(t) && t >= 0 && Number.isFinite(d) && d >= 0) {
+          await api.adminManagerUpdateFinishedResult(editParticipant.runSessionId, {
+            resultTime: t,
+            resultDistance: d,
+          });
+        }
+      }
       setEditParticipant(null);
       await loadQueueHistory();
     } catch (e) {
@@ -201,10 +242,76 @@ export default function ManagerPanelPage() {
     if (row.status !== 'finished') return;
     setEditParticipant({
       id: row.participantId,
+      runSessionId: row.runSessionId,
       firstName: row.participantFirstName,
       lastName: row.participantLastName,
       phone: row.participantPhone,
+      resultTime: row.resultTime != null ? String(row.resultTime) : '',
+      resultDistance: row.resultDistance != null ? String(row.resultDistance) : '',
     });
+  };
+
+  const createSuspensionBackup = async () => {
+    if (mode !== 'admin') return;
+    setSuspensionBusy(true);
+    setError(null);
+    try {
+      await api.adminExportDataDownload();
+      const created = await api.adminSuspensionCreateBackup();
+      setSuspensionState(created.state);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось создать backup');
+    } finally {
+      setSuspensionBusy(false);
+    }
+  };
+
+  const clearAfterSuspensionBackup = async () => {
+    if (mode !== 'admin' || !suspensionState) return;
+    if (!window.confirm('Удалить текущие данные и начать заново? Действие необратимо до восстановления из backup.')) return;
+    setSuspensionBusy(true);
+    setError(null);
+    try {
+      await api.adminSuspensionClearAfterBackup();
+      await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSlots(), loadSuspensionState()]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось очистить данные');
+    } finally {
+      setSuspensionBusy(false);
+    }
+  };
+
+  const restoreSuspended = async () => {
+    if (mode !== 'admin' || !suspensionState) return;
+    if (!window.confirm(`Восстановить состояние из backup от ${formatHistoryDisplayTime(suspensionState.createdAt)}?`)) return;
+    setSuspensionBusy(true);
+    setError(null);
+    try {
+      await api.adminSuspensionRestoreLast();
+      await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSlots(), loadSuspensionState()]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось восстановить backup');
+    } finally {
+      setSuspensionBusy(false);
+    }
+  };
+
+  const deleteFinishedRunEntry = async () => {
+    if (mode !== 'admin' || !editParticipant) return;
+    const pin = window.prompt('Введите PIN администратора для удаления записи о забеге');
+    if (!pin || !pin.trim()) return;
+    if (!window.confirm('Удалить запись о завершенном забеге целиком? Действие необратимо.')) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.adminManagerDeleteRunEntry(editParticipant.runSessionId, pin.trim());
+      setEditParticipant(null);
+      await loadQueueHistory();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось удалить запись о забеге');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const stopRunningSession = async (row: HistoryRow) => {
@@ -292,32 +399,43 @@ export default function ManagerPanelPage() {
   };
 
   return (
-    <main style={styles.page}>
+    <main style={{ ...styles.page, ...(mode === 'admin' ? styles.pageAdmin : {}) }}>
       <header style={styles.header}>
-        <h1 style={styles.title}>Панель менеджера</h1>
-        <div style={styles.tabs}>
-          <button style={tab === 'queue' ? styles.tabActive : styles.tab} onClick={() => setTab('queue')} type="button">
-            Очередь
-          </button>
-          <button style={tab === 'runs' ? styles.tabActive : styles.tab} onClick={() => setTab('runs')} type="button">
-            Забеги
-          </button>
-          <button style={tab === 'system' ? styles.tabActive : styles.tab} onClick={() => setTab('system')} type="button">
-            Система
+        <h1 style={{ ...styles.title, ...(mode === 'admin' ? styles.titleAdmin : {}) }}>
+          {mode === 'admin' ? 'Панель администратора' : 'Панель менеджера'}
+        </h1>
+        <div style={styles.headerRight}>
+          <div style={styles.tabs}>
+            <button style={tab === 'queue' ? styles.tabActive : styles.tab} onClick={() => setTab('queue')} type="button">
+              Очередь
+            </button>
+            {mode === 'admin' ? (
+              <button
+                style={tab === 'suspension' ? styles.tabActive : styles.tab}
+                onClick={() => setTab('suspension')}
+                type="button"
+              >
+                Приостановка
+              </button>
+            ) : null}
+            <button style={tab === 'runs' ? styles.tabActive : styles.tab} onClick={() => setTab('runs')} type="button">
+              Забеги
+            </button>
+            <button style={tab === 'system' ? styles.tabActive : styles.tab} onClick={() => setTab('system')} type="button">
+              Система
+            </button>
+          </div>
+          <button type="button" style={styles.btnHomeHeader} onClick={() => navigate('/')}>
+            На главную
           </button>
         </div>
       </header>
 
       {error ? <p style={styles.error}>{error}</p> : null}
       {busy ? <p style={styles.info}>Загрузка...</p> : null}
-
-      {tab === 'queue' ? (
-        <section>
-          <div style={styles.homeMainWrap}>
-            <button type="button" style={styles.btnHomeMain} onClick={() => navigate('/')}>
-              Вернуться на главную
-            </button>
-          </div>
+      <div style={styles.contentArea}>
+        {tab === 'queue' ? (
+          <section style={styles.sectionScrollable}>
           <div style={styles.sectionHead}>
             <h2 style={styles.h2}>История очереди</h2>
             <div style={styles.headActions}>
@@ -353,96 +471,143 @@ export default function ManagerPanelPage() {
               style={styles.searchInput}
             />
           </label>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>#</th>
-                <th style={styles.th}>Участник</th>
-                <th style={styles.th}>Забег</th>
-                <th style={styles.th}>Статус</th>
-                <th style={styles.th}>Телефон</th>
-                <th style={styles.th}>Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayedRows.map((row) => (
-                <tr
-                  key={row.runSessionId}
-                  style={
-                    row.status === 'running'
-                      ? styles.runningRow
-                      : row.status === 'finished'
-                        ? styles.finishedRow
-                        : undefined
-                  }
-                  onClick={() => openFinishedEdit(row)}
-                >
-                  <td style={styles.td}>{row.status === 'finished' ? '—' : row.queueNumber}</td>
-                  <td style={styles.td}>
-                    <div>{row.participantName}</div>
-                    <div style={styles.timeHint}>{formatHistoryDisplayTime(row.displayTime)}</div>
-                  </td>
-                  <td style={styles.td}>{row.runType}</td>
-                  <td style={styles.td}>{row.status}</td>
-                  <td style={styles.td}>{row.participantPhone ?? ''}</td>
-                  <td style={styles.td}>
-                    {row.status === 'finished' ? (
-                      <button
-                        type="button"
-                        style={styles.editOnlyBtn}
-                        disabled={busy}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openFinishedEdit(row);
-                        }}
-                      >
-                        Редактировать
-                      </button>
-                    ) : row.status === 'running' ? (
-                      <button
-                        type="button"
-                        style={styles.stopRunBtn}
-                        disabled={busy}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void stopRunningSession(row);
-                        }}
-                      >
-                        Сойти с забега
-                      </button>
-                    ) : (
-                      <div style={styles.actions} onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
-                          disabled={busy || row.status !== 'queued'}
-                          onClick={() => moveQueue(row, 'move-up')}
-                        >
-                          -1
-                        </button>
-                        <button
-                          type="button"
-                          style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
-                          disabled={busy || row.status !== 'queued'}
-                          onClick={() => moveQueue(row, 'move-down')}
-                        >
-                          +1
-                        </button>
-                        <button
-                          type="button"
-                          style={row.status === 'queued' ? styles.tailBtn : styles.tailBtnDisabled}
-                          disabled={busy || row.status !== 'queued'}
-                          onClick={() => moveQueue(row, 'move-tail')}
-                        >
-                          В конец
-                        </button>
-                      </div>
-                    )}
-                  </td>
+          <div style={styles.quickFiltersRow}>
+            <button
+              type="button"
+              style={quickRunTypeFilter === 0 ? styles.quickFilterBtnActive : styles.quickFilterBtn}
+              onClick={() => toggleRunTypeFilter(0)}
+            >
+              5 мин
+            </button>
+            <button
+              type="button"
+              style={quickRunTypeFilter === 1 ? styles.quickFilterBtnActive : styles.quickFilterBtn}
+              onClick={() => toggleRunTypeFilter(1)}
+            >
+              1 км
+            </button>
+            <button
+              type="button"
+              style={quickRunTypeFilter === 2 ? styles.quickFilterBtnActive : styles.quickFilterBtn}
+              onClick={() => toggleRunTypeFilter(2)}
+            >
+              5 км
+            </button>
+            <button
+              type="button"
+              style={quickSexFilter === 'male' ? styles.quickFilterBtnActive : styles.quickFilterBtn}
+              onClick={() => toggleSexFilter('male')}
+            >
+              М
+            </button>
+            <button
+              type="button"
+              style={quickSexFilter === 'female' ? styles.quickFilterBtnActive : styles.quickFilterBtn}
+              onClick={() => toggleSexFilter('female')}
+            >
+              Ж
+            </button>
+          </div>
+          <div style={styles.tableScrollWrap}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>#</th>
+                  <th style={styles.th}>Участник</th>
+                  <th style={styles.th}>Забег</th>
+                  <th style={styles.th}>Статус</th>
+                  <th style={styles.th}>Телефон</th>
+                  {mode === 'admin' ? <th style={styles.th}>Результат</th> : null}
+                  <th style={styles.th}>Действия</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {displayedRows.map((row) => (
+                  <tr
+                    key={row.runSessionId}
+                    style={
+                      row.status === 'running'
+                        ? styles.runningRow
+                        : row.status === 'finished'
+                          ? styles.finishedRow
+                          : undefined
+                    }
+                    onClick={() => openFinishedEdit(row)}
+                  >
+                    <td style={styles.td}>{row.status === 'finished' ? '—' : row.queueNumber}</td>
+                    <td style={styles.td}>
+                      <div>{row.participantName}</div>
+                      <div style={styles.timeHint}>{formatHistoryDisplayTime(row.displayTime)}</div>
+                    </td>
+                    <td style={styles.td}>{row.runType}</td>
+                    <td style={styles.td}>{row.status}</td>
+                    <td style={styles.td}>{row.participantPhone ?? ''}</td>
+                    {mode === 'admin' ? (
+                      <td style={styles.td}>
+                        {row.resultTime != null || row.resultDistance != null
+                          ? `${row.resultTime ?? 0} c / ${Math.round(row.resultDistance ?? 0)} м`
+                          : '—'}
+                      </td>
+                    ) : null}
+                    <td style={styles.td}>
+                      {row.status === 'finished' ? (
+                        <button
+                          type="button"
+                          style={styles.editOnlyBtn}
+                          disabled={busy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openFinishedEdit(row);
+                          }}
+                        >
+                          Редактировать
+                        </button>
+                      ) : row.status === 'running' ? (
+                        <button
+                          type="button"
+                          style={styles.stopRunBtn}
+                          disabled={busy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void stopRunningSession(row);
+                          }}
+                        >
+                          Сойти с забега
+                        </button>
+                      ) : (
+                        <div style={styles.actions} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
+                            disabled={busy || row.status !== 'queued'}
+                            onClick={() => moveQueue(row, 'move-up')}
+                          >
+                            -1
+                          </button>
+                          <button
+                            type="button"
+                            style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
+                            disabled={busy || row.status !== 'queued'}
+                            onClick={() => moveQueue(row, 'move-down')}
+                          >
+                            +1
+                          </button>
+                          <button
+                            type="button"
+                            style={row.status === 'queued' ? styles.tailBtn : styles.tailBtnDisabled}
+                            disabled={busy || row.status !== 'queued'}
+                            onClick={() => moveQueue(row, 'move-tail')}
+                          >
+                            В конец
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {editParticipant ? (
             <div
               role="presentation"
@@ -452,8 +617,9 @@ export default function ManagerPanelPage() {
               <div role="dialog" style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{ margin: '0 0 12px', fontSize: 18 }}>Участник (завершил забег)</h3>
                 <p style={{ margin: '0 0 14px', fontSize: 13, color: '#888' }}>
-                  Изменяются только фамилия, имя и телефон. Нажмите строку в таблице снова после сохранения при
-                  необходимости.
+                  {mode === 'admin'
+                    ? 'Для admin доступны фамилия, имя, телефон и результат завершенного забега. Также можно удалить запись о забеге целиком.'
+                    : 'Изменяются только фамилия, имя и телефон. Нажмите строку в таблице снова после сохранения при необходимости.'}
                 </p>
                 <label style={styles.modalField}>
                   Фамилия
@@ -479,10 +645,40 @@ export default function ManagerPanelPage() {
                     onChange={(e) => setEditParticipant({ ...editParticipant, phone: e.target.value })}
                   />
                 </label>
-                <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                {mode === 'admin' ? (
+                  <>
+                    <label style={styles.modalField}>
+                      Результат (сек)
+                      <input
+                        style={styles.input}
+                        value={editParticipant.resultTime}
+                        onChange={(e) => setEditParticipant({ ...editParticipant, resultTime: e.target.value })}
+                      />
+                    </label>
+                    <label style={styles.modalField}>
+                      Результат (метры)
+                      <input
+                        style={styles.input}
+                        value={editParticipant.resultDistance}
+                        onChange={(e) => setEditParticipant({ ...editParticipant, resultDistance: e.target.value })}
+                      />
+                    </label>
+                  </>
+                ) : null}
+                <div style={styles.modalActionsRow}>
                   <button type="button" style={styles.saveBtn} disabled={busy} onClick={() => void saveHistoryParticipant()}>
                     Сохранить
                   </button>
+                  {mode === 'admin' ? (
+                    <button
+                      type="button"
+                      style={{ ...styles.refreshBtn, borderColor: '#7a2222', background: '#341214', color: '#ffd8d8' }}
+                      disabled={busy}
+                      onClick={() => void deleteFinishedRunEntry()}
+                    >
+                      Удалить запись о забеге
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     style={styles.refreshBtn}
@@ -495,11 +691,11 @@ export default function ManagerPanelPage() {
               </div>
             </div>
           ) : null}
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      {tab === 'runs' ? (
-        <section>
+        {tab === 'runs' ? (
+          <section style={styles.sectionScrollable}>
           <h2 style={styles.h2}>Слоты забегов</h2>
           <div style={styles.slotGrid}>
             {maleSlots.map((slot, i) => (
@@ -597,11 +793,11 @@ export default function ManagerPanelPage() {
               </table>
             </>
           ) : null}
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      {tab === 'system' ? (
-        <section>
+        {tab === 'system' ? (
+          <section style={styles.sectionScrollable}>
           <h2 style={styles.h2}>Перезагрузка системы</h2>
           <p style={styles.info}>Требуется подтверждение PIN менеджера</p>
           <div style={styles.systemCard}>
@@ -622,16 +818,80 @@ export default function ManagerPanelPage() {
               Перезагрузить систему
             </button>
           </div>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
+        {tab === 'suspension' && mode === 'admin' ? (
+          <section style={styles.sectionScrollable}>
+          <h2 style={styles.h2}>Приостановка</h2>
+          <p style={styles.info}>Шаг 1: экспорт JSON в браузер + server-side backup в папку backup.</p>
+          <div style={styles.systemCard}>
+            <button type="button" style={styles.restartBtn} disabled={suspensionBusy} onClick={createSuspensionBackup}>
+              Создать backup и скачать JSON
+            </button>
+            {suspensionState ? (
+              <>
+                <p style={{ margin: 0, color: '#b8b8b8' }}>
+                  Последний backup: {formatHistoryDisplayTime(suspensionState.createdAt)}
+                </p>
+                <p style={{ margin: 0, color: '#888', fontSize: 12, wordBreak: 'break-all' }}>{suspensionState.backupPath}</p>
+                <button
+                  type="button"
+                  style={{ ...styles.restartBtn, background: '#7a2222' }}
+                  disabled={suspensionBusy}
+                  onClick={clearAfterSuspensionBackup}
+                >
+                  Удалить текущие данные и начать заново
+                </button>
+                <button
+                  type="button"
+                  style={{ ...styles.restartBtn, background: '#1f3e7a' }}
+                  disabled={suspensionBusy}
+                  onClick={restoreSuspended}
+                >
+                  Вернуться к забегу, приостановленному {formatHistoryDisplayTime(suspensionState.createdAt)}
+                </button>
+              </>
+            ) : (
+              <p style={{ margin: 0, color: '#888' }}>
+                Backup еще не создан. Кнопка удаления будет доступна только после успешного backup.
+              </p>
+            )}
+          </div>
+          </section>
+        ) : null}
+      </div>
     </main>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { padding: 24, color: '#fff', background: '#121212', minHeight: '100vh', boxSizing: 'border-box' },
+  page: {
+    padding: 24,
+    color: '#fff',
+    background: '#121212',
+    height: '100vh',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  pageAdmin: {
+    background:
+      'radial-gradient(ellipse 78% 56% at 82% 92%, rgba(35, 48, 230, 0.30), rgba(17, 18, 22, 0) 60%), linear-gradient(180deg, rgba(35, 48, 230, 0.30) 0%, rgba(35, 48, 230, 0.08) 100%), #111216',
+  },
   header: { display: 'flex', gap: 16, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  headerRight: { display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' },
+  contentArea: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
+  sectionScrollable: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   title: { margin: 0, fontSize: 28, fontWeight: 700 },
+  titleAdmin: {
+    background: '#e6233a',
+    color: '#fff',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    padding: '6px 12px',
+    borderRadius: 10,
+  },
   tabs: { display: 'flex', gap: 8 },
   tab: { padding: '10px 14px', borderRadius: 10, border: '1px solid #555', background: '#1b1b1b', color: '#ddd' },
   tabActive: { padding: '10px 14px', borderRadius: 10, border: '1px solid #e6233a', background: '#2a1115', color: '#fff' },
@@ -639,22 +899,15 @@ const styles: Record<string, React.CSSProperties> = {
   h3: { margin: '20px 0 12px', fontSize: 18 },
   info: { margin: '8px 0', color: '#b8b8b8' },
   error: { margin: '8px 0', color: '#ff7b7b' },
-  homeMainWrap: {
-    display: 'flex',
-    justifyContent: 'center',
-    width: '100%',
-    marginBottom: 20,
-  },
-  btnHomeMain: {
-    width: '100%',
-    maxWidth: 560,
-    minHeight: 56,
-    padding: '14px 20px',
-    borderRadius: 14,
+  btnHomeHeader: {
+    minHeight: 42,
+    minWidth: 220,
+    padding: '8px 32px',
+    borderRadius: 10,
     border: '1px solid #e6233a',
     background: '#e6233a',
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 600,
     cursor: 'pointer',
     boxSizing: 'border-box' as const,
@@ -674,6 +927,29 @@ const styles: Record<string, React.CSSProperties> = {
   recoveryBtnMainText: { display: 'block', lineHeight: 1.1 },
   recoveryBtnSubText: { display: 'block', lineHeight: 1.1, fontSize: 11, fontWeight: 500, marginTop: 2, opacity: 0.95 },
   recoveryReason: { margin: 0, color: '#a9a9a9', fontSize: 13 },
+  quickFiltersRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' },
+  quickFilterBtn: {
+    minHeight: 30,
+    padding: '4px 10px',
+    borderRadius: 999,
+    border: '1px solid #5a5a5a',
+    background: '#1a1a1a',
+    color: '#d4d4d4',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  quickFilterBtnActive: {
+    minHeight: 30,
+    padding: '4px 10px',
+    borderRadius: 999,
+    border: '1px solid #e6233a',
+    background: '#3a141a',
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+  },
   refreshBtn: { padding: '8px 12px', borderRadius: 8, border: '1px solid #555', background: '#1e1e1e', color: '#fff' },
   downloadBtn: {
     padding: '8px 12px',
@@ -682,6 +958,13 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#13294f',
     color: '#d7e7ff',
     fontWeight: 600,
+  },
+  tableScrollWrap: {
+    flex: 1,
+    minHeight: 0,
+    overflow: 'auto',
+    border: '1px solid #2a2a2a',
+    borderRadius: 8,
   },
   table: { width: '100%', borderCollapse: 'collapse', background: '#171717' },
   th: { textAlign: 'left', padding: 10, borderBottom: '1px solid #333', fontSize: 14, color: '#ccc' },
@@ -776,13 +1059,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   modalCard: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 560,
     background: '#1a1a1a',
     border: '1px solid #444',
     borderRadius: 12,
     padding: 20,
     boxSizing: 'border-box' as const,
   },
+  modalActionsRow: { display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' },
   modalField: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12, fontSize: 14, color: '#ccc' },
   input: { width: '100%', minHeight: 34, borderRadius: 8, border: '1px solid #555', background: '#0f0f0f', color: '#fff', padding: '6px 8px', boxSizing: 'border-box' },
   saveBtn: { padding: '8px 12px', borderRadius: 8, border: '1px solid #e6233a', background: '#3a141a', color: '#fff' },

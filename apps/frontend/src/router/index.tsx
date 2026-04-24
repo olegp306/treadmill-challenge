@@ -12,7 +12,6 @@ import RunQueueBusyPage from '../pages/RunQueueBusyPage';
 import RunQueuePositionIntroPage from '../pages/RunQueuePositionIntroPage';
 import RunLeaveQueueConfirmPage from '../pages/RunLeaveQueueConfirmPage';
 import DemoRunPage from '../pages/DemoRunPage';
-import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminCompetitionPage from '../pages/admin/AdminCompetitionPage';
 import AdminArchivePage from '../pages/admin/AdminArchivePage';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
@@ -58,7 +57,7 @@ export function AppRoutes() {
         path="/admin"
         element={
           <GodAdminRoute>
-            <AdminDashboardPage />
+            <ManagerPanelPage mode="admin" />
           </GodAdminRoute>
         }
       />

@@ -1,7 +1,7 @@
 import os from 'node:os';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { ensureDb } from './db/index.js';
+import { ensureDb, getDb } from './db/index.js';
 import registerRoutes from './routes/register.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import participantRoutes from './routes/participants.js';
@@ -16,6 +16,7 @@ import { registerTouchDesignerOscRunResultHandler } from './integrations/touchde
 import { touchDesignerAdapter } from './integrations/touchdesigner/adapter.js';
 import { submitRunSessionResult } from './services/runResultService.js';
 import { startDataSnapshotBackupScheduler } from './services/dataSnapshotBackup.js';
+import * as eventLogs from './db/events.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -78,6 +79,30 @@ async function main() {
   });
   app.addHook('onClose', async () => {
     backupScheduler.stop();
+  });
+
+  const pruneEvents = () => {
+    try {
+      const res = eventLogs.pruneEventsRetention(getDb());
+      if (res.deletedByAge > 0 || res.deletedByLimit > 0) {
+        app.log.info({
+          msg: 'events_retention_pruned',
+          deletedByAge: res.deletedByAge,
+          deletedByLimit: res.deletedByLimit,
+          remaining: res.remaining,
+        });
+      }
+    } catch (e) {
+      app.log.warn({
+        msg: 'events_retention_failed',
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  };
+  pruneEvents();
+  const eventsRetentionTimer = setInterval(pruneEvents, 60 * 60 * 1000);
+  app.addHook('onClose', async () => {
+    clearInterval(eventsRetentionTimer);
   });
 
   app.get('/health', async () => ({ status: 'ok' }));

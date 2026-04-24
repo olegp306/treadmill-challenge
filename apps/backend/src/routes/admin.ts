@@ -1,6 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import {
   getRunTypeById,
@@ -35,6 +37,7 @@ import {
   buildExportDownloadFilename,
   validateDataSnapshot,
 } from '../services/dataSnapshot.js';
+import { writeDataSnapshotBackup } from '../services/dataSnapshotBackup.js';
 import {
   buildLeaderboardsExportFilename,
   buildLeaderboardsWorkbookXlsxBuffer,
@@ -48,7 +51,7 @@ function getAdminPinFromRequest(request: FastifyRequest): string | null {
 }
 
 function getGodAdminPins(db: ReturnType<typeof getDb>): Set<string> {
-  const pins = new Set<string>(['555555']);
+  const pins = new Set<string>(['191181']);
   const configured = adminSettings.getAdminPin(db)?.trim();
   if (configured) pins.add(configured);
   return pins;
@@ -82,6 +85,45 @@ async function assertAdmin(request: FastifyRequest, reply: FastifyReply): Promis
 function parseRunTypeId(v: unknown): RunTypeId | null {
   const n = typeof v === 'number' ? v : Number(v);
   return isRunTypeId(n) ? n : null;
+}
+
+type SuspensionState = {
+  backupPath: string;
+  createdAt: string;
+};
+
+function resolveBackupBaseDir(): string {
+  const raw = process.env.DATA_SNAPSHOT_BACKUP_DIR?.trim();
+  if (!raw) return path.resolve(process.cwd(), 'backup');
+  return path.isAbsolute(raw) ? raw : path.resolve(process.cwd(), raw);
+}
+
+function suspensionStateFilePath(): string {
+  return path.join(resolveBackupBaseDir(), 'suspension-state.json');
+}
+
+async function readSuspensionState(): Promise<SuspensionState | null> {
+  try {
+    const raw = await readFile(suspensionStateFilePath(), 'utf8');
+    const parsed = JSON.parse(raw) as Partial<SuspensionState>;
+    if (
+      typeof parsed.backupPath === 'string' &&
+      parsed.backupPath.trim() &&
+      typeof parsed.createdAt === 'string' &&
+      parsed.createdAt.trim()
+    ) {
+      return { backupPath: parsed.backupPath, createdAt: parsed.createdAt };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeSuspensionState(state: SuspensionState): Promise<void> {
+  const p = suspensionStateFilePath();
+  await mkdir(path.dirname(p), { recursive: true });
+  await writeFile(p, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
 }
 
 export default async function adminRoutes(app: FastifyInstance): Promise<void> {
@@ -169,7 +211,83 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
 
     scoped.get('/api/admin/manager/queue-history', async () => {
       const db = getDb();
-      return { entries: runSessions.listManagerQueueHistory(db, 20) };
+      const base = runSessions.listManagerQueueHistory(db, 20);
+      const entries = base.map((r) => {
+        const session = runSessions.getRunSessionById(db, r.runSessionId);
+        return {
+          ...r,
+          resultTime: session?.resultTime ?? null,
+          resultDistance: session?.resultDistance ?? null,
+        };
+      });
+      return { entries };
+    });
+
+    scoped.put('/api/admin/manager/queue-history/:runSessionId/result', async (request, reply) => {
+      const db = getDb();
+      const { runSessionId } = request.params as { runSessionId: string };
+      const body = (request.body ?? {}) as { resultTime?: unknown; resultDistance?: unknown };
+      const resultTime = Number(body.resultTime);
+      const resultDistance = Number(body.resultDistance);
+      if (!Number.isFinite(resultTime) || resultTime < 0 || !Number.isFinite(resultDistance) || resultDistance < 0) {
+        return reply.status(400).send({ error: 'resultTime/resultDistance must be non-negative numbers' });
+      }
+      const session = runSessions.getRunSessionById(db, runSessionId);
+      if (!session || session.status !== 'finished') {
+        return reply.status(404).send({ error: 'Finished run session not found' });
+      }
+      runSessions.updateSessionResults(db, runSessionId, resultTime, resultDistance);
+      const run = db
+        .prepare(`SELECT id FROM runs WHERE runSessionId = ? ORDER BY createdAt DESC, id DESC LIMIT 1`)
+        .get(runSessionId) as { id: string } | undefined;
+      if (run) {
+        runs.updateRunMetrics(db, run.id, resultTime, resultDistance);
+      }
+      return reply.send({ ok: true });
+    });
+
+    scoped.delete('/api/admin/manager/queue-history/:runSessionId/entry', async (request, reply) => {
+      const db = getDb();
+      const { runSessionId } = request.params as { runSessionId: string };
+      const body = (request.body ?? {}) as { pin?: unknown };
+      const pin = typeof body.pin === 'string' ? body.pin.trim() : '';
+      if (!pin || !isGodAdminPin(db, pin)) {
+        return reply.status(401).send({ error: 'Неверный PIN администратора' });
+      }
+      const session = runSessions.getRunSessionById(db, runSessionId);
+      if (!session || session.status !== 'finished') {
+        return reply.status(404).send({ error: 'Finished run session not found' });
+      }
+      const participant = participants.getParticipantById(db, session.participantId);
+      const runsToDelete = db
+        .prepare(`SELECT id, resultTime, distance FROM runs WHERE runSessionId = ? ORDER BY createdAt ASC, id ASC`)
+        .all(runSessionId) as Array<{ id: string; resultTime: number; distance: number }>;
+      const competition = competitions.getCompetitionById(db, session.competitionId);
+      const wasWinnerEntry = competition?.winnerRunSessionId === runSessionId;
+      db.prepare(`DELETE FROM runs WHERE runSessionId = ?`).run(runSessionId);
+      db.prepare(`DELETE FROM run_sessions WHERE id = ?`).run(runSessionId);
+      if (wasWinnerEntry) {
+        db.prepare(`UPDATE competitions SET winnerRunSessionId = NULL WHERE id = ?`).run(session.competitionId);
+      }
+      runSessions.renumberQueuedSessions(db, session.competitionId);
+      request.log.warn({
+        msg: 'admin_finished_run_entry_deleted',
+        actorRole: 'god_admin',
+        actorIp: request.ip,
+        deletedAt: new Date().toISOString(),
+        runSessionId,
+        competitionId: session.competitionId,
+        runTypeId: session.runTypeId,
+        runType: session.runType,
+        status: session.status,
+        wasWinnerEntry,
+        participantId: session.participantId,
+        participantFirstName: participant?.firstName ?? null,
+        participantLastName: participant?.lastName ?? null,
+        participantPhone: participant?.phone ?? null,
+        deletedRuns: runsToDelete.map((r) => ({ runId: r.id, resultTime: r.resultTime, distance: r.distance })),
+      });
+      return reply.send({ ok: true, deletedRuns: runsToDelete.length, deletedRunSessionId: runSessionId });
     });
 
     scoped.get('/api/admin/manager/queue-recovery-state', async () => {
@@ -882,6 +1000,74 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         }
       }
     );
+
+    scoped.get('/api/admin/suspension/state', async () => {
+      const state = await readSuspensionState();
+      return { state };
+    });
+
+    scoped.post('/api/admin/suspension/create-backup', async (request, reply) => {
+      try {
+        const created = await writeDataSnapshotBackup({
+          info: (o) => request.log.info(o),
+          warn: (o) => request.log.warn(o),
+          error: (o) => request.log.error(o),
+        });
+        const state: SuspensionState = {
+          backupPath: created.path,
+          createdAt: new Date().toISOString(),
+        };
+        await writeSuspensionState(state);
+        return reply.send({ ok: true, state });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Failed to create backup';
+        return reply.status(500).send({ error: msg });
+      }
+    });
+
+    scoped.post('/api/admin/suspension/clear-after-backup', async (_request, reply) => {
+      const state = await readSuspensionState();
+      if (!state) return reply.status(400).send({ error: 'Сначала создайте backup на вкладке Приостановка' });
+      const db = getDb();
+      const empty = {
+        meta: {
+          exportFormatVersion: 1 as const,
+          schemaVersion: 1 as const,
+          createdAt: new Date().toISOString(),
+          appVersion: getAppVersion(),
+          photosNote: 'paths_only_not_binary' as const,
+        },
+        participants: [],
+        competitions: [],
+        runSessions: [],
+        runs: [],
+        events: [],
+        adminSettings: [],
+      };
+      applyDataSnapshot(db, empty);
+      ensureActiveCompetitionsForAllSlots();
+      return reply.send({ ok: true });
+    });
+
+    scoped.post('/api/admin/suspension/restore-last', async (_request, reply) => {
+      const state = await readSuspensionState();
+      if (!state) return reply.status(404).send({ error: 'Нет сохраненного приостановленного забега' });
+      if (!existsSync(state.backupPath)) {
+        return reply.status(404).send({ error: 'Файл backup не найден на сервере' });
+      }
+      try {
+        const raw = await readFile(state.backupPath, 'utf8');
+        const parsed = validateDataSnapshot(JSON.parse(raw));
+        if (!parsed.ok) return reply.status(400).send({ error: parsed.error });
+        const db = getDb();
+        applyDataSnapshot(db, parsed.snapshot);
+        ensureActiveCompetitionsForAllSlots();
+        return reply.send({ ok: true, restoredFrom: state });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Restore failed';
+        return reply.status(500).send({ error: msg });
+      }
+    });
 
     scoped.post('/api/admin/test-data/reset', async (_request, reply) => {
       try {

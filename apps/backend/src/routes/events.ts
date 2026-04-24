@@ -48,7 +48,7 @@ export default async function eventsRoutes(app: FastifyInstance): Promise<void> 
     }
     try {
       const db = getDb();
-      const id = events.insertEvent(db, {
+      const result = events.insertEvent(db, {
         sessionId,
         participantId: parsed.participantId ?? null,
         runSessionId: parsed.runSessionId ?? null,
@@ -56,7 +56,7 @@ export default async function eventsRoutes(app: FastifyInstance): Promise<void> 
         payloadJson,
         readableMessage: parsed.readableMessage ?? '',
       });
-      return reply.status(201).send({ ok: true, id });
+      return reply.status(201).send({ ok: true, id: result.id, throttled: result.throttled });
     } catch (err) {
       request.log.error(err);
       return reply.status(500).send({ error: 'Failed to store event' });

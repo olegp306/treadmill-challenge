@@ -1,5 +1,5 @@
 import type { CSSProperties, Ref, RefObject } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { api } from '../api/client';
@@ -8,15 +8,15 @@ import { ScreenContainer } from '../arOzio/ScreenContainer';
 import { h, w } from '../arOzio/dimensions';
 import type { LeaderboardEntry } from '../hooks/useLeaderboard';
 import { getRunOption } from '../features/run-selection/runOptions';
-import { FooterActionsRow } from '../ui/components/FooterActionsRow';
+import { td } from '../features/td/tdTokens';
 import { HeaderChrome } from '../ui/components/HeaderChrome';
 import { Sheet } from '../ui/components/Sheet';
 import { ui } from '../ui/tokens';
 
-/** Стабильная высота списка: не больше 7 строк (top 7) на колонку. */
-const MAX_LEADERBOARD_ROWS = 7;
+/** Стабильная высота фоновых колонок: до 10 строк. */
+const MAX_LEADERBOARD_ROWS = 10;
 
-/** Порядок карусели: 3 мужских зачёта, затем 3 женских (те же форматы). */
+/** Загрузка данных: 3 мужских зачёта + 3 женских (индексы 0–2 и 3–5). Отображение: всегда один пол + три формата. */
 const CAROUSEL_ORDER: Array<{ runTypeId: RunTypeId; sex: Gender }> = [
   { runTypeId: 0, sex: 'male' },
   { runTypeId: 1, sex: 'male' },
@@ -26,7 +26,13 @@ const CAROUSEL_ORDER: Array<{ runTypeId: RunTypeId; sex: Gender }> = [
   { runTypeId: 2, sex: 'female' },
 ];
 
+function slideIndexFor(runTypeId: RunTypeId, sex: Gender): number {
+  return sex === 'male' ? runTypeId : runTypeId + 3;
+}
+
 const CAROUSEL_FADE_MS = 220;
+/** Figma node 939:1141 — Outline/Arrow Right 2; для «назад» используем отражение по X. */
+const FIGMA_ARROW_NEXT_ICON = 'https://www.figma.com/api/mcp/asset/a31f25a5-7712-41cb-aa93-c859c2f56928';
 
 function parseLeaderboardScope(searchParams: URLSearchParams): { runTypeId: RunTypeId; sex: Gender } | null {
   const rt = searchParams.get('runTypeId');
@@ -55,17 +61,34 @@ function globalMetric(entry: LeaderboardEntry): string {
   return `${formatTimeMmSs(entry.resultTime)} · ${Math.round(entry.distance)} м`;
 }
 
-function filterEntries(entries: LeaderboardEntry[], q: string): LeaderboardEntry[] {
-  const t = q.trim().toLowerCase();
-  if (!t) return entries;
-  return entries.filter((e) => e.participantName.toLowerCase().includes(t));
-}
-
 type SlideState = {
   loading: boolean;
   error: string | null;
   entries: LeaderboardEntry[];
 };
+
+type NameSearchMatch = { runTypeId: RunTypeId; sex: Gender; participantId: string; runId: string };
+
+/** Точное совпадение полной строки имени (после trim). */
+function collectExactNameMatches(slides: SlideState[], needle: string): NameSearchMatch[] {
+  const t = needle.trim();
+  if (t.length < 3) return [];
+  const out: NameSearchMatch[] = [];
+  CAROUSEL_ORDER.forEach((scope, slideIdx) => {
+    const entries = slides[slideIdx]?.entries ?? [];
+    for (const e of entries) {
+      if (e.participantName.trim() === t) {
+        out.push({
+          runTypeId: scope.runTypeId,
+          sex: scope.sex,
+          participantId: e.participantId,
+          runId: e.runId,
+        });
+      }
+    }
+  });
+  return out;
+}
 
 function emptySlide(): SlideState {
   return { loading: true, error: null, entries: [] };
@@ -73,20 +96,36 @@ function emptySlide(): SlideState {
 
 export default function LeaderboardPage() {
   const [searchParams] = useSearchParams();
+  /** Какой формат забега (0/1/2) в центре; левый/правый — соседи по кругу среди трёх форматов. */
   const [carouselIndex, setCarouselIndex] = useState(0);
+  /** Все три лидерборда показывают зачёты только этого пола. */
+  const [selectedSex, setSelectedSex] = useState<Gender>('male');
   const [slides, setSlides] = useState<SlideState[]>(() =>
     Array.from({ length: 6 }, () => emptySlide())
   );
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInputDraft, setSearchInputDraft] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [nameSearchMatches, setNameSearchMatches] = useState<NameSearchMatch[]>([]);
+  const [nameSearchMatchIndex, setNameSearchMatchIndex] = useState(0);
   /** Подсветка только после успешного разрешения `?runSessionId=` (не из URL participant id). */
   const [highlightParticipantId, setHighlightParticipantId] = useState<string | undefined>(undefined);
   const [resolvedHighlightScope, setResolvedHighlightScope] = useState<{
     runTypeId: RunTypeId;
     sex: Gender;
   } | null>(null);
+  /** Подсветка строки после поиска по имени (кнопка «Найти»). */
+  const [searchHighlightParticipantId, setSearchHighlightParticipantId] = useState<string | undefined>(
+    undefined
+  );
+  const [searchHighlightRunId, setSearchHighlightRunId] = useState<string | undefined>(undefined);
+  const [searchHighlightScope, setSearchHighlightScope] = useState<{
+    runTypeId: RunTypeId;
+    sex: Gender;
+  } | null>(null);
   const [isCarouselFading, setIsCarouselFading] = useState(false);
 
   const highlightRef = useRef<HTMLDivElement | null>(null);
+  const searchRowRef = useRef<HTMLDivElement | null>(null);
   const urlScopeSynced = useRef(false);
   const fadeTimerRef = useRef<number | null>(null);
 
@@ -123,16 +162,18 @@ export default function LeaderboardPage() {
       setResolvedHighlightScope(null);
       return;
     }
+    setNameSearchMatches([]);
+    setSearchHighlightParticipantId(undefined);
+    setSearchHighlightRunId(undefined);
+    setSearchHighlightScope(null);
     let cancelled = false;
     void (async () => {
       try {
         const session = await api.getRunSessionState(raw);
         const participant = await api.getParticipant(session.participantId);
         if (cancelled) return;
-        const idx = CAROUSEL_ORDER.findIndex(
-          (s) => s.runTypeId === session.runTypeId && s.sex === participant.sex
-        );
-        if (idx >= 0) setCarouselIndex(idx);
+        setSelectedSex(participant.sex);
+        setCarouselIndex(session.runTypeId);
         setHighlightParticipantId(session.participantId);
         setResolvedHighlightScope({ runTypeId: session.runTypeId, sex: participant.sex });
       } catch {
@@ -153,24 +194,21 @@ export default function LeaderboardPage() {
     if (searchParams.get('runSessionId')) return;
     const scope = parseLeaderboardScope(searchParams);
     if (!scope) return;
-    const idx = CAROUSEL_ORDER.findIndex(
-      (s) => s.runTypeId === scope.runTypeId && s.sex === scope.sex
-    );
-    if (idx >= 0) {
-      setCarouselIndex(idx);
-      urlScopeSynced.current = true;
-    }
+    setSelectedSex(scope.sex);
+    setCarouselIndex(scope.runTypeId);
+    urlScopeSynced.current = true;
   }, [searchParams]);
 
   const switchCarouselWithFade = useCallback((nextIndex: number) => {
-    if (nextIndex === carouselIndex) return;
+    const normalized = ((nextIndex % 3) + 3) % 3;
+    if (normalized === carouselIndex) return;
     if (fadeTimerRef.current !== null) {
       window.clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = null;
     }
     setIsCarouselFading(true);
     fadeTimerRef.current = window.setTimeout(() => {
-      setCarouselIndex(nextIndex);
+      setCarouselIndex(normalized);
       setIsCarouselFading(false);
       fadeTimerRef.current = null;
     }, CAROUSEL_FADE_MS);
@@ -185,56 +223,105 @@ export default function LeaderboardPage() {
     };
   }, []);
 
-  const leftIdx = (carouselIndex + 5) % 6;
-  const centerIdx = carouselIndex;
-  const rightIdx = (carouselIndex + 1) % 6;
+  useEffect(() => {
+    if (searchInputDraft.trim().length >= 3) return;
+    setNameSearchMatches([]);
+    setNameSearchMatchIndex(0);
+    setSearchHighlightParticipantId(undefined);
+    setSearchHighlightRunId(undefined);
+    setSearchHighlightScope(null);
+  }, [searchInputDraft]);
 
-  const centerScope = CAROUSEL_ORDER[centerIdx];
+  const leftRunType = ((carouselIndex + 2) % 3) as RunTypeId;
+  const centerRunType = carouselIndex as RunTypeId;
+  const rightRunType = ((carouselIndex + 1) % 3) as RunTypeId;
 
-  const showHighlight =
+  const leftIdx = slideIndexFor(leftRunType, selectedSex);
+  const centerIdx = slideIndexFor(centerRunType, selectedSex);
+  const rightIdx = slideIndexFor(rightRunType, selectedSex);
+
+  const centerScope = { runTypeId: centerRunType, sex: selectedSex };
+
+  const urlHighlightVisible =
     highlightParticipantId !== undefined &&
     resolvedHighlightScope !== null &&
     centerScope.runTypeId === resolvedHighlightScope.runTypeId &&
     centerScope.sex === resolvedHighlightScope.sex;
 
-  const centerEntriesRaw = slides[centerIdx]?.entries ?? [];
-  const centerEntries = useMemo(
-    () => filterEntries(centerEntriesRaw, searchQuery),
-    [centerEntriesRaw, searchQuery]
-  );
+  const searchHighlightVisible =
+    searchHighlightParticipantId !== undefined &&
+    searchHighlightScope !== null &&
+    centerScope.runTypeId === searchHighlightScope.runTypeId &&
+    centerScope.sex === searchHighlightScope.sex;
 
-  const leftEntries = useMemo(
-    () => filterEntries(slides[leftIdx]?.entries ?? [], searchQuery),
-    [slides, leftIdx, searchQuery]
-  );
-  const rightEntries = useMemo(
-    () => filterEntries(slides[rightIdx]?.entries ?? [], searchQuery),
-    [slides, rightIdx, searchQuery]
+  const showHighlight = urlHighlightVisible || searchHighlightVisible;
+  const activeHighlightParticipantId = urlHighlightVisible
+    ? highlightParticipantId
+    : searchHighlightVisible
+      ? searchHighlightParticipantId
+      : undefined;
+  const activeHighlightRunId = searchHighlightVisible ? searchHighlightRunId : undefined;
+
+  const centerEntries = slides[centerIdx]?.entries ?? [];
+  const leftEntries = slides[leftIdx]?.entries ?? [];
+  const rightEntries = slides[rightIdx]?.entries ?? [];
+
+  const applyNameSearchMatch = useCallback((m: NameSearchMatch) => {
+    setSelectedSex(m.sex);
+    setCarouselIndex(m.runTypeId);
+    setSearchHighlightParticipantId(m.participantId);
+    setSearchHighlightRunId(m.runId);
+    setSearchHighlightScope({ runTypeId: m.runTypeId, sex: m.sex });
+  }, []);
+
+  const runNameSearch = useCallback(() => {
+    const q = searchInputDraft.trim();
+    if (q.length < 3) return;
+    const matches = collectExactNameMatches(slides, q);
+    setNameSearchMatches(matches);
+    if (matches.length === 0) {
+      setNameSearchMatchIndex(0);
+      setSearchHighlightParticipantId(undefined);
+      setSearchHighlightRunId(undefined);
+      setSearchHighlightScope(null);
+      return;
+    }
+    setNameSearchMatchIndex(0);
+    applyNameSearchMatch(matches[0]!);
+  }, [searchInputDraft, slides, applyNameSearchMatch]);
+
+  const cycleNameSearchMatch = useCallback(
+    (delta: -1 | 1) => {
+      if (nameSearchMatches.length <= 1) return;
+      const next = (nameSearchMatchIndex + delta + nameSearchMatches.length) % nameSearchMatches.length;
+      setNameSearchMatchIndex(next);
+      applyNameSearchMatch(nameSearchMatches[next]!);
+    },
+    [nameSearchMatches, nameSearchMatchIndex, applyNameSearchMatch]
   );
 
   useEffect(() => {
-    if (!showHighlight || !highlightRef.current) return;
+    if (!showHighlight || (!activeHighlightParticipantId && !activeHighlightRunId) || !highlightRef.current) return;
     const t = window.setTimeout(() => {
       highlightRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, 160);
     return () => clearTimeout(t);
-  }, [showHighlight, centerEntries, carouselIndex]);
+  }, [showHighlight, activeHighlightParticipantId, activeHighlightRunId, centerEntries, carouselIndex]);
 
   const shiftCarousel = useCallback((delta: -1 | 1) => {
-    const next = (carouselIndex + delta + 6) % 6;
+    const next = (carouselIndex + delta + 3) % 3;
     switchCarouselWithFade(next);
   }, [carouselIndex, switchCarouselWithFade]);
 
   const setGenderTab = useCallback((sex: Gender) => {
-    const rt = centerScope.runTypeId;
-    const idx = CAROUSEL_ORDER.findIndex((s) => s.runTypeId === rt && s.sex === sex);
-    if (idx >= 0) {
-      switchCarouselWithFade(idx);
-    }
-  }, [centerScope.runTypeId, switchCarouselWithFade]);
+    setSelectedSex(sex);
+  }, []);
 
   const centerLoading = slides[centerIdx]?.loading ?? true;
   const centerError = slides[centerIdx]?.error ?? null;
+  const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
+  const showSearchFindButton = searchInputDraft.trim().length >= 3;
+  const showSearchSwitchButtons = isSearchFocused && nameSearchMatches.length > 1;
 
   return (
     <ArOzioViewport>
@@ -246,22 +333,93 @@ export default function LeaderboardPage() {
               logoStyle={styles.logoMark}
               right={
                 <div style={styles.headerRight}>
-                  <label style={styles.searchBar}>
-                    <span style={styles.searchIcon} aria-hidden>
-                      ⌕
+                  <div
+                    ref={searchRowRef}
+                    style={{
+                      ...styles.searchRow,
+                      ...(isSearchExpanded ? styles.searchRowFocused : {}),
+                    }}
+                    onFocusCapture={() => setIsSearchFocused(true)}
+                    onBlurCapture={(e) => {
+                      const next = e.relatedTarget as Node | null;
+                      if (next && searchRowRef.current?.contains(next)) return;
+                      setIsSearchFocused(false);
+                    }}
+                  >
+                    <label
+                      style={{
+                        ...styles.searchBar,
+                        ...(isSearchExpanded ? styles.searchBarFocused : {}),
+                        ...(isSearchFocused ? styles.searchBarActiveFocus : {}),
+                      }}
+                    >
+                      <span style={styles.searchIcon} aria-hidden>
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="100%"
+                          height="100%"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2" />
+                          <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                      <input
+                        type="text"
+                        value={searchInputDraft}
+                        onChange={(e) => setSearchInputDraft(e.target.value)}
+                        placeholder={isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
+                        style={{
+                          ...styles.searchInput,
+                          ...(showSearchSwitchButtons ? styles.searchInputWithSwitchButtons : {}),
+                        }}
+                        autoComplete="off"
+                      />
+                      {showSearchSwitchButtons ? (
+                        <span style={styles.searchSwitchButtonsInInput}>
+                          <button
+                            type="button"
+                            aria-label="Предыдущий найденный участник"
+                            style={styles.searchSwitchBtnInInput}
+                            onClick={() => cycleNameSearchMatch(-1)}
+                          >
+                            <span style={styles.searchSwitchIcon}>⌃</span>
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Следующий найденный участник"
+                            style={styles.searchSwitchBtnInInput}
+                            onClick={() => cycleNameSearchMatch(1)}
+                          >
+                            <span style={styles.searchSwitchIcon}>⌄</span>
+                          </button>
+                        </span>
+                      ) : null}
+                    </label>
+                    <span
+                      style={{
+                        ...styles.searchFindBtnSlot,
+                        ...(showSearchFindButton ? styles.searchFindBtnSlotVisible : styles.searchFindBtnSlotHidden),
+                      }}
+                      aria-hidden={!showSearchFindButton}
+                    >
+                      <button
+                        type="button"
+                        style={{
+                          ...styles.searchFindBtn,
+                          ...(showSearchFindButton ? styles.searchFindBtnVisible : styles.searchFindBtnHidden),
+                        }}
+                        onClick={runNameSearch}
+                        disabled={!showSearchFindButton}
+                      >
+                        <span style={styles.searchFindBtnText}>Найти</span>
+                      </button>
                     </span>
-                    <input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Поиск"
-                      style={styles.searchInput}
-                      autoComplete="off"
-                    />
-                  </label>
-                  <Link to="/" style={styles.btnHome}>
-                    На главную
-                  </Link>
+                    <Link to="/" style={styles.btnHome}>
+                      На главную
+                    </Link>
+                  </div>
                 </div>
               }
             />
@@ -271,7 +429,7 @@ export default function LeaderboardPage() {
                 type="button"
                 style={{
                   ...styles.genderTab,
-                  ...(centerScope.sex === 'female' ? styles.genderTabActive : styles.genderTabIdle),
+                  ...(selectedSex === 'female' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
                 onClick={() => setGenderTab('female')}
               >
@@ -281,15 +439,13 @@ export default function LeaderboardPage() {
                 type="button"
                 style={{
                   ...styles.genderTab,
-                  ...(centerScope.sex === 'male' ? styles.genderTabActive : styles.genderTabIdle),
+                  ...(selectedSex === 'male' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
                 onClick={() => setGenderTab('male')}
               >
                 Мужчины
               </button>
             </div>
-
-            <p style={styles.pageTitle}>Лидерборд</p>
 
             <div
               style={{
@@ -301,25 +457,31 @@ export default function LeaderboardPage() {
               <button
                 type="button"
                 aria-label="Предыдущий зачёт"
-                style={{ ...styles.arrowBtn, left: w(8) }}
+                style={{ ...styles.arrowBtn, ...styles.arrowBtnLeft, left: w(8) }}
                 onClick={() => shiftCarousel(-1)}
               >
-                ‹
+                <img
+                  src={FIGMA_ARROW_NEXT_ICON}
+                  alt=""
+                  aria-hidden
+                  style={{ ...styles.arrowIconImageInner, transform: 'rotate(90deg)' }}
+                />
               </button>
 
               <aside
                 style={{
-                  ...styles.sideCol,
-                  ...styles.colCarouselFlank,
+                  ...styles.sideColLayer1,
+                  ...styles.colCarouselFlankLeft,
                   pointerEvents: 'none',
                 }}
                 aria-hidden
               >
                 <LeaderboardStack
                   entries={leftEntries}
-                  runTypeId={CAROUSEL_ORDER[leftIdx].runTypeId}
+                  runTypeId={leftRunType}
                   scoped
                   highlightId={undefined}
+                  highlightRunId={undefined}
                   highlightRef={null}
                   dim
                   loading={slides[leftIdx]?.loading}
@@ -328,12 +490,13 @@ export default function LeaderboardPage() {
                 />
               </aside>
 
-              <section style={{ ...styles.mainCol, ...styles.colCarouselCenter }}>
+              <section style={styles.mainColLayer2}>
                 <LeaderboardStack
                   entries={centerEntries}
                   runTypeId={centerScope.runTypeId}
                   scoped
-                  highlightId={showHighlight ? highlightParticipantId : undefined}
+                  highlightId={showHighlight ? activeHighlightParticipantId : undefined}
+                  highlightRunId={showHighlight ? activeHighlightRunId : undefined}
                   highlightRef={highlightRef}
                   dim={false}
                   loading={centerLoading}
@@ -344,17 +507,18 @@ export default function LeaderboardPage() {
 
               <aside
                 style={{
-                  ...styles.sideCol,
-                  ...styles.colCarouselFlank,
+                  ...styles.sideColLayer3,
+                  ...styles.colCarouselFlankRight,
                   pointerEvents: 'none',
                 }}
                 aria-hidden
               >
                 <LeaderboardStack
                   entries={rightEntries}
-                  runTypeId={CAROUSEL_ORDER[rightIdx].runTypeId}
+                  runTypeId={rightRunType}
                   scoped
                   highlightId={undefined}
+                  highlightRunId={undefined}
                   highlightRef={null}
                   dim
                   loading={slides[rightIdx]?.loading}
@@ -366,21 +530,17 @@ export default function LeaderboardPage() {
               <button
                 type="button"
                 aria-label="Следующий зачёт"
-                style={{ ...styles.arrowBtn, right: w(8) }}
+                style={{ ...styles.arrowBtn, ...styles.arrowBtnRight, right: w(8) }}
                 onClick={() => shiftCarousel(1)}
               >
-                ›
+                <img
+                  src={FIGMA_ARROW_NEXT_ICON}
+                  alt=""
+                  aria-hidden
+                  style={{ ...styles.arrowIconImageInner, transform: 'rotate(-90deg)' }}
+                />
               </button>
             </div>
-
-            <FooterActionsRow style={styles.footerNav}>
-              <Link to="/" style={styles.btnHomeFooter}>
-                На главную
-              </Link>
-              <Link to="/register" replace style={styles.btnParticipate}>
-                Принять участие
-              </Link>
-            </FooterActionsRow>
           </div>
         </Sheet>
       </ScreenContainer>
@@ -393,6 +553,7 @@ function LeaderboardStack({
   runTypeId,
   scoped,
   highlightId,
+  highlightRunId,
   highlightRef,
   dim,
   loading,
@@ -403,6 +564,7 @@ function LeaderboardStack({
   runTypeId: RunTypeId;
   scoped: boolean;
   highlightId?: string;
+  highlightRunId?: string;
   highlightRef: RefObject<HTMLDivElement | null> | null;
   dim: boolean;
   loading?: boolean;
@@ -410,7 +572,7 @@ function LeaderboardStack({
   emptyHint?: string;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
-  const rows = entries.slice(0, MAX_LEADERBOARD_ROWS);
+  const rows = dim ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
 
   return (
     <div
@@ -421,9 +583,14 @@ function LeaderboardStack({
       }}
     >
       <div style={styles.stackHeaderBar}>
-        <p style={styles.stackHeaderText}>{title}</p>
+        <p style={styles.stackHeaderLabel}>{title}</p>
       </div>
-      <div style={styles.stackBody}>
+      <div
+        style={{
+          ...styles.stackBody,
+          ...(dim ? styles.stackBodyDim : styles.stackBodyMain),
+        }}
+      >
         {loading ? <p style={styles.muted}>Загрузка…</p> : null}
         {!loading && error ? <p style={styles.err}>{error}</p> : null}
         {!loading && !error && rows.length === 0 && !dim ? (
@@ -431,7 +598,9 @@ function LeaderboardStack({
         ) : null}
         {!loading && !error && rows.length > 0
           ? rows.map((e, i) => {
-              const isHighlight = Boolean(highlightId) && e.participantId === highlightId;
+              const isHighlight =
+                (highlightRunId !== undefined && e.runId === highlightRunId) ||
+                (highlightRunId === undefined && Boolean(highlightId) && e.participantId === highlightId);
               const rowRef = isHighlight && highlightRef ? highlightRef : undefined;
               const top3 = i < 3;
               const resultStr = scoped ? primaryMetric(e, runTypeId) : globalMetric(e);
@@ -441,16 +610,25 @@ function LeaderboardStack({
                   ref={rowRef as Ref<HTMLDivElement> | undefined}
                   style={{
                     ...styles.lbRow,
+                    ...(dim ? styles.lbRowBack : {}),
                     ...(top3 ? styles.lbRowTop : {}),
-                    ...(isHighlight ? styles.lbRowHighlight : {}),
                   }}
                 >
                   <div style={styles.lbRowLeft}>
-                    <span style={styles.lbRank}>{e.rank ?? i + 1}</span>
-                    <span style={styles.lbName}>{e.participantName}</span>
-                    {isHighlight ? <span style={styles.lbYouBadge}>это ты</span> : null}
+                    <span style={{ ...styles.lbRank, ...(dim ? styles.lbRankBack : {}) }}>
+                      {e.rank ?? i + 1}
+                    </span>
+                    <span
+                      style={{
+                        ...styles.lbName,
+                        ...(dim ? styles.lbNameBack : {}),
+                        ...(isHighlight ? styles.lbNameHighlight : {}),
+                      }}
+                    >
+                      {e.participantName}
+                    </span>
                   </div>
-                  <span style={styles.lbResult}>{resultStr}</span>
+                  <span style={{ ...styles.lbResult, ...(dim ? styles.lbResultBack : {}) }}>{resultStr}</span>
                 </div>
               );
             })
@@ -463,11 +641,16 @@ function LeaderboardStack({
   );
 }
 
+/** ~2× прежней ширины колонки: слой 1 (слева) и 3 (справа) — задний план, слой 2 (центр) — передний. */
+const LB_LAYER_SIDE_WIDTH = w(1480);
+const LB_LAYER_CENTER_WIDTH = w(1580);
+
 const styles: Record<string, CSSProperties> = {
   page: {
     gap: h(12),
     justifyContent: 'flex-start',
     minHeight: '100%',
+    overflow: 'hidden',
   },
   sheet: {
     flex: 1,
@@ -484,6 +667,7 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: h(24),
     minHeight: '100%',
+    overflow: 'hidden',
     boxSizing: 'border-box',
   },
   headerRow: {
@@ -510,8 +694,67 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: w(32),
+    gap: w(20),
     flexWrap: 'wrap',
+  },
+  searchRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: w(14),
+    flexWrap: 'nowrap',
+    transition: 'transform 220ms ease, width 220ms ease',
+    transformOrigin: 'center center',
+    width: w(1040),
+    justifyContent: 'flex-start',
+  },
+  searchRowFocused: {
+    width: w(1220),
+    justifyContent: 'flex-start',
+  },
+  searchFindBtnSlot: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flexShrink: 0,
+    width: w(230),
+  },
+  searchFindBtnSlotVisible: {
+    opacity: 1,
+  },
+  searchFindBtnSlotHidden: {
+    opacity: 0,
+  },
+  searchFindBtn: {
+    flexShrink: 0,
+    minHeight: h(72),
+    padding: `${h(18)} ${w(36)}`,
+    borderRadius: w(16),
+    border: 'none',
+    background: ui.color.red,
+    color: '#fff',
+    fontFamily: '"Druk Wide Cyr"',
+    fontSize: w(24),
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    fontWeight: 500,
+    fontSynthesis: 'none',
+    cursor: 'pointer',
+    transition: 'opacity 220ms ease, transform 220ms ease',
+  },
+  searchFindBtnText: {
+    display: 'inline-block',
+    lineHeight: 1,
+  },
+  searchFindBtnVisible: {
+    opacity: 1,
+    transform: 'translateX(0)',
+    pointerEvents: 'auto',
+  },
+  searchFindBtnHidden: {
+    opacity: 0,
+    transform: 'translateX(-10px)',
+    pointerEvents: 'none',
   },
   searchBar: {
     display: 'flex',
@@ -524,11 +767,26 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(255,255,255,0.2)',
     boxSizing: 'border-box',
     minWidth: w(400),
+    width: '100%',
+    position: 'relative',
+    transition: 'min-width 220ms ease, border-color 220ms ease, box-shadow 220ms ease',
+  },
+  searchBarFocused: {
+    minWidth: w(620),
+  },
+  searchBarActiveFocus: {
+    borderColor: 'rgba(255,255,255,0.52)',
+    boxShadow: '0 0 0 1px rgba(255,255,255,0.24)',
   },
   searchIcon: {
-    fontSize: w(32),
+    width: w(30),
+    height: h(30),
     color: 'rgba(255,255,255,0.85)',
-    lineHeight: 1,
+    lineHeight: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   searchInput: {
     flex: 1,
@@ -537,9 +795,45 @@ const styles: Record<string, CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: '#fff',
-    fontSize: w(22),
-    textTransform: 'uppercase',
+    fontFamily: '"Druk Wide Cyr"',
+    fontSize: w(24),
+    fontWeight: 500,
     letterSpacing: '0.02em',
+    fontSynthesis: 'none',
+  },
+  searchInputWithSwitchButtons: {
+    paddingRight: w(84),
+  },
+  searchSwitchButtonsInInput: {
+    position: 'absolute',
+    right: w(12),
+    top: '50%',
+    transform: 'translateY(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: h(4),
+    zIndex: 2,
+  },
+  searchSwitchBtnInInput: {
+    width: w(34),
+    height: h(24),
+    borderRadius: w(7),
+    border: '1px solid rgba(255,255,255,0.45)',
+    background: 'rgba(255,255,255,0.08)',
+    color: '#fff',
+    padding: 0,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchSwitchIcon: {
+    fontFamily: td.fontDruk,
+    fontWeight: 400,
+    fontSynthesis: 'none',
+    lineHeight: 1,
+    fontSize: w(16),
+    marginTop: w(-2),
   },
   btnHome: {
     display: 'inline-flex',
@@ -550,19 +844,22 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: w(80),
     border: '1px solid rgba(255,255,255,0.3)',
     color: '#fff',
+    fontFamily: '"Druk Wide Cyr"',
     fontSize: w(22),
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
     textDecoration: 'none',
-    fontWeight: 400,
+    fontWeight: 500,
+    fontSynthesis: 'none',
+    whiteSpace: 'nowrap',
   },
   genderTabs: {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'stretch',
-    maxWidth: w(1200),
+    width: LB_LAYER_CENTER_WIDTH,
+    maxWidth: LB_LAYER_CENTER_WIDTH,
     margin: '0 auto',
-    width: '100%',
     minHeight: h(88),
     borderRadius: w(34),
     background: '#262626',
@@ -575,9 +872,12 @@ const styles: Record<string, CSSProperties> = {
     border: 'none',
     cursor: 'pointer',
     borderRadius: w(28),
-    fontSize: w(28),
+    fontFamily: '"Druk Wide Cyr"',
+    fontSize: w(30),
     textTransform: 'uppercase',
-    fontWeight: 400,
+    fontWeight: 500,
+    lineHeight: h(39),
+    fontSynthesis: 'none',
   },
   genderTabActive: {
     background: '#fff',
@@ -587,74 +887,105 @@ const styles: Record<string, CSSProperties> = {
     background: 'transparent',
     color: 'rgba(255,255,255,0.6)',
   },
-  pageTitle: {
-    margin: 0,
-    textAlign: 'center',
-    fontSize: w(52),
-    lineHeight: 1.1,
-    textTransform: 'uppercase',
-    color: '#fff',
-    fontWeight: 400,
-  },
   leaderboardRow: {
     position: 'relative',
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    gap: w(16),
+    display: 'block',
     flex: 1,
-    minHeight: h(400),
-    paddingLeft: w(100),
-    paddingRight: w(100),
+    minHeight: h(940),
+    width: '100%',
+    maxWidth: w(2360),
+    margin: '0 auto',
+    paddingLeft: 0,
+    paddingRight: 0,
     boxSizing: 'border-box',
+    overflow: 'hidden',
   },
   arrowBtn: {
     position: 'absolute' as const,
     top: '50%',
     transform: 'translateY(calc(-50% - 10px))',
-    width: w(100),
-    height: w(100),
-    borderRadius: w(48),
+    width: w(112),
+    height: w(112),
+    borderRadius: w(47),
     border: 'none',
-    background: ui.color.red,
+    background: '#e6233a',
     color: '#fff',
-    fontSize: w(56),
     lineHeight: 1,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 4,
+    zIndex: 6,
+    boxSizing: 'border-box',
+    padding: `${h(18)} ${w(18)}`,
+    transition: 'transform 160ms ease, filter 160ms ease',
   },
-  sideCol: {
-    flex: '0 1 26%',
+  arrowBtnLeft: {
+    transform: 'translate(-10%, calc(-50% - 10px))',
+  },
+  arrowBtnRight: {
+    transform: 'translate(10%, calc(-50% - 10px))',
+  },
+  arrowIconImageInner: {
+    width: '50%',
+    height: '50%',
+    display: 'block',
+    objectFit: 'contain',
+    pointerEvents: 'none',
+    flexShrink: 0,
+  },
+  /** Слой 1 — левый лидерборд, задний план; `left` = гориз. padding `HeaderChrome` (как у логотипа). */
+  sideColLayer1: {
+    position: 'absolute',
+    left: w(50),
+    top: h(48),
+    width: LB_LAYER_SIDE_WIDTH,
     minWidth: 0,
-    maxWidth: w(480),
-    alignSelf: 'stretch',
+    zIndex: 1,
+    boxSizing: 'border-box',
   },
-  colCarouselFlank: {
-    transform: 'scale(0.94) translateZ(0)',
-    opacity: 0.92,
+  /** Слой 3 — правый лидерборд; `right` = гориз. padding `HeaderChrome` (как у блока с «На главную»). */
+  sideColLayer3: {
+    position: 'absolute',
+    right: w(50),
+    top: h(48),
+    width: LB_LAYER_SIDE_WIDTH,
+    minWidth: 0,
+    zIndex: 1,
+    boxSizing: 'border-box',
+  },
+  colCarouselFlankLeft: {
+    transformOrigin: 'left center',
+    transform: 'translateX(0) scale(0.92) translateZ(0)',
+    opacity: 0.58,
     transition: 'transform 0.45s ease, opacity 0.45s ease',
   },
-  mainCol: {
-    flex: '1 1 40%',
-    minWidth: 0,
-    maxWidth: w(980),
-    zIndex: 2,
-    alignSelf: 'stretch',
+  colCarouselFlankRight: {
+    transformOrigin: 'right center',
+    transform: 'translateX(0) scale(0.92) translateZ(0)',
+    opacity: 0.58,
+    transition: 'transform 0.45s ease, opacity 0.45s ease',
   },
-  colCarouselCenter: {
-    transform: 'scale(1) translateZ(0)',
+  /** Слой 2 — центральный лидерборд, передний план, по центру, шире боковых. */
+  mainColLayer2: {
+    position: 'absolute',
+    left: '50%',
+    top: 0,
+    width: LB_LAYER_CENTER_WIDTH,
+    minWidth: 0,
+    zIndex: 4,
+    transform: 'translateX(-50%) translateZ(0)',
     transition: 'transform 0.45s ease',
+    boxSizing: 'border-box',
   },
   stackCard: {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    maxHeight: h(900),
-    borderRadius: w(36),
+    /** Стабильная высота под 10 строк + шапка + паддинги списка (без скачков при <10). */
+    minHeight: h(880),
+    maxHeight: h(980),
+    borderRadius: w(20),
     borderTop: '2px solid rgba(255,255,255,0.9)',
     background: 'linear-gradient(180deg, #000000 0%, #181818 100%)',
     boxSizing: 'border-box',
@@ -662,25 +993,41 @@ const styles: Record<string, CSSProperties> = {
   },
   stackCardMain: {
     border: '1px solid rgba(255, 100, 119, 0.6)',
-    boxShadow: '0 0 0 1px rgba(230, 35, 58, 0.45)',
+    boxShadow:
+      '0 0 0 1px rgba(230, 35, 58, 0.45), 0 18px 48px rgba(0,0,0,0.55), 0 0 60px rgba(230, 35, 58, 0.12)',
   },
   stackDim: {
-    opacity: 0.35,
-    filter: 'blur(0.3px)',
-    maxHeight: h(820),
+    opacity: 0.9,
+    filter: 'grayscale(1) saturate(0)',
   },
   stackHeaderBar: {
-    background: ui.color.red,
-    padding: `${h(18)} ${w(16)}`,
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    background: 'transparent',
+    padding: `${h(28)} ${w(22)} ${h(24)}`,
     flexShrink: 0,
+    boxSizing: 'border-box',
   },
-  stackHeaderText: {
+  stackHeaderLabel: {
     margin: 0,
+    width: '100%',
     textAlign: 'center',
-    fontSize: w(30),
+    background: '#e6233a',
+    padding: `${h(24)} ${w(18)}`,
+    display: 'block',
+    borderRadius: w(28),
+    fontFamily: '"Druk Wide Cyr"',
+    /** На шаг крупнее табов «Мужчины / Женщины» (там w(30)). */
+    /** +10% к прежним w(34) → ~37.4 */
+    fontSize: w(38),
     color: '#fff',
     textTransform: 'uppercase',
-    fontWeight: 400,
+    fontWeight: 500,
+    fontSynthesis: 'none',
+    letterSpacing: '0.03em',
+    lineHeight: 1.15,
   },
   stackBody: {
     flex: 1,
@@ -691,6 +1038,22 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: h(14),
     WebkitOverflowScrolling: 'touch',
+    scrollBehavior: 'smooth',
+    overscrollBehavior: 'contain',
+  },
+  /** Центральный leaderboard: полный список + аккуратный тонкий scrollbar. */
+  stackBodyMain: {
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'rgba(255,255,255,0.28) transparent',
+  },
+  /** Только список: Ч/Б, без яркого цвета; шапка «забег» остаётся цветной. */
+  stackBodyDim: {
+    filter: 'grayscale(1) saturate(0) contrast(0.82) brightness(0.82)',
+  },
+  /** Задние карточки: базовый размер строки −15% к центральному w(20). */
+  lbRowBack: {
+    fontSize: w(17),
+    color: 'rgba(214,218,224,0.9)',
   },
   lbRow: {
     display: 'flex',
@@ -699,18 +1062,13 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'space-between',
     gap: w(20),
     padding: `${h(14)} ${w(14)}`,
-    borderRadius: w(22),
+    borderRadius: w(16),
     color: '#fff',
     textTransform: 'uppercase',
-    fontSize: w(24),
+    fontSize: w(20),
   },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',
-  },
-  lbRowHighlight: {
-    background: 'rgba(230, 35, 58, 0.35)',
-    outline: `2px solid ${ui.color.red}`,
-    outlineOffset: 0,
   },
   lbRowLeft: {
     display: 'flex',
@@ -720,11 +1078,23 @@ const styles: Record<string, CSSProperties> = {
     minWidth: 0,
     flex: 1,
   },
+  lbRankBack: {
+    fontSize: w(20),
+    color: 'rgba(230,233,237,0.9)',
+  },
   lbRank: {
+    fontFamily: '"Druk Wide Cyr"',
     fontStyle: 'italic',
     fontWeight: 500,
-    minWidth: w(48),
+    fontSynthesis: 'none',
+    minWidth: w(52),
     color: '#fff',
+    fontSize: w(30),
+    letterSpacing: '0.02em',
+  },
+  lbNameBack: {
+    fontSize: w(20),
+    color: 'rgba(220,224,229,0.88)',
   },
   lbName: {
     flex: 1,
@@ -732,21 +1102,25 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    fontFamily: '"Druk Wide Cyr"',
+    fontWeight: 500,
+    fontSize: w(30),
+    letterSpacing: '0.03em',
+    fontSynthesis: 'none',
   },
-  lbYouBadge: {
-    flexShrink: 0,
-    marginLeft: w(12),
-    padding: `${h(4)} ${w(12)}`,
-    borderRadius: w(20),
-    fontSize: w(16),
-    lineHeight: 1,
-    color: '#fff',
-    background: ui.color.red,
-    textTransform: 'uppercase',
+  lbNameHighlight: {
+    color: ui.color.red,
+  },
+  lbResultBack: {
+    fontSize: w(26),
+    color: 'rgba(232,236,240,0.9)',
   },
   lbResult: {
+    fontFamily: '"Druk Wide Cyr"',
     fontWeight: 500,
-    fontSize: w(28),
+    fontSynthesis: 'none',
+    fontSize: w(30),
+    letterSpacing: '0.09em',
     textAlign: 'right',
     flexShrink: 0,
   },
@@ -769,49 +1143,5 @@ const styles: Record<string, CSSProperties> = {
     textAlign: 'center',
     color: '#f85149',
     fontSize: w(24),
-  },
-  footerNav: {
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: w(32),
-    width: '100%',
-    flexShrink: 0,
-    marginTop: h(8),
-  },
-  btnHomeFooter: {
-    flex: '1 1 0',
-    minWidth: 0,
-    minHeight: h(132),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#000',
-    color: '#fff',
-    fontWeight: 400,
-    fontSize: w(42),
-    lineHeight: 1,
-    textTransform: 'uppercase',
-    textDecoration: 'none',
-    borderRadius: w(36),
-    border: `1px solid ${ui.color.panelBorder}`,
-    boxSizing: 'border-box',
-  },
-  btnParticipate: {
-    flex: '1 1 0',
-    minWidth: 0,
-    minHeight: h(132),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: ui.color.red,
-    color: '#fff',
-    fontWeight: 400,
-    fontSize: w(42),
-    lineHeight: 1,
-    textTransform: 'uppercase',
-    textDecoration: 'none',
-    borderRadius: w(36),
-    boxSizing: 'border-box',
   },
 };

@@ -346,13 +346,33 @@ export const api = {
         participantFirstName: string;
         participantLastName: string;
         participantPhone: string;
+        sex: Gender;
         runTypeId: RunTypeId;
         runType: string;
         status: 'queued' | 'running' | 'finished';
         competitionId: string;
         displayTime: string;
+        resultTime: number | null;
+        resultDistance: number | null;
       }>;
     }>('/admin/manager/queue-history');
+  },
+
+  adminManagerUpdateFinishedResult(runSessionId: string, body: { resultTime: number; resultDistance: number }) {
+    return adminRequest<{ ok: boolean }>(`/admin/manager/queue-history/${encodeURIComponent(runSessionId)}/result`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  },
+
+  adminManagerDeleteRunEntry(runSessionId: string, pin: string) {
+    return adminRequest<{ ok: boolean; deletedRuns: number; deletedRunSessionId: string }>(
+      `/admin/manager/queue-history/${encodeURIComponent(runSessionId)}/entry`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ pin }),
+      }
+    );
   },
 
   adminManagerQueueRecoveryState() {
@@ -618,6 +638,34 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(snapshot),
     });
+  },
+
+  adminSuspensionState() {
+    return adminRequest<{ state: { backupPath: string; createdAt: string } | null }>('/admin/suspension/state');
+  },
+
+  adminSuspensionCreateBackup() {
+    return adminRequest<{ ok: boolean; state: { backupPath: string; createdAt: string } }>('/admin/suspension/create-backup', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+
+  adminSuspensionClearAfterBackup() {
+    return adminRequest<{ ok: boolean }>('/admin/suspension/clear-after-backup', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+
+  adminSuspensionRestoreLast() {
+    return adminRequest<{ ok: boolean; restoredFrom: { backupPath: string; createdAt: string } }>(
+      '/admin/suspension/restore-last',
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }
+    );
   },
 
   /** Download one XLSX file with all active leaderboard sheets. */

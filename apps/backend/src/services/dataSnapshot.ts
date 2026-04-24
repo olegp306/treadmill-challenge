@@ -21,10 +21,16 @@ export type DataSnapshotV1 = {
   competitions: Record<string, unknown>[];
   runSessions: Record<string, unknown>[];
   runs: Record<string, unknown>[];
-  /** Optional for backward compatibility with old exports; ignored in new export payloads. */
+  /**
+   * Optional for backward compatibility with older backups.
+   * New exports always include `events`, but only rows with `createdAt` in the last 24 hours (see `buildDataSnapshot`).
+   */
   events?: Record<string, unknown>[];
   adminSettings: { key: string; value: string }[];
 };
+
+/** Only events newer than this relative to export time are included in JSON backup. */
+const EVENTS_EXPORT_LOOKBACK_MS = 24 * 60 * 60 * 1000;
 
 export function buildExportDownloadFilename(): string {
   const d = new Date();
@@ -36,12 +42,20 @@ function selectAll(db: Db, table: string): Record<string, unknown>[] {
   return db.prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
 }
 
+function selectEventsForExport(db: Db, exportAt: Date): Record<string, unknown>[] {
+  const cutoffIso = new Date(exportAt.getTime() - EVENTS_EXPORT_LOOKBACK_MS).toISOString();
+  return db
+    .prepare(`SELECT * FROM events WHERE createdAt >= ? ORDER BY createdAt ASC, id ASC`)
+    .all(cutoffIso) as Record<string, unknown>[];
+}
+
 export function buildDataSnapshot(db: Db): DataSnapshotV1 {
+  const exportAt = new Date();
   return {
     meta: {
       exportFormatVersion: DATA_SNAPSHOT_EXPORT_FORMAT_VERSION,
       schemaVersion: DATA_SNAPSHOT_SCHEMA_VERSION,
-      createdAt: new Date().toISOString(),
+      createdAt: exportAt.toISOString(),
       appVersion: getAppVersion(),
       photosNote: 'paths_only_not_binary',
     },
@@ -49,6 +63,7 @@ export function buildDataSnapshot(db: Db): DataSnapshotV1 {
     competitions: selectAll(db, 'competitions'),
     runSessions: selectAll(db, 'run_sessions'),
     runs: selectAll(db, 'runs'),
+    events: selectEventsForExport(db, exportAt),
     adminSettings: selectAll(db, 'admin_settings').map((r) => ({
       key: String(r.key),
       value: String(r.value),

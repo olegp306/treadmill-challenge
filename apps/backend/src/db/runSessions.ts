@@ -228,6 +228,7 @@ export type ManagerQueueHistoryRow = {
   participantFirstName: string;
   participantLastName: string;
   participantPhone: string;
+  sex: Gender;
   runTypeId: RunTypeId;
   runType: string;
   status: 'queued' | 'running' | 'finished';
@@ -277,6 +278,7 @@ export function listManagerQueueHistory(db: Db, maxTotal: number): ManagerQueueH
       participantFirstName: r.participantFirstName,
       participantLastName: r.participantLastName,
       participantPhone: r.participantPhone,
+      sex: r.sex,
       runTypeId: r.runSession.runTypeId,
       runType: r.runSession.runType,
       status: st,
@@ -292,9 +294,10 @@ export function listManagerQueueHistory(db: Db, maxTotal: number): ManagerQueueH
       .prepare(
         `
       SELECT s.id, s.participantId, s.competitionId, s.runTypeId, s.runType, s.status, s.queueNumber, s.resultTime, s.resultDistance,
-             s.createdAt, s.startedAt, s.finishedAt, p.firstName as pf, p.lastName as pl, p.phone as pphone
+             s.createdAt, s.startedAt, s.finishedAt, p.firstName as pf, p.lastName as pl, p.phone as pphone, c.gender as cg
       FROM run_sessions s
       JOIN participants p ON p.id = s.participantId
+      JOIN competitions c ON c.id = s.competitionId
       WHERE s.status = 'finished'
       ORDER BY
         (CASE WHEN s.finishedAt IS NOT NULL AND TRIM(s.finishedAt) != '' THEN s.finishedAt ELSE s.createdAt END) DESC,
@@ -307,10 +310,12 @@ export function listManagerQueueHistory(db: Db, maxTotal: number): ManagerQueueH
     for (const row of fRows) {
       const pf = row.pf;
       const pl = row.pl;
+      const cg = row.cg;
       const sessionRow = { ...row };
       delete sessionRow.pf;
       delete sessionRow.pl;
       delete sessionRow.pphone;
+      delete sessionRow.cg;
       const s = rowToSession(sessionRow);
       finished.push({
         runSessionId: s.id,
@@ -320,6 +325,7 @@ export function listManagerQueueHistory(db: Db, maxTotal: number): ManagerQueueH
         participantFirstName: String(pf ?? '').trim(),
         participantLastName: String(pl ?? '').trim(),
         participantPhone: String(row.pphone ?? ''),
+        sex: String(cg ?? 'male') as Gender,
         runTypeId: s.runTypeId,
         runType: s.runType,
         status: 'finished',
