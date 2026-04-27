@@ -298,7 +298,7 @@ export function listManagerQueueHistory(db: Db, maxTotal: number): ManagerQueueH
       FROM run_sessions s
       JOIN participants p ON p.id = s.participantId
       JOIN competitions c ON c.id = s.competitionId
-      WHERE s.status = 'finished'
+      WHERE s.status = 'finished' AND c.status = 'active'
       ORDER BY
         (CASE WHEN s.finishedAt IS NOT NULL AND TRIM(s.finishedAt) != '' THEN s.finishedAt ELSE s.createdAt END) DESC,
         s.id DESC

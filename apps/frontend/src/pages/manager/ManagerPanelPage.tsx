@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
-import { getRunTypeName } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
+import { formatRunResult } from '../../utils/runResultFormat';
 
 type ManagerTab = 'queue' | 'runs' | 'system' | 'suspension';
 
@@ -18,19 +18,6 @@ type EditParticipantState = {
   resultDistance: string;
 };
 
-type Slot = {
-  runTypeId: RunTypeId;
-  sex: Gender;
-  competition: { id: string; title: string } | null;
-};
-
-type EditableParticipant = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-};
-
 type QueueRecoveryState = {
   runningCount: number;
   queuedCount: number;
@@ -39,10 +26,12 @@ type QueueRecoveryState = {
 
 type QuickRunTypeFilter = RunTypeId | null;
 type QuickSexFilter = Gender | null;
+type HistorySortMode = 'best' | 'worst' | 'new' | 'old' | null;
 
-function slotLabel(slot: Slot): string {
-  const sex = slot.sex === 'male' ? 'Мужчины' : 'Женщины';
-  return `${sex} — ${getRunTypeName(slot.runTypeId)}`;
+function shortRunTypeLabel(runTypeId: RunTypeId): string {
+  if (runTypeId === 0) return '5 мин';
+  if (runTypeId === 1) return '1 км';
+  return '5 км';
 }
 
 function formatHistoryDisplayTime(iso: string): string {
@@ -59,11 +48,13 @@ function formatHistoryDisplayTime(iso: string): string {
 
 export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager' | 'admin' }) {
   const navigate = useNavigate();
+  const inactivityTimerRef = useRef<number | null>(null);
   const [tab, setTab] = useState<ManagerTab>('queue');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [historyRows, setHistoryRows] = useState<HistoryRow[]>([]);
+  const [rankedHistoryRows, setRankedHistoryRows] = useState<HistoryRow[]>([]);
   const [queueRecovery, setQueueRecovery] = useState<QueueRecoveryState>({
     runningCount: 0,
     queuedCount: 0,
@@ -73,19 +64,12 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
   const [queueSearch, setQueueSearch] = useState('');
   const [quickRunTypeFilter, setQuickRunTypeFilter] = useState<QuickRunTypeFilter>(null);
   const [quickSexFilter, setQuickSexFilter] = useState<QuickSexFilter>(null);
+  const [historySortMode, setHistorySortMode] = useState<HistorySortMode>('new');
   const [editParticipant, setEditParticipant] = useState<EditParticipantState | null>(null);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(null);
-  const [participants, setParticipants] = useState<EditableParticipant[]>([]);
-  const [drafts, setDrafts] = useState<Record<string, EditableParticipant>>({});
-
   const [restartPin, setRestartPin] = useState('');
   const [restartConfirm, setRestartConfirm] = useState(false);
   const [suspensionState, setSuspensionState] = useState<{ backupPath: string; createdAt: string } | null>(null);
   const [suspensionBusy, setSuspensionBusy] = useState(false);
-
-  const maleSlots = useMemo(() => slots.filter((s) => s.sex === 'male'), [slots]);
-  const femaleSlots = useMemo(() => slots.filter((s) => s.sex === 'female'), [slots]);
 
   const loadQueueHistory = useCallback(async () => {
     const res = await api.adminManagerQueueHistory();
@@ -104,59 +88,125 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
   }, []);
 
   const queueRecoveryReason = useMemo(() => {
-    if (queueRecovery.runningCount > 0) return '';
-    if (queueRecovery.queuedCount === 0) return 'Очередь пуста';
-    return 'Тренажер свободен, можно запустить первого в очереди';
+    if (queueRecovery.runningCount + queueRecovery.queuedCount === 0) return 'Очередь пуста';
+    return `В очереди: running ${queueRecovery.runningCount}, queued ${queueRecovery.queuedCount}`;
   }, [queueRecovery]);
-  const showQueueStartedOnButton = queueRecoveryHint === 'Очередь запущена';
 
-  const displayedRows = useMemo(() => {
+  const activeQueueRows = useMemo(
+    () => historyRows.filter((r) => r.status === 'running' || r.status === 'queued'),
+    [historyRows]
+  );
+
+  const historyOnlyRows = useMemo(() => historyRows.filter((r) => r.status === 'finished'), [historyRows]);
+
+  const filteredHistoryRows = useMemo(() => {
     const n = queueSearch.trim().toLowerCase();
-    return historyRows.filter((r) => {
+    return historyOnlyRows.filter((r) => {
       const hay = `${r.participantFirstName} ${r.participantLastName} ${r.participantName} ${r.participantPhone}`.toLowerCase();
       const matchesSearch = !n || hay.includes(n);
       const matchesRunType = quickRunTypeFilter === null || r.runTypeId === quickRunTypeFilter;
       const matchesSex = quickSexFilter === null || r.sex === quickSexFilter;
       return matchesSearch && matchesRunType && matchesSex;
     });
-  }, [historyRows, queueSearch, quickRunTypeFilter, quickSexFilter]);
+  }, [historyOnlyRows, queueSearch, quickRunTypeFilter, quickSexFilter]);
 
-  const toggleRunTypeFilter = useCallback((runTypeId: RunTypeId) => {
-    setQuickRunTypeFilter((prev) => (prev === runTypeId ? null : runTypeId));
+  const historyRowsSorted = useMemo(() => {
+    const byDisplayTimeDesc = (a: HistoryRow, b: HistoryRow) => {
+      const ta = Date.parse(a.displayTime);
+      const tb = Date.parse(b.displayTime);
+      if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return tb - ta;
+      return b.displayTime.localeCompare(a.displayTime);
+    };
+    const byDisplayTimeAsc = (a: HistoryRow, b: HistoryRow) => {
+      const ta = Date.parse(a.displayTime);
+      const tb = Date.parse(b.displayTime);
+      if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return ta - tb;
+      return a.displayTime.localeCompare(b.displayTime);
+    };
+    const byResultBest = (a: HistoryRow, b: HistoryRow) => {
+      if (a.runTypeId !== b.runTypeId) return byDisplayTimeDesc(a, b);
+      if (a.runTypeId === 0) {
+        const ad = a.resultDistance ?? 0;
+        const bd = b.resultDistance ?? 0;
+        return bd - ad;
+      }
+      const at = a.resultTime ?? Number.POSITIVE_INFINITY;
+      const bt = b.resultTime ?? Number.POSITIVE_INFINITY;
+      return at - bt;
+    };
+    const out = [...filteredHistoryRows];
+    if (historySortMode === 'best') return out.sort(byResultBest);
+    if (historySortMode === 'worst') return out.sort((a, b) => byResultBest(b, a));
+    if (historySortMode === 'old') return out.sort(byDisplayTimeAsc);
+    if (historySortMode === 'new') return out.sort(byDisplayTimeDesc);
+    return out;
+  }, [filteredHistoryRows, historySortMode]);
+
+  const hasSearch = queueSearch.trim().length > 0;
+  const showHistoryRank = !hasSearch && quickRunTypeFilter !== null && quickSexFilter !== null;
+  const sortModeForRankedApi: 'best' | 'worst' | 'new' | 'old' =
+    historySortMode === 'worst' || historySortMode === 'new' || historySortMode === 'old'
+      ? historySortMode
+      : 'best';
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!showHistoryRank) {
+      setRankedHistoryRows([]);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    void api
+      .adminManagerRankedHistory({
+        runTypeId: quickRunTypeFilter!,
+        sex: quickSexFilter!,
+        order: sortModeForRankedApi,
+      })
+      .then((res) => {
+        if (!cancelled) setRankedHistoryRows(res.entries as HistoryRow[]);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Не удалось загрузить рейтинг');
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showHistoryRank, quickRunTypeFilter, quickSexFilter, sortModeForRankedApi]);
+
+  const toggleHistorySort = useCallback((mode: Exclude<HistorySortMode, null>) => {
+    setHistorySortMode((prev) => (prev === mode ? null : mode));
   }, []);
 
-  const toggleSexFilter = useCallback((sex: Gender) => {
-    setQuickSexFilter((prev) => (prev === sex ? null : sex));
+  const applyRunSexFilter = useCallback((runTypeId: RunTypeId, sex: Gender) => {
+    setQueueSearch('');
+    setQuickRunTypeFilter((prevRunTypeId) => {
+      if (prevRunTypeId === runTypeId && quickSexFilter === sex) {
+        setQuickSexFilter(null);
+        return null;
+      }
+      setQuickSexFilter(sex);
+      return runTypeId;
+    });
+  }, [quickSexFilter]);
+
+  const onSearchChange = useCallback((value: string) => {
+    setQueueSearch(value);
+    if (value.trim().length > 0) {
+      setQuickRunTypeFilter(null);
+      setQuickSexFilter(null);
+    }
   }, []);
-
-  const loadSlots = async () => {
-    const dashboard = await api.adminDashboard();
-    const mapped = dashboard.slots.map((s) => ({
-      runTypeId: s.runTypeId,
-      sex: s.sex,
-      competition: s.competition ? { id: s.competition.id, title: s.competition.title } : null,
-    }));
-    setSlots(mapped);
-  };
-
-  const loadParticipantsByCompetitionId = async (competitionId: string) => {
-    const res = await api.adminCompetitionParticipants(competitionId);
-    const mapped = res.participants.map((p) => ({
-      id: p.id,
-      firstName: p.firstName,
-      lastName: p.lastName,
-      phone: p.phone,
-    }));
-    setParticipants(mapped);
-    setDrafts(Object.fromEntries(mapped.map((p) => [p.id, { ...p }])));
-  };
 
   useEffect(() => {
     void (async () => {
       setBusy(true);
       setError(null);
       try {
-        await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSlots(), loadSuspensionState()]);
+        await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSuspensionState()]);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Ошибка загрузки');
       } finally {
@@ -173,23 +223,6 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
       setQueueRecoveryHint(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка обновления очереди');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const manualStartQueue = async () => {
-    if (!queueRecovery.canStart || busy) return;
-    setBusy(true);
-    setError(null);
-    setQueueRecoveryHint(null);
-    try {
-      const res = await api.adminManagerQueueStart();
-      setQueueRecoveryHint(res.message);
-      await Promise.all([loadQueueHistory(), loadQueueRecovery()]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось запустить очередь');
-      await loadQueueRecovery().catch(() => undefined);
     } finally {
       setBusy(false);
     }
@@ -224,23 +257,10 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
     }
   };
 
-  const moveQueue = async (row: HistoryRow, action: 'move-up' | 'move-down' | 'move-tail') => {
-    if (row.status !== 'queued') return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.adminQueueAction(row.competitionId, row.runSessionId, action);
-      await loadQueueHistory();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось изменить очередь');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const openFinishedEdit = (row: HistoryRow) => {
     if (row.status !== 'finished') return;
-    setEditParticipant({
+    const openEditor = () =>
+      setEditParticipant({
       id: row.participantId,
       runSessionId: row.runSessionId,
       firstName: row.participantFirstName,
@@ -249,6 +269,45 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
       resultTime: row.resultTime != null ? String(row.resultTime) : '',
       resultDistance: row.resultDistance != null ? String(row.resultDistance) : '',
     });
+    if (mode === 'manager') {
+      const pin = window.prompt('Введите пароль менеджера для редактирования участника');
+      if (!pin || !pin.trim()) return;
+      setBusy(true);
+      setError(null);
+      void api
+        .managerLogin(pin.trim())
+        .then(() => openEditor())
+        .catch((e) => {
+          setError(e instanceof Error ? e.message : 'Неверный пароль менеджера');
+        })
+        .finally(() => setBusy(false));
+      return;
+    }
+    const hasAdminSession =
+      typeof sessionStorage !== 'undefined' &&
+      Boolean(sessionStorage.getItem('adminPin')) &&
+      sessionStorage.getItem('adminRole') === 'god_admin';
+    if (hasAdminSession) {
+      openEditor();
+      return;
+    }
+    const pin = window.prompt('Введите PIN администратора для редактирования участника');
+    if (!pin || !pin.trim()) return;
+    setBusy(true);
+    setError(null);
+    void api
+      .adminLogin(pin.trim())
+      .then(() => {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('adminPin', pin.trim());
+          sessionStorage.setItem('adminRole', 'god_admin');
+        }
+        openEditor();
+      })
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : 'Неверный PIN администратора');
+      })
+      .finally(() => setBusy(false));
   };
 
   const createSuspensionBackup = async () => {
@@ -273,7 +332,7 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
     setError(null);
     try {
       await api.adminSuspensionClearAfterBackup();
-      await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSlots(), loadSuspensionState()]);
+      await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSuspensionState()]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось очистить данные');
     } finally {
@@ -288,7 +347,7 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
     setError(null);
     try {
       await api.adminSuspensionRestoreLast();
-      await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSlots(), loadSuspensionState()]);
+      await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSuspensionState()]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось восстановить backup');
     } finally {
@@ -314,56 +373,50 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
     }
   };
 
-  const stopRunningSession = async (row: HistoryRow) => {
-    if (row.status !== 'running') return;
-    if (
-      !window.confirm(
-        'Остановить забег и убрать участника с дорожки? Следующий в очереди сможет начать (как после обычного завершения).'
-      )
-    ) {
+  const resetCurrentQueue = async () => {
+    const activeRows = historyRows.filter((r) => r.status === 'queued' || r.status === 'running');
+    if (activeRows.length === 0) {
+      setError('Очередь уже пуста');
       return;
     }
+    if (
+      !window.confirm(
+        'Сбросить всю текущую очередь (running + queued)? Завершенные результаты останутся без изменений.'
+      )
+    ) return;
+    const pinPromptLabel =
+      mode === 'admin'
+        ? 'Введите PIN администратора для сброса очереди'
+        : 'Введите пароль менеджера для сброса очереди';
+    const pin = window.prompt(pinPromptLabel);
+    if (!pin || !pin.trim()) return;
     setBusy(true);
     setError(null);
     try {
-      await api.adminQueueAction(row.competitionId, row.runSessionId, 'mark-cancelled');
-      await loadQueueHistory();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось остановить забег');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const openSlotParticipants = async (slot: Slot) => {
-    if (!slot.competition?.id) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await loadParticipantsByCompetitionId(slot.competition.id);
-      setSelectedCompetitionId(slot.competition.id);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить участников');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const saveParticipant = async (participantId: string) => {
-    const draft = drafts[participantId];
-    if (!draft) return;
-    if (!selectedCompetitionId) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.adminUpdateParticipant(participantId, {
-        firstName: draft.firstName.trim(),
-        lastName: draft.lastName.trim(),
-        phone: draft.phone.trim(),
+      if (mode === 'admin') {
+        await api.adminLogin(pin.trim());
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('adminPin', pin.trim());
+          sessionStorage.setItem('adminRole', 'god_admin');
+        }
+      } else {
+        await api.managerLogin(pin.trim());
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('adminPin', pin.trim());
+          sessionStorage.setItem('adminRole', 'manager');
+        }
+      }
+      const queuedFirst = [...activeRows].sort((a, b) => {
+        if (a.status === b.status) return 0;
+        return a.status === 'queued' ? -1 : 1;
       });
-      await loadParticipantsByCompetitionId(selectedCompetitionId);
+      for (const row of queuedFirst) {
+        await api.adminQueueAction(row.competitionId, row.runSessionId, 'mark-cancelled');
+      }
+      await Promise.all([loadQueueHistory(), loadQueueRecovery()]);
+      setQueueRecoveryHint('Очередь сброшена');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сохранить участника');
+      setError(e instanceof Error ? e.message : 'Не удалось сбросить очередь');
     } finally {
       setBusy(false);
     }
@@ -397,6 +450,33 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
       setBusy(false);
     }
   };
+
+  useEffect(() => {
+    const INACTIVITY_MS = 2 * 60 * 1000;
+    const clearTimer = () => {
+      if (inactivityTimerRef.current !== null) {
+        window.clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    };
+    const forceExitToMain = () => {
+      setEditParticipant(null);
+      sessionStorage.removeItem('adminPin');
+      sessionStorage.removeItem('adminRole');
+      navigate('/', { replace: true });
+    };
+    const resetTimer = () => {
+      clearTimer();
+      inactivityTimerRef.current = window.setTimeout(forceExitToMain, INACTIVITY_MS);
+    };
+    const activityEvents: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'input', 'touchstart'];
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }));
+    resetTimer();
+    return () => {
+      clearTimer();
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
+    };
+  }, [navigate]);
 
   return (
     <main style={{ ...styles.page, ...(mode === 'admin' ? styles.pageAdmin : {}) }}>
@@ -437,21 +517,20 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
         {tab === 'queue' ? (
           <section style={styles.sectionScrollable}>
           <div style={styles.sectionHead}>
-            <h2 style={styles.h2}>История очереди</h2>
+            <h2 style={styles.h2}>
+              Текущая очередь
+            </h2>
             <div style={styles.headActions}>
               <button
                 type="button"
-                style={queueRecovery.canStart && !busy ? styles.downloadBtn : styles.downloadBtnDisabled}
-                disabled={busy || !queueRecovery.canStart}
-                onClick={() => void manualStartQueue()}
+                style={styles.downloadBtn}
+                disabled={busy}
+                onClick={() => void resetCurrentQueue()}
               >
-                <span style={styles.recoveryBtnMainText}>Запустить очередь</span>
-                {showQueueStartedOnButton ? (
-                  <span style={styles.recoveryBtnSubText}>очередь запущена</span>
-                ) : null}
-              </button>
-              <button type="button" style={styles.downloadBtn} onClick={() => void exportLeaderboardsXlsx()} disabled={busy}>
-                Download Excel
+                <span style={styles.recoveryBtnMainText}>Сброс очереди</span>
+                <span style={styles.recoveryBtnSubText}>
+                  Сбрасывает текущего участника и всех, кто в очереди после него
+                </span>
               </button>
               <button type="button" style={styles.refreshBtn} onClick={refreshQueue} disabled={busy}>
                 Обновить
@@ -461,54 +540,7 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
           <div style={styles.recoveryWrap}>
             {queueRecoveryReason ? <p style={styles.recoveryReason}>{queueRecoveryReason}</p> : null}
           </div>
-          <label style={styles.searchLabel}>
-            Поиск
-            <input
-              type="search"
-              value={queueSearch}
-              onChange={(e) => setQueueSearch(e.target.value)}
-              placeholder="Имя, фамилия или телефон (часть строки)"
-              style={styles.searchInput}
-            />
-          </label>
-          <div style={styles.quickFiltersRow}>
-            <button
-              type="button"
-              style={quickRunTypeFilter === 0 ? styles.quickFilterBtnActive : styles.quickFilterBtn}
-              onClick={() => toggleRunTypeFilter(0)}
-            >
-              5 мин
-            </button>
-            <button
-              type="button"
-              style={quickRunTypeFilter === 1 ? styles.quickFilterBtnActive : styles.quickFilterBtn}
-              onClick={() => toggleRunTypeFilter(1)}
-            >
-              1 км
-            </button>
-            <button
-              type="button"
-              style={quickRunTypeFilter === 2 ? styles.quickFilterBtnActive : styles.quickFilterBtn}
-              onClick={() => toggleRunTypeFilter(2)}
-            >
-              5 км
-            </button>
-            <button
-              type="button"
-              style={quickSexFilter === 'male' ? styles.quickFilterBtnActive : styles.quickFilterBtn}
-              onClick={() => toggleSexFilter('male')}
-            >
-              М
-            </button>
-            <button
-              type="button"
-              style={quickSexFilter === 'female' ? styles.quickFilterBtnActive : styles.quickFilterBtn}
-              onClick={() => toggleSexFilter('female')}
-            >
-              Ж
-            </button>
-          </div>
-          <div style={styles.tableScrollWrap}>
+          <div style={styles.tableScrollWrapShort}>
             <table style={styles.table}>
               <thead>
                 <tr>
@@ -517,24 +549,13 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
                   <th style={styles.th}>Забег</th>
                   <th style={styles.th}>Статус</th>
                   <th style={styles.th}>Телефон</th>
-                  {mode === 'admin' ? <th style={styles.th}>Результат</th> : null}
-                  <th style={styles.th}>Действия</th>
+                  <th style={styles.th}>Результат</th>
                 </tr>
               </thead>
               <tbody>
-                {displayedRows.map((row) => (
-                  <tr
-                    key={row.runSessionId}
-                    style={
-                      row.status === 'running'
-                        ? styles.runningRow
-                        : row.status === 'finished'
-                          ? styles.finishedRow
-                          : undefined
-                    }
-                    onClick={() => openFinishedEdit(row)}
-                  >
-                    <td style={styles.td}>{row.status === 'finished' ? '—' : row.queueNumber}</td>
+                {activeQueueRows.map((row) => (
+                  <tr key={row.runSessionId} style={row.status === 'running' ? styles.runningRow : undefined}>
+                    <td style={styles.td}>{row.queueNumber}</td>
                     <td style={styles.td}>
                       <div>{row.participantName}</div>
                       <div style={styles.timeHint}>{formatHistoryDisplayTime(row.displayTime)}</div>
@@ -542,72 +563,14 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
                     <td style={styles.td}>{row.runType}</td>
                     <td style={styles.td}>{row.status}</td>
                     <td style={styles.td}>{row.participantPhone ?? ''}</td>
-                    {mode === 'admin' ? (
-                      <td style={styles.td}>
-                        {row.resultTime != null || row.resultDistance != null
-                          ? `${row.resultTime ?? 0} c / ${Math.round(row.resultDistance ?? 0)} м`
-                          : '—'}
-                      </td>
-                    ) : null}
-                    <td style={styles.td}>
-                      {row.status === 'finished' ? (
-                        <button
-                          type="button"
-                          style={styles.editOnlyBtn}
-                          disabled={busy}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openFinishedEdit(row);
-                          }}
-                        >
-                          Редактировать
-                        </button>
-                      ) : row.status === 'running' ? (
-                        <button
-                          type="button"
-                          style={styles.stopRunBtn}
-                          disabled={busy}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void stopRunningSession(row);
-                          }}
-                        >
-                          Сойти с забега
-                        </button>
-                      ) : (
-                        <div style={styles.actions} onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
-                            disabled={busy || row.status !== 'queued'}
-                            onClick={() => moveQueue(row, 'move-up')}
-                          >
-                            -1
-                          </button>
-                          <button
-                            type="button"
-                            style={row.status === 'queued' ? styles.smallBtn : styles.smallBtnDisabled}
-                            disabled={busy || row.status !== 'queued'}
-                            onClick={() => moveQueue(row, 'move-down')}
-                          >
-                            +1
-                          </button>
-                          <button
-                            type="button"
-                            style={row.status === 'queued' ? styles.tailBtn : styles.tailBtnDisabled}
-                            disabled={busy || row.status !== 'queued'}
-                            onClick={() => moveQueue(row, 'move-tail')}
-                          >
-                            В конец
-                          </button>
-                        </div>
-                      )}
-                    </td>
+                    <td style={styles.td}>{formatRunResult(row.runTypeId, row.resultTime, row.resultDistance)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          <p style={styles.info}>История забегов и фильтры доступны на вкладке «Забеги».</p>
           {editParticipant ? (
             <div
               role="presentation"
@@ -696,103 +659,86 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
 
         {tab === 'runs' ? (
           <section style={styles.sectionScrollable}>
-          <h2 style={styles.h2}>Слоты забегов</h2>
-          <div style={styles.slotGrid}>
-            {maleSlots.map((slot, i) => (
-              <button
-                key={`m-${slot.runTypeId}-${i}`}
-                type="button"
-                style={
-                  selectedCompetitionId === slot.competition?.id
-                    ? styles.slotBtnActive
-                    : styles.slotBtn
-                }
-                disabled={!slot.competition || busy}
-                onClick={() => openSlotParticipants(slot)}
-              >
-                {slotLabel(slot)}
+          <div style={styles.sectionHead}>
+            <h2 style={styles.h2}>Забеги</h2>
+            <div style={styles.headActions}>
+              <button type="button" style={styles.downloadBtn} onClick={() => void exportLeaderboardsXlsx()} disabled={busy}>
+                Export all leaderboards
               </button>
-            ))}
+            </div>
           </div>
-          <div style={styles.slotGrid}>
-            {femaleSlots.map((slot, i) => (
-              <button
-                key={`f-${slot.runTypeId}-${i}`}
-                type="button"
-                style={
-                  selectedCompetitionId === slot.competition?.id
-                    ? styles.slotBtnActive
-                    : styles.slotBtn
-                }
-                disabled={!slot.competition || busy}
-                onClick={() => openSlotParticipants(slot)}
-              >
-                {slotLabel(slot)}
+          <input
+            type="search"
+            value={queueSearch}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Поиск по имени, фамилии или телефону, можно часть строки"
+            style={styles.searchInput}
+          />
+          <div style={styles.slotFiltersRow}>
+            <div style={styles.slotFiltersGroup}>
+              <button type="button" style={quickRunTypeFilter === 0 && quickSexFilter === 'male' ? styles.slotBtnActive : styles.slotBtn} onClick={() => applyRunSexFilter(0, 'male')}>
+              5 мин / М
               </button>
-            ))}
+              <button type="button" style={quickRunTypeFilter === 1 && quickSexFilter === 'male' ? styles.slotBtnActive : styles.slotBtn} onClick={() => applyRunSexFilter(1, 'male')}>
+              1 км / М
+              </button>
+              <button type="button" style={quickRunTypeFilter === 2 && quickSexFilter === 'male' ? styles.slotBtnActive : styles.slotBtn} onClick={() => applyRunSexFilter(2, 'male')}>
+              5 км / М
+              </button>
+            </div>
+            <div style={styles.slotFiltersDivider} />
+            <div style={styles.slotFiltersGroup}>
+              <button type="button" style={quickRunTypeFilter === 0 && quickSexFilter === 'female' ? styles.slotBtnFemaleActive : styles.slotBtnFemale} onClick={() => applyRunSexFilter(0, 'female')}>
+                5 мин / Ж
+              </button>
+              <button type="button" style={quickRunTypeFilter === 1 && quickSexFilter === 'female' ? styles.slotBtnFemaleActive : styles.slotBtnFemale} onClick={() => applyRunSexFilter(1, 'female')}>
+                1 км / Ж
+              </button>
+              <button type="button" style={quickRunTypeFilter === 2 && quickSexFilter === 'female' ? styles.slotBtnFemaleActive : styles.slotBtnFemale} onClick={() => applyRunSexFilter(2, 'female')}>
+              5 км / Ж
+              </button>
+            </div>
           </div>
-
-          {selectedCompetitionId ? (
-            <>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Фамилия</th>
-                    <th style={styles.th}>Имя</th>
-                    <th style={styles.th}>Телефон</th>
-                    <th style={styles.th}>Сохранение</th>
+          <div style={styles.quickFiltersRow}>
+            <div style={styles.quickFilterGroup}>
+              <button type="button" style={historySortMode === 'best' ? styles.quickFilterBtnActive : styles.quickFilterBtn} onClick={() => toggleHistorySort('best')}>Лучшие</button>
+              <button type="button" style={historySortMode === 'worst' ? styles.quickFilterBtnActive : styles.quickFilterBtn} onClick={() => toggleHistorySort('worst')}>Худшие</button>
+              <button type="button" style={historySortMode === 'new' ? styles.quickFilterBtnActive : styles.quickFilterBtn} onClick={() => toggleHistorySort('new')}>Новые</button>
+              <button type="button" style={historySortMode === 'old' ? styles.quickFilterBtnActive : styles.quickFilterBtn} onClick={() => toggleHistorySort('old')}>Старые</button>
+            </div>
+          </div>
+          <div style={styles.tableScrollWrap}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Место</th>
+                  <th style={styles.th}>Участник</th>
+                  <th style={styles.th}>Забег</th>
+                  <th style={styles.th}>Телефон</th>
+                  <th style={styles.th}>Результат</th>
+                  <th style={styles.th}>Дата/время</th>
+                  <th style={styles.th}>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(showHistoryRank ? rankedHistoryRows : historyRowsSorted).map((row, idx) => (
+                  <tr key={row.runSessionId} style={styles.finishedRow} onClick={() => openFinishedEdit(row)}>
+                    <td style={styles.td}>{(row as HistoryRow & { rank?: number }).rank ?? idx + 1}</td>
+                    <td style={styles.td}>{row.participantName}</td>
+                    <td style={styles.td}>{shortRunTypeLabel(row.runTypeId)}</td>
+                    <td style={styles.td}>{row.participantPhone ?? ''}</td>
+                    <td style={styles.td}>{formatRunResult(row.runTypeId, row.resultTime, row.resultDistance)}</td>
+                    <td style={styles.td}>{formatHistoryDisplayTime(row.displayTime)}</td>
+                    <td style={styles.td}>
+                      <button type="button" style={styles.editOnlyBtn} disabled={busy} onClick={(e) => { e.stopPropagation(); openFinishedEdit(row); }}>
+                        Редактировать
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {participants.map((p) => (
-                    <tr key={p.id}>
-                      <td style={styles.td}>
-                        <input
-                          style={styles.input}
-                          value={drafts[p.id]?.lastName ?? ''}
-                          onChange={(e) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [p.id]: { ...(prev[p.id] ?? p), lastName: e.target.value },
-                            }))
-                          }
-                        />
-                      </td>
-                      <td style={styles.td}>
-                        <input
-                          style={styles.input}
-                          value={drafts[p.id]?.firstName ?? ''}
-                          onChange={(e) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [p.id]: { ...(prev[p.id] ?? p), firstName: e.target.value },
-                            }))
-                          }
-                        />
-                      </td>
-                      <td style={styles.td}>
-                        <input
-                          style={styles.input}
-                          value={drafts[p.id]?.phone ?? ''}
-                          onChange={(e) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [p.id]: { ...(prev[p.id] ?? p), phone: e.target.value },
-                            }))
-                          }
-                        />
-                      </td>
-                      <td style={styles.td}>
-                        <button type="button" style={styles.saveBtn} disabled={busy} onClick={() => saveParticipant(p.id)}>
-                          Сохранить
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          ) : null}
+                ))}
+              </tbody>
+            </table>
+          </div>
           </section>
         ) : null}
 
@@ -897,6 +843,7 @@ const styles: Record<string, React.CSSProperties> = {
   tabActive: { padding: '10px 14px', borderRadius: 10, border: '1px solid #e6233a', background: '#2a1115', color: '#fff' },
   h2: { margin: '8px 0 12px', fontSize: 22 },
   h3: { margin: '20px 0 12px', fontSize: 18 },
+  h2Secondary: { fontSize: 16, fontWeight: 500, color: '#b8b8b8' },
   info: { margin: '8px 0', color: '#b8b8b8' },
   error: { margin: '8px 0', color: '#ff7b7b' },
   btnHomeHeader: {
@@ -928,6 +875,7 @@ const styles: Record<string, React.CSSProperties> = {
   recoveryBtnSubText: { display: 'block', lineHeight: 1.1, fontSize: 11, fontWeight: 500, marginTop: 2, opacity: 0.95 },
   recoveryReason: { margin: 0, color: '#a9a9a9', fontSize: 13 },
   quickFiltersRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' },
+  quickFilterGroup: { display: 'flex', alignItems: 'center', gap: 8, marginRight: 12 },
   quickFilterBtn: {
     minHeight: 30,
     padding: '4px 10px',
@@ -965,6 +913,13 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'auto',
     border: '1px solid #2a2a2a',
     borderRadius: 8,
+  },
+  tableScrollWrapShort: {
+    maxHeight: 260,
+    overflow: 'auto',
+    border: '1px solid #2a2a2a',
+    borderRadius: 8,
+    marginBottom: 12,
   },
   table: { width: '100%', borderCollapse: 'collapse', background: '#171717' },
   th: { textAlign: 'left', padding: 10, borderBottom: '1px solid #333', fontSize: 14, color: '#ccc' },
@@ -1013,6 +968,9 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: 'border-box' as const,
   },
   slotGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginBottom: 10 },
+  slotFiltersRow: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10, flexWrap: 'wrap' },
+  slotFiltersGroup: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, minWidth: 420, flex: '1 1 420px' },
+  slotFiltersDivider: { width: 10, minWidth: 10, height: 1 },
   slotBtn: { padding: '12px 10px', borderRadius: 10, border: '1px solid #444', background: '#1a1a1a', color: '#fff' },
   slotBtnActive: {
     padding: '12px 10px',
@@ -1020,6 +978,20 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #e6233a',
     background: '#3a141a',
     color: '#fff',
+  },
+  slotBtnFemale: {
+    padding: '12px 10px',
+    borderRadius: 10,
+    border: '1px solid #6f5b67',
+    background: '#2a2127',
+    color: '#f0e4ea',
+  },
+  slotBtnFemaleActive: {
+    padding: '12px 10px',
+    borderRadius: 10,
+    border: '1px solid #b58ba0',
+    background: '#4a303f',
+    color: '#ffeef7',
   },
   runningRow: { background: '#232323', color: '#9f9f9f' },
   finishedRow: { background: '#161c18', cursor: 'pointer' },
@@ -1045,7 +1017,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     cursor: 'pointer',
   },
-  searchInput: { minHeight: 44, borderRadius: 8, border: '1px solid #555', background: '#0f0f0f', color: '#fff', padding: '8px 10px', fontSize: 16 },
+  searchInput: {
+    minHeight: 44,
+    borderRadius: 8,
+    border: '1px solid #555',
+    background: '#0f0f0f',
+    color: '#fff',
+    padding: '8px 10px',
+    fontSize: 16,
+    width: '100%',
+    maxWidth: 820,
+    marginBottom: 12,
+    boxSizing: 'border-box',
+  },
   modalBackdrop: {
     position: 'fixed',
     inset: 0,

@@ -358,6 +358,32 @@ export const api = {
     }>('/admin/manager/queue-history');
   },
 
+  adminManagerRankedHistory(params: { runTypeId: RunTypeId; sex: Gender; order?: 'best' | 'worst' | 'new' | 'old' }) {
+    const q = new URLSearchParams();
+    q.set('runTypeId', String(params.runTypeId));
+    q.set('sex', params.sex);
+    if (params.order) q.set('order', params.order);
+    return adminRequest<{
+      entries: Array<{
+        rank: number;
+        runSessionId: string;
+        participantId: string;
+        participantName: string;
+        participantFirstName: string;
+        participantLastName: string;
+        participantPhone: string;
+        sex: Gender;
+        runTypeId: RunTypeId;
+        runType: string;
+        status: 'finished';
+        competitionId: string;
+        displayTime: string;
+        resultTime: number;
+        resultDistance: number;
+      }>;
+    }>(`/admin/manager/ranked-history?${q.toString()}`);
+  },
+
   adminManagerUpdateFinishedResult(runSessionId: string, body: { resultTime: number; resultDistance: number }) {
     return adminRequest<{ ok: boolean }>(`/admin/manager/queue-history/${encodeURIComponent(runSessionId)}/result`, {
       method: 'PUT',

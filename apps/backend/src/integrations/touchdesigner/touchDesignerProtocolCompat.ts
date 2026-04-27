@@ -53,12 +53,14 @@ export function parseRunStateOscArgs(args: unknown[]): RunStateOscParsed {
     return { kind: 'busy', runSessionId };
   }
   if (stateRaw === 'stop') {
-    const resultTime = argNumber(args[2]);
-    const distance = argNumber(args[3]);
-    if (resultTime == null || resultTime <= 0) {
-      return { kind: 'invalid', reason: 'stop_requires_positive_resultTime' };
+    const resultTimeRaw = argNumber(args[2]);
+    const distanceRaw = argNumber(args[3]);
+    const resultTime = resultTimeRaw ?? 0;
+    const distance = distanceRaw ?? 0;
+    if (resultTime < 0) {
+      return { kind: 'invalid', reason: 'stop_requires_non_negative_resultTime' };
     }
-    if (distance == null || distance < 0) {
+    if (distance < 0) {
       return { kind: 'invalid', reason: 'stop_requires_non_negative_distance' };
     }
     return {

@@ -1,41 +1,40 @@
 import { utils, write } from 'xlsx';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeName } from '@treadmill-challenge/shared';
-import { competitions, getDb, participants, runs } from '../db/index.js';
+import { competitions, getDb } from '../db/index.js';
 import { ensureActiveCompetitionsForAllSlots } from './competitionService.js';
+import { getRankedRuns } from './rankingService.js';
 
 type ResultType = 'time' | 'distance';
 
 type ExportRow = {
+  leaderboard: string;
   rank: number;
   lastName: string;
   firstName: string;
-  middleName: string;
+  phone: string;
   resultDisplay: string;
   resultType: ResultType;
   sortValue: number;
   runDateTime: string;
-  runId: string;
   runSessionId: string;
   participantId: string;
-  competitionId: string;
   runTypeId: RunTypeId;
   gender: Gender;
 };
 
 const HEADER_MAP: Record<keyof ExportRow, string> = {
+  leaderboard: 'Лидерборд',
   rank: 'Место',
   lastName: 'Фамилия',
   firstName: 'Имя',
-  middleName: 'Отчество',
+  phone: 'Телефон',
   resultDisplay: 'Результат',
   resultType: 'Тип результата',
   sortValue: 'Значение для сортировки',
   runDateTime: 'Дата и время забега',
-  runId: 'ID забега',
   runSessionId: 'ID сессии',
   participantId: 'ID участника',
-  competitionId: 'ID соревнования',
   runTypeId: 'ID типа забега',
   gender: 'Пол',
 };
@@ -61,6 +60,10 @@ function formatResultSeconds(resultTimeSeconds: number): string {
   return `${two(minutes)}:${seconds.toFixed(2).padStart(5, '0')}`;
 }
 
+function formatRunResult(runTypeId: RunTypeId, resultTime: number, resultDistance: number): string {
+  return runTypeId === 0 ? `${Math.round(resultDistance)} м` : formatResultSeconds(resultTime);
+}
+
 function metricTypeForRunType(runTypeId: RunTypeId): ResultType {
   return runTypeId === 0 ? 'distance' : 'time';
 }
@@ -80,31 +83,27 @@ function sheetNameForSlot(runTypeId: RunTypeId, sex: Gender): string {
   return `${sexLabel}_${runLabel}`;
 }
 
-function buildSheetRows(competitionId: string, runTypeId: RunTypeId, sex: Gender): ExportRow[] {
+function buildSheetRows(runTypeId: RunTypeId, sex: Gender): ExportRow[] {
   const db = getDb();
-  const rows = runs.getLeaderboardForCompetition(db, competitionId, runTypeId, 500);
-  return rows.map((entry, index) => {
-    const participant = participants.getParticipantById(db, entry.run.participantId);
-    const resultType = metricTypeForRunType(runTypeId);
-    const sortValue = sortValueForEntry(runTypeId, entry.run.resultTime, entry.run.distance);
+  const rows = getRankedRuns(db, { runTypeId, sex, sortMode: 'best' });
+  return rows.map((entry) => {
+    const resultType = metricTypeForRunType(entry.runTypeId);
+    const sortValue = sortValueForEntry(entry.runTypeId, entry.resultTime, entry.resultDistance);
+    const leaderboard = `${getRunTypeName(entry.runTypeId)} / ${entry.sex === 'male' ? 'М' : 'Ж'}`;
     return {
-      rank: index + 1,
-      lastName: participant?.lastName ?? '',
-      firstName: participant?.firstName ?? '',
-      middleName: '',
-      resultDisplay:
-        resultType === 'time'
-          ? formatResultSeconds(entry.run.resultTime)
-          : String(Math.round(entry.run.distance)),
+      leaderboard,
+      rank: entry.rank,
+      lastName: entry.participantLastName,
+      firstName: entry.participantFirstName,
+      phone: entry.participantPhone,
+      resultDisplay: formatRunResult(entry.runTypeId, entry.resultTime, entry.resultDistance),
       resultType,
       sortValue,
-      runDateTime: formatRunDateTime(entry.run.createdAt),
-      runId: String(entry.run.id),
-      runSessionId: entry.run.runSessionId ?? '',
-      participantId: entry.run.participantId,
-      competitionId,
-      runTypeId,
-      gender: sex,
+      runDateTime: formatRunDateTime(entry.displayTime),
+      runSessionId: entry.runSessionId,
+      participantId: entry.participantId,
+      runTypeId: entry.runTypeId,
+      gender: entry.sex,
     };
   });
 }
@@ -124,20 +123,19 @@ export function buildLeaderboardsWorkbookXlsxBuffer(): { buffer: Buffer; sheetCo
       const activeCompetition = competitions.getActiveCompetition(db, runTypeId, sex);
       if (!activeCompetition) continue;
 
-      const dataRows = buildSheetRows(activeCompetition.id, runTypeId, sex);
+      const dataRows = buildSheetRows(runTypeId, sex);
       const rowsForSheet = dataRows.map((row) => ({
+        [HEADER_MAP.leaderboard]: row.leaderboard,
         [HEADER_MAP.rank]: row.rank,
         [HEADER_MAP.lastName]: row.lastName,
         [HEADER_MAP.firstName]: row.firstName,
-        [HEADER_MAP.middleName]: row.middleName,
+        [HEADER_MAP.phone]: row.phone,
         [HEADER_MAP.resultDisplay]: row.resultDisplay,
         [HEADER_MAP.resultType]: resultTypeLabel(row.resultType),
         [HEADER_MAP.sortValue]: row.sortValue,
         [HEADER_MAP.runDateTime]: row.runDateTime,
-        [HEADER_MAP.runId]: row.runId,
         [HEADER_MAP.runSessionId]: row.runSessionId,
         [HEADER_MAP.participantId]: row.participantId,
-        [HEADER_MAP.competitionId]: row.competitionId,
         [HEADER_MAP.runTypeId]: row.runTypeId,
         [HEADER_MAP.gender]: row.gender,
       }));
@@ -147,16 +145,15 @@ export function buildLeaderboardsWorkbookXlsxBuffer(): { buffer: Buffer; sheetCo
         ref: `A1:${String.fromCharCode('A'.charCodeAt(0) + Object.keys(HEADER_MAP).length - 1)}1`,
       };
       sheet['!cols'] = [
+        { wch: 18 },
         { wch: 8 },
         { wch: 18 },
         { wch: 16 },
-        { wch: 16 },
+        { wch: 18 },
         { wch: 14 },
         { wch: 16 },
         { wch: 20 },
         { wch: 22 },
-        { wch: 40 },
-        { wch: 40 },
         { wch: 40 },
         { wch: 40 },
         { wch: 14 },

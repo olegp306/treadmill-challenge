@@ -12,6 +12,7 @@ import { td } from '../features/td/tdTokens';
 import { HeaderChrome } from '../ui/components/HeaderChrome';
 import { Sheet } from '../ui/components/Sheet';
 import { ui } from '../ui/tokens';
+import { formatRunResult, formatTimeResultMmSs } from '../utils/runResultFormat';
 
 /** Стабильная высота фоновых колонок: до 10 строк. */
 const MAX_LEADERBOARD_ROWS = 10;
@@ -44,21 +45,12 @@ function parseLeaderboardScope(searchParams: URLSearchParams): { runTypeId: RunT
   return { runTypeId: n as RunTypeId, sex: g };
 }
 
-/** Match Figma: MM:SS */
-function formatTimeMmSs(sec: number): string {
-  const t = Math.round(sec);
-  const m = Math.floor(t / 60);
-  const s = t % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
 function primaryMetric(entry: LeaderboardEntry, runTypeId: RunTypeId): string {
-  if (runTypeId === 0) return `${Math.round(entry.distance)} м`;
-  return formatTimeMmSs(entry.resultTime);
+  return formatRunResult(runTypeId, entry.resultTime, entry.distance);
 }
 
 function globalMetric(entry: LeaderboardEntry): string {
-  return `${formatTimeMmSs(entry.resultTime)} · ${Math.round(entry.distance)} м`;
+  return `${formatTimeResultMmSs(entry.resultTime)} · ${Math.round(entry.distance)} м`;
 }
 
 type SlideState = {

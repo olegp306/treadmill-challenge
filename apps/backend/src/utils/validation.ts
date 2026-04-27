@@ -71,17 +71,33 @@ export function validateRunSessionResultBody(body: unknown): Validation<RunSessi
   const resultObj =
     o.result && typeof o.result === 'object' ? (o.result as Record<string, unknown>) : ({} as Record<string, unknown>);
   const runSessionId = o.runSessionId;
-  const resultTime = resultObj.resultTime ?? o.resultTime;
-  const distance = resultObj.distance ?? o.distance;
+  const resultTimeRaw = resultObj.resultTime ?? o.resultTime;
+  const distanceRaw = resultObj.distance ?? o.distance;
   if (typeof runSessionId !== 'string' || !runSessionId.trim()) {
     return { success: false, message: 'runSessionId is required and must be a non-empty string' };
   }
-  if (typeof resultTime !== 'number' || resultTime < 0 || !Number.isFinite(resultTime)) {
-    return { success: false, message: 'resultTime is required and must be a non-negative number' };
-  }
-  if (typeof distance !== 'number' || distance < 0 || !Number.isFinite(distance)) {
-    return { success: false, message: 'distance is required and must be a non-negative number' };
-  }
+  const parseMetric = (value: unknown, name: 'resultTime' | 'distance'): number | ValidationError => {
+    // TD may omit one or both metrics for "zero run"; treat missing as 0 to finish session safely.
+    if (value == null) return 0;
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value) || value < 0) {
+        return { success: false, message: `${name} must be a non-negative finite number` };
+      }
+      return value;
+    }
+    if (typeof value === 'string' && value.trim() !== '') {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        return { success: false, message: `${name} must be a non-negative finite number` };
+      }
+      return parsed;
+    }
+    return { success: false, message: `${name} must be a non-negative finite number` };
+  };
+  const parsedResultTime = parseMetric(resultTimeRaw, 'resultTime');
+  if (typeof parsedResultTime !== 'number') return parsedResultTime;
+  const parsedDistance = parseMetric(distanceRaw, 'distance');
+  if (typeof parsedDistance !== 'number') return parsedDistance;
 
   let verificationPhotoBase64: string | undefined;
   const direct =
@@ -107,8 +123,8 @@ export function validateRunSessionResultBody(body: unknown): Validation<RunSessi
     success: true,
     data: {
       runSessionId: runSessionId.trim(),
-      resultTime,
-      distance,
+      resultTime: parsedResultTime,
+      distance: parsedDistance,
       ...(verificationPhotoBase64 !== undefined ? { verificationPhotoBase64 } : {}),
     },
   };

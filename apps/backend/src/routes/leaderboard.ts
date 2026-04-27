@@ -3,33 +3,7 @@ import { getRunTypeName } from '@treadmill-challenge/shared';
 import { getDb } from '../db/index.js';
 import { competitions, runs } from '../db/index.js';
 import { parseLeaderboardScopeQuery } from '../utils/validation.js';
-
-function rankCompetitionEntries(
-  entries: Array<{ resultTime: number; distance: number }>,
-  runTypeId: number
-): number[] {
-  const ranks: number[] = [];
-  let prevKey: string | null = null;
-  let prevRank = 0;
-  for (let i = 0; i < entries.length; i++) {
-    const e = entries[i];
-    const key = runTypeId === 0 ? `${e.distance}|${e.resultTime}` : `${e.resultTime}|${e.distance}`;
-    if (i === 0) {
-      prevRank = 1;
-      prevKey = key;
-      ranks.push(1);
-      continue;
-    }
-    if (key === prevKey) {
-      ranks.push(prevRank);
-    } else {
-      prevRank = i + 1;
-      prevKey = key;
-      ranks.push(prevRank);
-    }
-  }
-  return ranks;
-}
+import { getRankedRuns } from '../services/rankingService.js';
 
 export default async function leaderboardRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/leaderboard', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -55,26 +29,22 @@ export default async function leaderboardRoutes(app: FastifyInstance): Promise<v
           leaderboard: [],
         });
       }
-      const entries = runs.getLeaderboardForCompetition(db, comp.id, scope.runTypeId, 100);
-      const ranks = rankCompetitionEntries(
-        entries.map((e) => ({ resultTime: e.run.resultTime, distance: e.run.distance })),
-        scope.runTypeId
-      );
+      const entries = getRankedRuns(db, { runTypeId: scope.runTypeId, sex: scope.sex, sortMode: 'best' });
       return reply.send({
         scoped: true,
         runTypeId: scope.runTypeId,
         sex: scope.sex,
         runTypeName: getRunTypeName(scope.runTypeId),
         competitionTitle: comp.title,
-        leaderboard: entries.map((e, idx) => ({
-          rank: ranks[idx],
-          participantId: e.run.participantId,
+        leaderboard: entries.map((e) => ({
+          rank: e.rank,
+          participantId: e.participantId,
           participantName: e.participantName,
-          resultTime: e.run.resultTime,
-          distance: e.run.distance,
-          speed: e.run.speed,
-          runId: e.run.id,
-          createdAt: e.run.createdAt,
+          resultTime: e.resultTime,
+          distance: e.resultDistance,
+          speed: runs.speedFromTimeDistance(e.resultTime, e.resultDistance),
+          runId: e.runSessionId,
+          createdAt: e.displayTime,
         })),
       });
     }

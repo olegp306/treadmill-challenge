@@ -42,6 +42,7 @@ import {
   buildLeaderboardsExportFilename,
   buildLeaderboardsWorkbookXlsxBuffer,
 } from '../services/leaderboardExcelExport.js';
+import { getRankedRuns } from '../services/rankingService.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const x = request.headers['x-admin-pin'];
   if (typeof x === 'string' && x.length > 0) return x.trim();
@@ -211,7 +212,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
 
     scoped.get('/api/admin/manager/queue-history', async () => {
       const db = getDb();
-      const base = runSessions.listManagerQueueHistory(db, 20);
+      const base = runSessions.listManagerQueueHistory(db, 500);
       const entries = base.map((r) => {
         const session = runSessions.getRunSessionById(db, r.runSessionId);
         return {
@@ -221,6 +222,43 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         };
       });
       return { entries };
+    });
+
+    scoped.get('/api/admin/manager/ranked-history', async (request, reply) => {
+      const db = getDb();
+      const query = (request.query ?? {}) as { runTypeId?: unknown; sex?: unknown; order?: unknown };
+      const runTypeId = parseRunTypeId(query.runTypeId);
+      const sex =
+        typeof query.sex === 'string'
+          ? normalizeGender(query.sex)
+          : typeof query.sex === 'number'
+            ? normalizeGender(String(query.sex))
+            : null;
+      if (runTypeId === null || sex === null) {
+        return reply.status(400).send({ error: 'runTypeId and sex are required' });
+      }
+      const orderRaw = typeof query.order === 'string' ? query.order.trim().toLowerCase() : '';
+      const sortMode = orderRaw === 'worst' || orderRaw === 'new' || orderRaw === 'old' ? orderRaw : 'best';
+      const ranked = getRankedRuns(db, { runTypeId, sex, sortMode });
+      return reply.send({
+        entries: ranked.map((r) => ({
+          rank: r.rank,
+          runSessionId: r.runSessionId,
+          participantId: r.participantId,
+          participantName: r.participantName,
+          participantFirstName: r.participantFirstName,
+          participantLastName: r.participantLastName,
+          participantPhone: r.participantPhone,
+          sex: r.sex,
+          runTypeId: r.runTypeId,
+          runType: r.runType,
+          status: 'finished' as const,
+          competitionId: '',
+          displayTime: r.displayTime,
+          resultTime: r.resultTime,
+          resultDistance: r.resultDistance,
+        })),
+      });
     });
 
     scoped.put('/api/admin/manager/queue-history/:runSessionId/result', async (request, reply) => {
