@@ -611,6 +611,7 @@ export const api = {
       maxQueueSizePerRun: number;
       eventTitle: string;
       heartbeatIntervalMin: 5 | 10 | 30 | 60;
+      inactivityTimeoutSec: number;
       showIntegrationInfoMessages: boolean;
     }>('/admin/settings');
   },
@@ -625,6 +626,7 @@ export const api = {
     maxQueueSizePerRun?: number;
     eventTitle: string;
     heartbeatIntervalMin: 5 | 10 | 30 | 60;
+    inactivityTimeoutSec: number;
     showIntegrationInfoMessages: boolean;
   }>) {
     return adminRequest<{ ok: boolean }>('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
@@ -726,6 +728,7 @@ export const api = {
   getPublicSettings() {
     return request<{
       heartbeatIntervalMin: 5 | 10 | 30 | 60;
+      inactivityTimeoutSec: number;
       tdDemoMode: boolean;
       showIntegrationInfoMessages: boolean;
       appVersion: string;

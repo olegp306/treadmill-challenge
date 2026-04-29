@@ -12,7 +12,8 @@ import { RunTypeTabBar } from '../features/run-selection/RunTypeTabBar';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { api } from '../api/client';
 import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
-import { logEvent, setLoggedRunSessionId } from '../logging/logEvent';
+import { clearLoggedParticipantId, clearLoggedRunSessionId, logEvent, setLoggedRunSessionId } from '../logging/logEvent';
+import { useInactivityReset } from '../hooks/useInactivityReset';
 
 export type RunSelectLocationState = {
   participantId: string;
@@ -60,6 +61,14 @@ export default function RunSelectionPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { report, clearPhase } = useIntegrationInfo();
+
+  useInactivityReset({
+    onTimeout: () => {
+      clearLoggedRunSessionId();
+      clearLoggedParticipantId();
+      navigate('/', { replace: true });
+    },
+  });
 
   useEffect(() => {
     if (!participantId) {

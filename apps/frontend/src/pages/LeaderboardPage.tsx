@@ -1,6 +1,6 @@
 import type { CSSProperties, Ref, RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { api } from '../api/client';
 import { ArOzioViewport } from '../arOzio/ArOzioViewport';
@@ -13,6 +13,7 @@ import { HeaderChrome } from '../ui/components/HeaderChrome';
 import { Sheet } from '../ui/components/Sheet';
 import { ui } from '../ui/tokens';
 import { formatRunResult, formatTimeResultMmSs } from '../utils/runResultFormat';
+import { useInactivityReset } from '../hooks/useInactivityReset';
 
 /** Стабильная высота фоновых колонок: до 10 строк. */
 const MAX_LEADERBOARD_ROWS = 10;
@@ -34,6 +35,8 @@ function slideIndexFor(runTypeId: RunTypeId, sex: Gender): number {
 const CAROUSEL_FADE_MS = 220;
 /** Figma node 939:1141 — Outline/Arrow Right 2; для «назад» используем отражение по X. */
 const FIGMA_ARROW_NEXT_ICON = 'https://www.figma.com/api/mcp/asset/a31f25a5-7712-41cb-aa93-c859c2f56928';
+const FIGMA_SEARCH_ARROW_UP_ICON = 'https://www.figma.com/api/mcp/asset/d6068a7f-3f3c-4fff-8d51-b496f52cc5b0';
+const FIGMA_SEARCH_ARROW_DOWN_ICON = 'https://www.figma.com/api/mcp/asset/089e4e97-3284-4e73-981f-2a1934991340';
 
 function parseLeaderboardScope(searchParams: URLSearchParams): { runTypeId: RunTypeId; sex: Gender } | null {
   const rt = searchParams.get('runTypeId');
@@ -62,14 +65,25 @@ type SlideState = {
 type NameSearchMatch = { runTypeId: RunTypeId; sex: Gender; participantId: string; runId: string };
 
 /** Точное совпадение полной строки имени (после trim). */
+function normalizeFullName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(' ');
+}
+
 function collectExactNameMatches(slides: SlideState[], needle: string): NameSearchMatch[] {
-  const t = needle.trim();
+  const t = normalizeFullName(needle);
   if (t.length < 3) return [];
   const out: NameSearchMatch[] = [];
   CAROUSEL_ORDER.forEach((scope, slideIdx) => {
     const entries = slides[slideIdx]?.entries ?? [];
     for (const e of entries) {
-      if (e.participantName.trim() === t) {
+      const participantNameNormalized = normalizeFullName(e.participantName);
+      const participantNameReversed = participantNameNormalized.split(' ').reverse().join(' ');
+      if (participantNameNormalized === t || participantNameReversed === t) {
         out.push({
           runTypeId: scope.runTypeId,
           sex: scope.sex,
@@ -87,6 +101,7 @@ function emptySlide(): SlideState {
 }
 
 export default function LeaderboardPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   /** Какой формат забега (0/1/2) в центре; левый/правый — соседи по кругу среди трёх форматов. */
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -115,6 +130,12 @@ export default function LeaderboardPage() {
     sex: Gender;
   } | null>(null);
   const [isCarouselFading, setIsCarouselFading] = useState(false);
+
+  useInactivityReset({
+    onTimeout: () => {
+      navigate('/', { replace: true });
+    },
+  });
 
   const highlightRef = useRef<HTMLDivElement | null>(null);
   const searchRowRef = useRef<HTMLDivElement | null>(null);
@@ -285,7 +306,9 @@ export default function LeaderboardPage() {
   const cycleNameSearchMatch = useCallback(
     (delta: -1 | 1) => {
       if (nameSearchMatches.length <= 1) return;
-      const next = (nameSearchMatchIndex + delta + nameSearchMatches.length) % nameSearchMatches.length;
+      const nextRaw = nameSearchMatchIndex + delta;
+      const next = Math.max(0, Math.min(nameSearchMatches.length - 1, nextRaw));
+      if (next === nameSearchMatchIndex) return;
       setNameSearchMatchIndex(next);
       applyNameSearchMatch(nameSearchMatches[next]!);
     },
@@ -313,7 +336,9 @@ export default function LeaderboardPage() {
   const centerError = slides[centerIdx]?.error ?? null;
   const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
   const showSearchFindButton = searchInputDraft.trim().length >= 3;
-  const showSearchSwitchButtons = isSearchFocused && nameSearchMatches.length > 1;
+  const showSearchSwitchButtons = nameSearchMatches.length > 1;
+  const canGoSearchUp = showSearchSwitchButtons && nameSearchMatchIndex > 0;
+  const canGoSearchDown = showSearchSwitchButtons && nameSearchMatchIndex < nameSearchMatches.length - 1;
 
   return (
     <ArOzioViewport>
@@ -374,17 +399,38 @@ export default function LeaderboardPage() {
                             type="button"
                             aria-label="Предыдущий найденный участник"
                             style={styles.searchSwitchBtnInInput}
+                            disabled={!canGoSearchUp}
                             onClick={() => cycleNameSearchMatch(-1)}
                           >
-                            <span style={styles.searchSwitchIcon}>⌃</span>
+                            <img
+                              src={FIGMA_SEARCH_ARROW_UP_ICON}
+                              alt=""
+                              aria-hidden
+                              style={{
+                                ...styles.searchSwitchIconImage,
+                                ...styles.searchSwitchIconUpRotated,
+                                ...(canGoSearchUp ? styles.searchSwitchIconImageActive : styles.searchSwitchIconImageInactive),
+                              }}
+                            />
                           </button>
                           <button
                             type="button"
                             aria-label="Следующий найденный участник"
                             style={styles.searchSwitchBtnInInput}
+                            disabled={!canGoSearchDown}
                             onClick={() => cycleNameSearchMatch(1)}
                           >
-                            <span style={styles.searchSwitchIcon}>⌄</span>
+                            <img
+                              src={FIGMA_SEARCH_ARROW_DOWN_ICON}
+                              alt=""
+                              aria-hidden
+                              style={{
+                                ...styles.searchSwitchIconImage,
+                                ...(canGoSearchDown
+                                  ? styles.searchSwitchIconImageActive
+                                  : styles.searchSwitchIconImageInactive),
+                              }}
+                            />
                           </button>
                         </span>
                       ) : null}
@@ -794,7 +840,7 @@ const styles: Record<string, CSSProperties> = {
     fontSynthesis: 'none',
   },
   searchInputWithSwitchButtons: {
-    paddingRight: w(84),
+    paddingRight: w(112),
   },
   searchSwitchButtonsInInput: {
     position: 'absolute',
@@ -802,16 +848,16 @@ const styles: Record<string, CSSProperties> = {
     top: '50%',
     transform: 'translateY(-50%)',
     display: 'flex',
-    flexDirection: 'column',
-    gap: h(4),
+    flexDirection: 'row',
+    gap: 0,
     zIndex: 2,
   },
   searchSwitchBtnInInput: {
-    width: w(34),
-    height: h(24),
+    width: w(44),
+    height: h(36),
     borderRadius: w(7),
-    border: '1px solid rgba(255,255,255,0.45)',
-    background: 'rgba(255,255,255,0.08)',
+    border: 'none',
+    background: 'transparent',
     color: '#fff',
     padding: 0,
     cursor: 'pointer',
@@ -819,13 +865,23 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchSwitchIcon: {
-    fontFamily: td.fontDruk,
-    fontWeight: 400,
-    fontSynthesis: 'none',
-    lineHeight: 1,
-    fontSize: w(16),
-    marginTop: w(-2),
+  searchSwitchIconImage: {
+    width: w(30),
+    height: h(16),
+    display: 'block',
+    objectFit: 'contain',
+    pointerEvents: 'none',
+  },
+  searchSwitchIconUpRotated: {
+    transform: 'rotate(180deg)',
+  },
+  searchSwitchIconImageActive: {
+    filter: 'none',
+    opacity: 1,
+  },
+  searchSwitchIconImageInactive: {
+    filter: 'brightness(0) invert(1)',
+    opacity: 1,
   },
   btnHome: {
     display: 'inline-flex',

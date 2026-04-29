@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { logEvent } from '../logging/logEvent';
+import { clearLoggedParticipantId, clearLoggedRunSessionId, logEvent } from '../logging/logEvent';
 import { RunQueueScreenShell } from '../features/run-queue/RunQueueScreenShell';
 import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
 import type { RunQueueLocationState } from './RunQueuePage';
+import { useInactivityReset } from '../hooks/useInactivityReset';
 
 /** Экран «Ваш номер в очереди» (Figma 718:897) — после «Ок» главная форма (`/`), без повторного «дорожка занята». */
 export default function RunQueuePositionIntroPage() {
@@ -18,6 +19,14 @@ export default function RunQueuePositionIntroPage() {
   const position = state?.position ?? 0;
 
   const [displayName, setDisplayName] = useState('УЧАСТНИК');
+
+  useInactivityReset({
+    onTimeout: () => {
+      clearLoggedRunSessionId();
+      clearLoggedParticipantId();
+      navigate('/', { replace: true });
+    },
+  });
 
   useEffect(() => {
     if (!participantId || !runSessionId || !state) {

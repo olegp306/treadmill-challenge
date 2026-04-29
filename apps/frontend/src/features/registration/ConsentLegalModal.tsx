@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ui } from '../../ui/tokens';
-import { CONSENT_PARTICIPATION_LEGAL_FONT_SIZE_PX } from './consentParticipationLegalRu';
 
 const FONT_DRUK = "'Druk Wide Cyr', 'Oswald', system-ui, sans-serif";
+const FONT_PROXIMA = "'Proxima Nova', 'ProximaNova', 'Inter', 'Segoe UI', Arial, sans-serif";
 
 type Props = {
   open: boolean;
@@ -121,14 +121,14 @@ export function ConsentLegalModal({ open, title, content, onClose }: Props) {
             id={titleId}
             style={{
               margin: 0,
-              fontSize: 'clamp(28px, 2.2vw, 48px)',
-              fontWeight: 400,
-              lineHeight: 1.5,
+              fontSize: 48,
+              fontWeight: 500,
+              lineHeight: 1.12,
               color: ui.color.text,
               textTransform: 'uppercase',
               flex: 1,
               minWidth: 0,
-              fontFamily: 'inherit',
+              fontFamily: FONT_DRUK,
             }}
           >
             {title}
@@ -190,12 +190,11 @@ export function ConsentLegalModal({ open, title, content, onClose }: Props) {
               key={i}
               style={{
                 margin: i === paragraphs.length - 1 ? 0 : '0 0 1.1em',
-                fontSize: CONSENT_PARTICIPATION_LEGAL_FONT_SIZE_PX,
-                lineHeight: 1.35,
+                fontSize: 36,
+                lineHeight: 1.28,
                 color: 'rgba(255, 255, 255, 0.92)',
-                textTransform: 'uppercase',
                 fontWeight: 400,
-                fontFamily: FONT_DRUK,
+                fontFamily: FONT_PROXIMA,
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
               }}

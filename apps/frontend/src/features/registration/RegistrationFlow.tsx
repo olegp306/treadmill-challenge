@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
-import { logEvent, setLoggedParticipantId } from '../../logging/logEvent';
+import {
+  clearLoggedParticipantId,
+  clearLoggedRunSessionId,
+  logEvent,
+  setLoggedParticipantId,
+} from '../../logging/logEvent';
+import { useInactivityReset } from '../../hooks/useInactivityReset';
 import { RegistrationLayout } from './RegistrationLayout';
 import { validateNamePart } from './nameValidation';
 import { formatPhoneFromDigits } from './phoneFormat';
@@ -27,6 +33,20 @@ export function RegistrationFlow() {
   const [fieldError, setFieldError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useInactivityReset({
+    onTimeout: () => {
+      clearLoggedParticipantId();
+      clearLoggedRunSessionId();
+      setStep(RegistrationStep.Age);
+      setForm(INITIAL_FORM);
+      setAgeChoice('unset');
+      setStepError(null);
+      setFieldError(false);
+      setSubmitError(null);
+      navigate('/', { replace: true });
+    },
+  });
 
   const patchForm = useCallback((p: Partial<RegistrationFormData>) => {
     setForm((prev) => ({ ...prev, ...p }));

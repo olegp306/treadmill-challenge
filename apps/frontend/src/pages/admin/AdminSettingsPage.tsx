@@ -43,6 +43,7 @@ export default function AdminSettingsPage() {
         maxGlobalQueueSize: settings.maxGlobalQueueSize ?? settings.maxQueueSizePerRun ?? DEFAULT_MAX_GLOBAL_QUEUE_SIZE,
         eventTitle: settings.eventTitle,
         heartbeatIntervalMin: settings.heartbeatIntervalMin,
+        inactivityTimeoutSec: settings.inactivityTimeoutSec,
         showIntegrationInfoMessages: settings.showIntegrationInfoMessages,
       });
       sessionStorage.setItem('adminPin', settings.adminPin);
@@ -168,6 +169,22 @@ export default function AdminSettingsPage() {
               <option value={30}>30</option>
               <option value={60}>60</option>
             </select>
+          </label>
+          <label style={lab}>
+            Таймаут бездействия (секунды)
+            <input
+              type="number"
+              min={15}
+              max={3600}
+              value={settings.inactivityTimeoutSec}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  inactivityTimeoutSec: Math.max(15, Math.min(3600, Number(e.target.value) || 120)),
+                })
+              }
+              style={inp}
+            />
           </label>
           <label style={lab}>
             Название события

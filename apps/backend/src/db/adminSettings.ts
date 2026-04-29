@@ -45,6 +45,7 @@ export function getMaxQueueSizePerRun(db: Db): number {
 }
 
 const HEARTBEAT_INTERVAL_MIN_OPTIONS = new Set([5, 10, 30, 60]);
+const DEFAULT_INACTIVITY_TIMEOUT_SEC = 120;
 
 /** Public telemetry heartbeat interval in minutes. Default 5. */
 export function getHeartbeatIntervalMin(db: Db): number {
@@ -58,4 +59,17 @@ export function normalizeHeartbeatIntervalMin(value: unknown): number {
   const n = Number(value);
   if (!Number.isFinite(n) || !HEARTBEAT_INTERVAL_MIN_OPTIONS.has(n)) return 5;
   return n;
+}
+
+/** Inactivity timeout in seconds for selected kiosk/admin screens. Default 120. */
+export function getInactivityTimeoutSec(db: Db): number {
+  const raw = Number(getSetting(db, 'inactivityTimeoutSec'));
+  if (!Number.isFinite(raw)) return DEFAULT_INACTIVITY_TIMEOUT_SEC;
+  return Math.min(3600, Math.max(15, Math.floor(raw)));
+}
+
+export function normalizeInactivityTimeoutSec(value: unknown): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_INACTIVITY_TIMEOUT_SEC;
+  return Math.min(3600, Math.max(15, Math.floor(n)));
 }

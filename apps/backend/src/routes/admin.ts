@@ -149,6 +149,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     const db = getDb();
     return {
       heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
+      inactivityTimeoutSec: adminSettings.getInactivityTimeoutSec(db),
       tdDemoMode: adminSettings.getTdDemoMode(db),
       showIntegrationInfoMessages: adminSettings.getIntegrationInfoMessages(db),
       appVersion: getAppVersion(),
@@ -950,6 +951,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         maxQueueSizePerRun: adminSettings.getMaxGlobalQueueSize(db),
         eventTitle: adminSettings.getSetting(db, 'eventTitle') ?? 'Amazing Red',
         heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
+        inactivityTimeoutSec: adminSettings.getInactivityTimeoutSec(db),
       };
     });
 
@@ -965,6 +967,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         maxQueueSizePerRun?: number;
         eventTitle?: string;
         heartbeatIntervalMin?: number;
+        inactivityTimeoutSec?: number;
         showIntegrationInfoMessages?: boolean;
       };
       if (body.adminPin !== undefined) adminSettings.setSetting(db, 'adminPin', body.adminPin.trim());
@@ -986,6 +989,10 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       if (body.heartbeatIntervalMin !== undefined) {
         const min = adminSettings.normalizeHeartbeatIntervalMin(body.heartbeatIntervalMin);
         adminSettings.setSetting(db, 'heartbeatIntervalMin', String(min));
+      }
+      if (body.inactivityTimeoutSec !== undefined) {
+        const timeout = adminSettings.normalizeInactivityTimeoutSec(body.inactivityTimeoutSec);
+        adminSettings.setSetting(db, 'inactivityTimeoutSec', String(timeout));
       }
       if (body.showIntegrationInfoMessages !== undefined) {
         adminSettings.setSetting(db, 'integrationInfoMessages', body.showIntegrationInfoMessages ? 'true' : 'false');

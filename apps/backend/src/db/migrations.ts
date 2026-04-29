@@ -207,6 +207,7 @@ function seedAdminSettings(db: Db): void {
   ins.run('maxQueueSizePerRun', String(DEFAULT_MAX_GLOBAL_QUEUE_SIZE));
   ins.run('maxGlobalQueueSize', String(DEFAULT_MAX_GLOBAL_QUEUE_SIZE));
   ins.run('heartbeatIntervalMin', '5');
+  ins.run('inactivityTimeoutSec', '120');
   ins.run('integrationInfoMessages', 'false');
   ins.run('lastTdSyncOk', '');
   ins.run('lastTdSyncError', '');

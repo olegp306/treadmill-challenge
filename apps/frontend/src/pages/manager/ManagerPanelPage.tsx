@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
 import { formatRunResult } from '../../utils/runResultFormat';
+import { useInactivityReset } from '../../hooks/useInactivityReset';
 
 type ManagerTab = 'queue' | 'runs' | 'system' | 'suspension';
 
@@ -16,6 +17,10 @@ type EditParticipantState = {
   phone: string;
   resultTime: string;
   resultDistance: string;
+};
+
+type EditAuthRequest = {
+  row: HistoryRow;
 };
 
 type QueueRecoveryState = {
@@ -48,7 +53,6 @@ function formatHistoryDisplayTime(iso: string): string {
 
 export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager' | 'admin' }) {
   const navigate = useNavigate();
-  const inactivityTimerRef = useRef<number | null>(null);
   const [tab, setTab] = useState<ManagerTab>('queue');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,10 +70,23 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
   const [quickSexFilter, setQuickSexFilter] = useState<QuickSexFilter>(null);
   const [historySortMode, setHistorySortMode] = useState<HistorySortMode>('new');
   const [editParticipant, setEditParticipant] = useState<EditParticipantState | null>(null);
+  const [editAuthRequest, setEditAuthRequest] = useState<EditAuthRequest | null>(null);
+  const [editAuthPin, setEditAuthPin] = useState('');
+  const [editAuthError, setEditAuthError] = useState<string | null>(null);
+  const [editAuthLoading, setEditAuthLoading] = useState(false);
   const [restartPin, setRestartPin] = useState('');
   const [restartConfirm, setRestartConfirm] = useState(false);
   const [suspensionState, setSuspensionState] = useState<{ backupPath: string; createdAt: string } | null>(null);
   const [suspensionBusy, setSuspensionBusy] = useState(false);
+
+  useInactivityReset({
+    onTimeout: () => {
+      setEditParticipant(null);
+      sessionStorage.removeItem('adminPin');
+      sessionStorage.removeItem('adminRole');
+      navigate('/', { replace: true });
+    },
+  });
 
   const loadQueueHistory = useCallback(async () => {
     const res = await api.adminManagerQueueHistory();
@@ -259,55 +276,61 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
 
   const openFinishedEdit = (row: HistoryRow) => {
     if (row.status !== 'finished') return;
-    const openEditor = () =>
-      setEditParticipant({
-      id: row.participantId,
-      runSessionId: row.runSessionId,
-      firstName: row.participantFirstName,
-      lastName: row.participantLastName,
-      phone: row.participantPhone,
-      resultTime: row.resultTime != null ? String(row.resultTime) : '',
-      resultDistance: row.resultDistance != null ? String(row.resultDistance) : '',
-    });
-    if (mode === 'manager') {
-      const pin = window.prompt('Введите пароль менеджера для редактирования участника');
-      if (!pin || !pin.trim()) return;
-      setBusy(true);
-      setError(null);
-      void api
-        .managerLogin(pin.trim())
-        .then(() => openEditor())
-        .catch((e) => {
-          setError(e instanceof Error ? e.message : 'Неверный пароль менеджера');
-        })
-        .finally(() => setBusy(false));
+    setEditAuthPin('');
+    setEditAuthError(null);
+    setEditAuthRequest({ row });
+  };
+
+  const closeEditAuthModal = () => {
+    if (editAuthLoading) return;
+    setEditAuthRequest(null);
+    setEditAuthPin('');
+    setEditAuthError(null);
+  };
+
+  const confirmEditAuth = async () => {
+    if (!editAuthRequest) return;
+    if (editAuthPin.length !== 6 || !/^\d{6}$/.test(editAuthPin)) {
+      setEditAuthError('Введите 6 цифр');
       return;
     }
-    const hasAdminSession =
-      typeof sessionStorage !== 'undefined' &&
-      Boolean(sessionStorage.getItem('adminPin')) &&
-      sessionStorage.getItem('adminRole') === 'god_admin';
-    if (hasAdminSession) {
-      openEditor();
-      return;
-    }
-    const pin = window.prompt('Введите PIN администратора для редактирования участника');
-    if (!pin || !pin.trim()) return;
-    setBusy(true);
+    setEditAuthLoading(true);
+    setEditAuthError(null);
     setError(null);
-    void api
-      .adminLogin(pin.trim())
-      .then(() => {
+    try {
+      if (mode === 'admin') {
+        await api.adminLogin(editAuthPin);
         if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem('adminPin', pin.trim());
+          sessionStorage.setItem('adminPin', editAuthPin);
           sessionStorage.setItem('adminRole', 'god_admin');
         }
-        openEditor();
-      })
-      .catch((e) => {
-        setError(e instanceof Error ? e.message : 'Неверный PIN администратора');
-      })
-      .finally(() => setBusy(false));
+      } else {
+        await api.managerLogin(editAuthPin);
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('adminPin', editAuthPin);
+          sessionStorage.setItem('adminRole', 'manager');
+        }
+      }
+      const row = editAuthRequest.row;
+      setEditParticipant({
+        id: row.participantId,
+        runSessionId: row.runSessionId,
+        firstName: row.participantFirstName,
+        lastName: row.participantLastName,
+        phone: row.participantPhone,
+        resultTime: row.resultTime != null ? String(row.resultTime) : '',
+        resultDistance: row.resultDistance != null ? String(row.resultDistance) : '',
+      });
+      setEditAuthRequest(null);
+      setEditAuthPin('');
+      setEditAuthError(null);
+    } catch (e) {
+      setEditAuthError(
+        e instanceof Error ? e.message : mode === 'admin' ? 'Неверный PIN администратора' : 'Неверный пароль менеджера'
+      );
+    } finally {
+      setEditAuthLoading(false);
+    }
   };
 
   const createSuspensionBackup = async () => {
@@ -451,33 +474,6 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
     }
   };
 
-  useEffect(() => {
-    const INACTIVITY_MS = 2 * 60 * 1000;
-    const clearTimer = () => {
-      if (inactivityTimerRef.current !== null) {
-        window.clearTimeout(inactivityTimerRef.current);
-        inactivityTimerRef.current = null;
-      }
-    };
-    const forceExitToMain = () => {
-      setEditParticipant(null);
-      sessionStorage.removeItem('adminPin');
-      sessionStorage.removeItem('adminRole');
-      navigate('/', { replace: true });
-    };
-    const resetTimer = () => {
-      clearTimer();
-      inactivityTimerRef.current = window.setTimeout(forceExitToMain, INACTIVITY_MS);
-    };
-    const activityEvents: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'input', 'touchstart'];
-    activityEvents.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }));
-    resetTimer();
-    return () => {
-      clearTimer();
-      activityEvents.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
-    };
-  }, [navigate]);
-
   return (
     <main style={{ ...styles.page, ...(mode === 'admin' ? styles.pageAdmin : {}) }}>
       <header style={styles.header}>
@@ -514,6 +510,56 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
       {error ? <p style={styles.error}>{error}</p> : null}
       {busy ? <p style={styles.info}>Загрузка...</p> : null}
       <div style={styles.contentArea}>
+        {editAuthRequest ? (
+          <div
+            style={styles.authModalBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-auth-title"
+            onClick={closeEditAuthModal}
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void confirmEditAuth();
+              }}
+              style={styles.authModalCard}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="edit-auth-title" style={styles.authModalTitle}>
+                {mode === 'admin' ? 'Подтверждение администратора' : 'Подтверждение менеджера'}
+              </h2>
+              <p style={styles.authModalHint}>
+                {mode === 'admin'
+                  ? 'Введите PIN администратора для редактирования записи'
+                  : 'Введите PIN менеджера для редактирования записи'}
+              </p>
+              <input
+                type="password"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="\d{6}"
+                maxLength={6}
+                value={editAuthPin}
+                onChange={(e) => setEditAuthPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                style={styles.authModalInput}
+              />
+              {editAuthError ? <p style={styles.authModalError}>{editAuthError}</p> : null}
+              <div style={styles.authModalActions}>
+                <button type="button" onClick={closeEditAuthModal} style={styles.authModalCancelBtn}>
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  disabled={editAuthLoading || editAuthPin.length !== 6}
+                  style={styles.authModalSubmitBtn}
+                >
+                  {editAuthLoading ? '…' : 'Подтвердить'}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : null}
         {tab === 'queue' ? (
           <section style={styles.sectionScrollable}>
           <div style={styles.sectionHead}>
@@ -571,89 +617,6 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
           </div>
 
           <p style={styles.info}>История забегов и фильтры доступны на вкладке «Забеги».</p>
-          {editParticipant ? (
-            <div
-              role="presentation"
-              style={styles.modalBackdrop}
-              onClick={() => !busy && setEditParticipant(null)}
-            >
-              <div role="dialog" style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-                <h3 style={{ margin: '0 0 12px', fontSize: 18 }}>Участник (завершил забег)</h3>
-                <p style={{ margin: '0 0 14px', fontSize: 13, color: '#888' }}>
-                  {mode === 'admin'
-                    ? 'Для admin доступны фамилия, имя, телефон и результат завершенного забега. Также можно удалить запись о забеге целиком.'
-                    : 'Изменяются только фамилия, имя и телефон. Нажмите строку в таблице снова после сохранения при необходимости.'}
-                </p>
-                <label style={styles.modalField}>
-                  Фамилия
-                  <input
-                    style={styles.input}
-                    value={editParticipant.lastName}
-                    onChange={(e) => setEditParticipant({ ...editParticipant, lastName: e.target.value })}
-                  />
-                </label>
-                <label style={styles.modalField}>
-                  Имя
-                  <input
-                    style={styles.input}
-                    value={editParticipant.firstName}
-                    onChange={(e) => setEditParticipant({ ...editParticipant, firstName: e.target.value })}
-                  />
-                </label>
-                <label style={styles.modalField}>
-                  Телефон
-                  <input
-                    style={styles.input}
-                    value={editParticipant.phone}
-                    onChange={(e) => setEditParticipant({ ...editParticipant, phone: e.target.value })}
-                  />
-                </label>
-                {mode === 'admin' ? (
-                  <>
-                    <label style={styles.modalField}>
-                      Результат (сек)
-                      <input
-                        style={styles.input}
-                        value={editParticipant.resultTime}
-                        onChange={(e) => setEditParticipant({ ...editParticipant, resultTime: e.target.value })}
-                      />
-                    </label>
-                    <label style={styles.modalField}>
-                      Результат (метры)
-                      <input
-                        style={styles.input}
-                        value={editParticipant.resultDistance}
-                        onChange={(e) => setEditParticipant({ ...editParticipant, resultDistance: e.target.value })}
-                      />
-                    </label>
-                  </>
-                ) : null}
-                <div style={styles.modalActionsRow}>
-                  <button type="button" style={styles.saveBtn} disabled={busy} onClick={() => void saveHistoryParticipant()}>
-                    Сохранить
-                  </button>
-                  {mode === 'admin' ? (
-                    <button
-                      type="button"
-                      style={{ ...styles.refreshBtn, borderColor: '#7a2222', background: '#341214', color: '#ffd8d8' }}
-                      disabled={busy}
-                      onClick={() => void deleteFinishedRunEntry()}
-                    >
-                      Удалить запись о забеге
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    style={styles.refreshBtn}
-                    disabled={busy}
-                    onClick={() => setEditParticipant(null)}
-                  >
-                    Отмена
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
           </section>
         ) : null}
 
@@ -804,6 +767,89 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
             )}
           </div>
           </section>
+        ) : null}
+        {editParticipant ? (
+          <div
+            role="presentation"
+            style={styles.modalBackdrop}
+            onClick={() => !busy && setEditParticipant(null)}
+          >
+            <div role="dialog" style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ margin: '0 0 12px', fontSize: 18 }}>Участник (завершил забег)</h3>
+              <p style={{ margin: '0 0 14px', fontSize: 13, color: '#888' }}>
+                {mode === 'admin'
+                  ? 'Для admin доступны фамилия, имя, телефон и результат завершенного забега. Также можно удалить запись о забеге целиком.'
+                  : 'Изменяются только фамилия, имя и телефон. Нажмите строку в таблице снова после сохранения при необходимости.'}
+              </p>
+              <label style={styles.modalField}>
+                Фамилия
+                <input
+                  style={styles.input}
+                  value={editParticipant.lastName}
+                  onChange={(e) => setEditParticipant({ ...editParticipant, lastName: e.target.value })}
+                />
+              </label>
+              <label style={styles.modalField}>
+                Имя
+                <input
+                  style={styles.input}
+                  value={editParticipant.firstName}
+                  onChange={(e) => setEditParticipant({ ...editParticipant, firstName: e.target.value })}
+                />
+              </label>
+              <label style={styles.modalField}>
+                Телефон
+                <input
+                  style={styles.input}
+                  value={editParticipant.phone}
+                  onChange={(e) => setEditParticipant({ ...editParticipant, phone: e.target.value })}
+                />
+              </label>
+              {mode === 'admin' ? (
+                <>
+                  <label style={styles.modalField}>
+                    Результат (сек)
+                    <input
+                      style={styles.input}
+                      value={editParticipant.resultTime}
+                      onChange={(e) => setEditParticipant({ ...editParticipant, resultTime: e.target.value })}
+                    />
+                  </label>
+                  <label style={styles.modalField}>
+                    Результат (метры)
+                    <input
+                      style={styles.input}
+                      value={editParticipant.resultDistance}
+                      onChange={(e) => setEditParticipant({ ...editParticipant, resultDistance: e.target.value })}
+                    />
+                  </label>
+                </>
+              ) : null}
+              <div style={styles.modalActionsRow}>
+                <button type="button" style={styles.saveBtn} disabled={busy} onClick={() => void saveHistoryParticipant()}>
+                  Сохранить
+                </button>
+                {mode === 'admin' ? (
+                  <button
+                    type="button"
+                    style={{ ...styles.refreshBtn, borderColor: '#7a2222', background: '#341214', color: '#ffd8d8' }}
+                    disabled={busy}
+                    onClick={() => void deleteFinishedRunEntry()}
+                  >
+                    Удалить запись о забеге
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  style={styles.refreshBtn}
+                  disabled={busy}
+                  onClick={() => setEditParticipant(null)}
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
     </main>
@@ -1058,4 +1104,57 @@ const styles: Record<string, React.CSSProperties> = {
   systemInput: { minHeight: 44, borderRadius: 8, border: '1px solid #555', background: '#0f0f0f', color: '#fff', padding: '8px 10px' },
   check: { display: 'flex', alignItems: 'center', gap: 8, color: '#d0d0d0' },
   restartBtn: { minHeight: 46, borderRadius: 10, border: 'none', background: '#e6233a', color: '#fff', fontWeight: 700 },
+  authModalBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 1200,
+    background: 'rgba(0,0,0,0.75)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    boxSizing: 'border-box' as const,
+  },
+  authModalCard: {
+    width: 'min(420px, 100%)',
+    background: '#1a1a1a',
+    borderRadius: 16,
+    padding: 28,
+    border: '1px solid #333',
+    boxSizing: 'border-box' as const,
+  },
+  authModalTitle: { margin: '0 0 16px', color: '#fff', fontSize: 22 },
+  authModalHint: { margin: '0 0 16px', color: '#aaa', fontSize: 15 },
+  authModalInput: {
+    width: '100%',
+    fontSize: 28,
+    letterSpacing: 12,
+    textAlign: 'center' as const,
+    padding: '16px 12px',
+    borderRadius: 12,
+    border: '1px solid #444',
+    background: '#0d0d0d',
+    color: '#fff',
+    boxSizing: 'border-box' as const,
+  },
+  authModalError: { color: '#f85149', margin: '12px 0 0', fontSize: 14 },
+  authModalActions: { display: 'flex', gap: 12, marginTop: 20 },
+  authModalCancelBtn: {
+    flex: 1,
+    minHeight: 52,
+    fontSize: 18,
+    borderRadius: 12,
+    border: '1px solid #444',
+    background: 'transparent',
+    color: '#ccc',
+  },
+  authModalSubmitBtn: {
+    flex: 1,
+    minHeight: 52,
+    fontSize: 18,
+    borderRadius: 12,
+    border: 'none',
+    background: '#e6233a',
+    color: '#fff',
+  },
 };
