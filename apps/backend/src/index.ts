@@ -11,11 +11,13 @@ import runRoutes from './routes/run.js';
 import adminRoutes from './routes/admin.js';
 import eventsRoutes from './routes/events.js';
 import devQueueControlRoutes from './routes/devQueueControl.js';
+import healthStatusRoutes from './routes/healthStatus.js';
 import { getAppVersion } from './version.js';
 import { registerTouchDesignerOscRunResultHandler } from './integrations/touchdesigner/oscTouchDesignerAck.js';
 import { touchDesignerAdapter } from './integrations/touchdesigner/adapter.js';
 import { submitRunSessionResult } from './services/runResultService.js';
 import { startDataSnapshotBackupScheduler } from './services/dataSnapshotBackup.js';
+import { startHealthPushScheduler } from './services/healthPushScheduler.js';
 import * as eventLogs from './db/events.js';
 
 const PORT = Number(process.env.PORT) || 3001;
@@ -69,6 +71,7 @@ async function main() {
   await app.register(touchdesignerRoutes);
   await app.register(runRoutes);
   await app.register(eventsRoutes);
+  await app.register(healthStatusRoutes);
   await app.register(adminRoutes);
   await app.register(devQueueControlRoutes);
 
@@ -79,6 +82,15 @@ async function main() {
   });
   app.addHook('onClose', async () => {
     backupScheduler.stop();
+  });
+
+  const healthPushScheduler = startHealthPushScheduler({
+    info: (o) => app.log.info(o),
+    warn: (o) => app.log.warn(o),
+    error: (o) => app.log.error(o),
+  });
+  app.addHook('onClose', async () => {
+    healthPushScheduler.stop();
   });
 
   const pruneEvents = () => {

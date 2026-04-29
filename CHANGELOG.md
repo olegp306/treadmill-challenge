@@ -7,6 +7,26 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.4.2] - 2026-04-29
+
+### Добавлено
+
+- **Health endpoint (агрегированный):** добавлен `GET /api/health/status` с единым payload состояния backend, iPad heartbeat, TouchDesigner, очереди, результатов и системных метрик хоста.
+- **Host push scheduler (optional):** добавлена периодическая отправка health payload на внешний хост при наличии `HEALTH_PUSH_URL` (интервал/таймаут настраиваются через env).
+- **Документация мониторинга:** добавлен технический документ `docs/health-monitoring.md` с контрактом endpoint, описанием `TDHealth.json`, warnings и параметров host push.
+
+### Изменено
+
+- **Telemetry iPad:** в frontend-события (`/api/events`) добавлен `deviceId` (через `VITE_IPAD_DEVICE_ID` или стабильный fallback в `localStorage`) для различения устройств.
+- **Health payload backend:** расширен секцией `system` (`cpuPct`, `ramPct`, `diskFreeGb`, `uptimeSec`, `internetOk`) и базовыми warning-правилами по ресурсам/сети.
+- **TouchDesigner health file:** backend поддерживает безопасное чтение `TDHealth.json` (по умолчанию `./runtime/health/TDHealth.json` или путь из `TD_HEALTH_FILE_PATH`) без падения сервиса при отсутствии/ошибке файла.
+
+### Исправлено
+
+- **Устойчивость мониторинга:** ошибки сборки health payload и ошибки host push не приводят к падению backend; проблемы логируются и сервис продолжает работу.
+
+---
+
 ## [0.4.1] - 2026-04-27
 
 ### Исправлено

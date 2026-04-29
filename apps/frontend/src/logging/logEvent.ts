@@ -1,6 +1,7 @@
 const SESSION_KEY = 'appLogSessionId';
 const PARTICIPANT_KEY = 'participantId';
 const RUN_SESSION_KEY = 'runSessionId';
+const DEVICE_KEY = 'ipadDeviceId';
 
 const SENSITIVE_KEYS = new Set([
   'password',
@@ -51,6 +52,25 @@ export function getOrCreateLogSessionId(): string {
     sessionStorage.setItem(SESSION_KEY, id);
   }
   return id;
+}
+
+function getConfiguredDeviceId(): string | null {
+  const configured = import.meta.env.VITE_IPAD_DEVICE_ID?.trim();
+  return configured ? configured : null;
+}
+
+function getOrCreateLocalDeviceId(): string {
+  if (typeof localStorage === 'undefined') return 'browser-unknown';
+  let id = localStorage.getItem(DEVICE_KEY);
+  if (!id) {
+    id = `ipad-${safeRandomUUID()}`;
+    localStorage.setItem(DEVICE_KEY, id);
+  }
+  return id;
+}
+
+export function getDeviceId(): string {
+  return getConfiguredDeviceId() ?? getOrCreateLocalDeviceId();
 }
 
 export function setLoggedParticipantId(participantId: string): void {
@@ -128,13 +148,17 @@ export function logEvent(
   const participantId = opts?.participantId ?? readStoredParticipantId();
   const runSessionId = opts?.runSessionId ?? readStoredRunSessionId();
   const safe = sanitizePayload(payload);
+  const deviceId = getDeviceId();
   const readableMessage = opts?.readableMessage?.trim() ?? '';
   void fetch('/api/events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       type,
-      payload: safe,
+      payload: {
+        ...safe,
+        deviceId,
+      },
       sessionId,
       ...(readableMessage ? { readableMessage } : {}),
       ...(participantId ? { participantId } : {}),
