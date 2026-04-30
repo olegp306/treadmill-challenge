@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
 import { formatRunResult } from '../../utils/runResultFormat';
 import { useInactivityReset } from '../../hooks/useInactivityReset';
 
-type ManagerTab = 'queue' | 'runs' | 'system' | 'suspension';
+type ManagerTab = 'queue' | 'runs' | 'system' | 'suspension' | 'td';
 
 type HistoryRow = Awaited<ReturnType<typeof api.adminManagerQueueHistory>>['entries'][number];
 
@@ -53,6 +53,7 @@ function formatHistoryDisplayTime(iso: string): string {
 
 export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager' | 'admin' }) {
   const navigate = useNavigate();
+  const restoreFromFileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<ManagerTab>('queue');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +79,8 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
   const [restartConfirm, setRestartConfirm] = useState(false);
   const [suspensionState, setSuspensionState] = useState<{ backupPath: string; createdAt: string } | null>(null);
   const [suspensionBusy, setSuspensionBusy] = useState(false);
+  const [tdSettings, setTdSettings] = useState<Awaited<ReturnType<typeof api.adminGetSettings>> | null>(null);
+  const [tdSaving, setTdSaving] = useState(false);
 
   useInactivityReset({
     onTimeout: () => {
@@ -97,6 +100,12 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
     if (mode !== 'admin') return;
     const res = await api.adminSuspensionState();
     setSuspensionState(res.state);
+  }, [mode]);
+
+  const loadTdSettings = useCallback(async () => {
+    if (mode !== 'admin') return;
+    const res = await api.adminGetSettings();
+    setTdSettings(res);
   }, [mode]);
 
   const loadQueueRecovery = useCallback(async () => {
@@ -223,14 +232,14 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
       setBusy(true);
       setError(null);
       try {
-        await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSuspensionState()]);
+        await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSuspensionState(), loadTdSettings()]);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Ошибка загрузки');
       } finally {
         setBusy(false);
       }
     })();
-  }, [loadQueueHistory, loadQueueRecovery, loadSuspensionState]);
+  }, [loadQueueHistory, loadQueueRecovery, loadSuspensionState, loadTdSettings]);
 
   const refreshQueue = async () => {
     setBusy(true);
@@ -378,6 +387,63 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
     }
   };
 
+  const restoreFromJsonFile = async (file: File) => {
+    if (mode !== 'admin') return;
+    const ok = window.confirm(
+      'Импорт заменит все данные в базе (участники, соревнования, сессии, забеги, события, настройки). Продолжить?'
+    );
+    if (!ok) return;
+    setSuspensionBusy(true);
+    setError(null);
+    try {
+      const text = await file.text();
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text) as unknown;
+      } catch {
+        setError('Некорректный JSON в файле.');
+        return;
+      }
+      await api.adminImportData(parsed);
+      await Promise.all([loadQueueHistory(), loadQueueRecovery(), loadSuspensionState(), loadTdSettings()]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось восстановить данные из файла');
+    } finally {
+      setSuspensionBusy(false);
+    }
+  };
+
+  const saveTdSettings = async () => {
+    if (mode !== 'admin' || !tdSettings) return;
+    setTdSaving(true);
+    setError(null);
+    try {
+      await api.adminPutSettings({
+        tdHost: tdSettings.tdHost,
+        tdPort: tdSettings.tdPort,
+        tdAdapter: tdSettings.tdAdapter,
+      });
+      await loadTdSettings();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось сохранить настройки TouchDesigner');
+    } finally {
+      setTdSaving(false);
+    }
+  };
+
+  const persistTdDemoMode = async (value: boolean) => {
+    if (mode !== 'admin' || !tdSettings) return;
+    const prev = tdSettings.tdDemoMode;
+    setTdSettings({ ...tdSettings, tdDemoMode: value });
+    setError(null);
+    try {
+      await api.adminPutSettings({ tdDemoMode: value });
+    } catch (e) {
+      setTdSettings({ ...tdSettings, tdDemoMode: prev });
+      setError(e instanceof Error ? e.message : 'Не удалось сохранить demo mode');
+    }
+  };
+
   const deleteFinishedRunEntry = async () => {
     if (mode !== 'admin' || !editParticipant) return;
     const pin = window.prompt('Введите PIN администратора для удаления записи о забеге');
@@ -491,7 +557,16 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
                 onClick={() => setTab('suspension')}
                 type="button"
               >
-                Приостановка
+                Экспорт-импорт
+              </button>
+            ) : null}
+            {mode === 'admin' ? (
+              <button
+                style={tab === 'td' ? styles.tabActive : styles.tab}
+                onClick={() => setTab('td')}
+                type="button"
+              >
+                TouchDesigner
               </button>
             ) : null}
             <button style={tab === 'runs' ? styles.tabActive : styles.tab} onClick={() => setTab('runs')} type="button">
@@ -731,7 +806,8 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
         ) : null}
         {tab === 'suspension' && mode === 'admin' ? (
           <section style={styles.sectionScrollable}>
-          <h2 style={styles.h2}>Приостановка</h2>
+          <h2 style={styles.h2}>Экспорт-импорт</h2>
+          <h3 style={{ ...styles.h2, fontSize: 22, marginTop: 0 }}>Приостановка</h3>
           <p style={styles.info}>Шаг 1: экспорт JSON в браузер + server-side backup в папку backup.</p>
           <div style={styles.systemCard}>
             <button type="button" style={styles.restartBtn} disabled={suspensionBusy} onClick={createSuspensionBackup}>
@@ -765,7 +841,79 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
                 Backup еще не создан. Кнопка удаления будет доступна только после успешного backup.
               </p>
             )}
+            <input
+              ref={restoreFromFileRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const input = e.target;
+                const file = input.files?.[0];
+                input.value = '';
+                if (!file) return;
+                void restoreFromJsonFile(file);
+              }}
+            />
+            <button
+              type="button"
+              style={{ ...styles.restartBtn, background: '#5a3b00', color: '#f6d78a' }}
+              disabled={suspensionBusy}
+              onClick={() => restoreFromFileRef.current?.click()}
+            >
+              Восстановить данные из файла
+            </button>
           </div>
+          </section>
+        ) : null}
+        {tab === 'td' && mode === 'admin' ? (
+          <section style={styles.sectionScrollable}>
+            <h2 style={styles.h2}>TouchDesigner</h2>
+            <div style={styles.systemCard}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 15 }}>
+                TouchDesigner host
+                <input
+                  value={tdSettings?.tdHost ?? ''}
+                  onChange={(e) => tdSettings && setTdSettings({ ...tdSettings, tdHost: e.target.value })}
+                  style={styles.systemInput}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 15 }}>
+                TouchDesigner port
+                <input
+                  value={tdSettings?.tdPort ?? ''}
+                  onChange={(e) => tdSettings && setTdSettings({ ...tdSettings, tdPort: e.target.value })}
+                  style={styles.systemInput}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 15 }}>
+                TD adapter (mock | osc)
+                <input
+                  value={tdSettings?.tdAdapter ?? ''}
+                  onChange={(e) => tdSettings && setTdSettings({ ...tdSettings, tdAdapter: e.target.value })}
+                  style={styles.systemInput}
+                />
+              </label>
+              <label style={styles.check}>
+                <input
+                  type="checkbox"
+                  checked={tdSettings?.tdDemoMode ?? false}
+                  onChange={(e) => void persistTdDemoMode(e.target.checked)}
+                />
+                TouchDesigner demo mode
+              </label>
+              <p style={{ margin: '-6px 0 0', fontSize: 13, color: '#888', lineHeight: 1.4 }}>
+                Сохраняется сразу при переключении (на сервер). Без этого режима бэкенд шлёт OSC на старт забега; в demo
+                режиме старт/очередь идут без TouchDesigner.
+              </p>
+              <button
+                type="button"
+                style={styles.restartBtn}
+                disabled={tdSaving || suspensionBusy || !tdSettings}
+                onClick={() => void saveTdSettings()}
+              >
+                {tdSaving ? 'Сохранение…' : 'Сохранить настройки TouchDesigner'}
+              </button>
+            </div>
           </section>
         ) : null}
         {editParticipant ? (
