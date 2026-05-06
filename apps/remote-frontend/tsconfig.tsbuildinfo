@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/vite-env.d.ts","./src/api/client.ts","./src/ui/app.tsx","./src/ui/loginscreen.tsx","./src/ui/remoteadminshell.tsx","./src/ui/tabs/exportimporttab.tsx","./src/ui/tabs/monitoringtab.tsx"],"version":"5.9.3"}

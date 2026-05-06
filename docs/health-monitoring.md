@@ -120,3 +120,7 @@
 - Схемы состояния TD зафиксированы через `td` секцию и optional `TDHealth.json`.
 - Backend реализует сбор и агрегацию состояния iPad, TD, очереди, результатов и системных метрик.
 - Система готова к подключению внешнего monitoring/alerts хоста.
+
+## Related docs
+
+- Host/backend spec for external monitoring, alerts, audit log: `docs/remote-health-monitoring-host-spec-ru.md`

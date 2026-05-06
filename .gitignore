@@ -2,6 +2,8 @@ node_modules
 dist
 *.db
 apps/backend/data/
+apps/backend/backup/
+apps/remote-backend/runtime/
 .env
 .env.local
 .DS_Store

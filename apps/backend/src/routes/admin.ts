@@ -44,6 +44,17 @@ import {
 } from '../services/leaderboardExcelExport.js';
 import { getRankedRuns } from '../services/rankingService.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
+  const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
+  if (token) {
+    const a = request.headers.authorization;
+    if (typeof a === 'string' && a.startsWith('Bearer ') && a.slice(7).trim() === token) {
+      return token;
+    }
+    const hdr = request.headers['x-local-backend-auth-token'];
+    if (typeof hdr === 'string' && hdr.trim() === token) {
+      return token;
+    }
+  }
   const x = request.headers['x-admin-pin'];
   if (typeof x === 'string' && x.length > 0) return x.trim();
   const a = request.headers.authorization;
@@ -53,6 +64,10 @@ function getAdminPinFromRequest(request: FastifyRequest): string | null {
 
 function getGodAdminPins(db: ReturnType<typeof getDb>): Set<string> {
   const pins = new Set<string>(['191181']);
+  const envPin = process.env.ADMIN_PIN?.trim();
+  if (envPin) pins.add(envPin);
+  const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
+  if (token) pins.add(token);
   const configured = adminSettings.getAdminPin(db)?.trim();
   if (configured) pins.add(configured);
   return pins;
@@ -210,6 +225,11 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       }
       return { slots };
     });
+
+    // Lightweight “операторский” endpoint for remote monitoring tab (Stage 1).
+    // Returns last registration + last 5 runs.
+    // Implemented in a separate route module, mounted here under assertAdmin.
+    await scoped.register((await import('./adminRecentRuns.js')).default);
 
     scoped.get('/api/admin/manager/queue-history', async () => {
       const db = getDb();

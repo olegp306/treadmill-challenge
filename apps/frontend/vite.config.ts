@@ -34,10 +34,11 @@ export default defineConfig({
   server: {
     /** Listen on all interfaces so the app is reachable at http://<local-ip>:5173 on the LAN. */
     host: true,
-    port: 5173,
+    port: Number(process.env.FRONTEND_PORT) || 5173,
+    strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:3001',
         changeOrigin: true,
       },
     },

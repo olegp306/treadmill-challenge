@@ -1,0 +1,99 @@
+function localBaseUrl(): string {
+  return (process.env.LOCAL_BACKEND_BASE_URL?.trim() || '').replace(/\/+$/, '');
+}
+
+export function getLocalBaseUrl(): string {
+  return localBaseUrl();
+}
+
+export function getLocalAdminToken(): string {
+  return process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim() || '';
+}
+
+function localAdminHeaders(): HeadersInit {
+  const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
+  if (!token) return {};
+  // Stage 1 dev: use token-based auth for local admin endpoints.
+  return { Authorization: `Bearer ${token}` };
+}
+
+async function parseJson<T>(response: Response): Promise<T> {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error((data as { error?: string }).error ?? `HTTP ${response.status}`);
+  }
+  return data as T;
+}
+
+export async function getLocalHealthStatus(): Promise<unknown> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const res = await fetch(`${base}/api/health/status`);
+  return parseJson(res);
+}
+
+export async function getLocalAdminRecentRuns(): Promise<unknown> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const res = await fetch(`${base}/api/admin/recent-runs`, { headers: { ...localAdminHeaders() } });
+  return parseJson(res);
+}
+
+export async function proxyLocalAdminJsonExport(logsHours?: number): Promise<Response> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const q = new URLSearchParams();
+  if (logsHours != null) q.set('logsHours', String(logsHours));
+  return fetch(`${base}/api/admin/data/export${q.toString() ? `?${q.toString()}` : ''}`, {
+    headers: { ...localAdminHeaders() },
+  });
+}
+
+export async function proxyLocalAdminLeaderboardsXlsx(): Promise<Response> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  return fetch(`${base}/api/admin/leaderboards/export-xlsx`, {
+    headers: { ...localAdminHeaders() },
+  });
+}
+
+export async function proxyLocalAdminImportJson(body: unknown): Promise<unknown> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const res = await fetch(`${base}/api/admin/data/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...localAdminHeaders() },
+    body: JSON.stringify(body),
+  });
+  return parseJson(res);
+}
+
+export async function getLocalAdminRunSessions(): Promise<unknown> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const res = await fetch(`${base}/api/admin/manager/queue-history`, { headers: { ...localAdminHeaders() } });
+  return parseJson(res);
+}
+
+export async function updateLocalAdminRunSessionResult(runSessionId: string, resultTime: number, resultDistance: number): Promise<unknown> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const res = await fetch(`${base}/api/admin/manager/queue-history/${encodeURIComponent(runSessionId)}/result`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...localAdminHeaders() },
+    body: JSON.stringify({ resultTime, resultDistance }),
+  });
+  return parseJson(res);
+}
+
+export async function deleteLocalAdminRunSessionEntry(runSessionId: string, pin: string): Promise<unknown> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const res = await fetch(`${base}/api/admin/manager/queue-history/${encodeURIComponent(runSessionId)}/entry`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...localAdminHeaders() },
+    body: JSON.stringify({ pin }),
+  });
+  return parseJson(res);
+}
+

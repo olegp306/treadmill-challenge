@@ -7,6 +7,23 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.4.5] - 2026-05-06
+
+### Добавлено
+
+- **Remote Administrator (Stage 1–2 foundation):** отдельные приложения `apps/remote-backend` и `apps/remote-frontend` (JWT auth), proxy к локальному backend (health/recent runs/runs/export/import).
+- **Monitoring host backend (remote-backend):** `POST /api/monitoring/health` (API key, лимиты размера, rate limit), latest state + JSONL history, severity calculation, Telegram/Email alerts с dedup/cooldown.
+- **Audit log (remote-backend):** JSONL audit events (login/logout/view/export/import/edit/delete) с лимитом metadata и retention cleanup.
+- **Документация:** `docs/ARCHITECTURE.md`, `docs/TOUCHDESIGNER_INTEGRATION.md`, `docs/remote-health-monitoring-host-spec-ru.md`.
+- **Dev UX:** `npm run dev:stop` (Windows-friendly) и пример `scripts/start-local-product.sh`.
+
+### Изменено
+
+- **Dev PIN:** значение по умолчанию обновлено на `191181` для local/remote admin dev setup.
+- **Remote backup mirror:** новые файлы создаются с префиксом `remote-backup-` и учитываются retention’ом; manual download остаётся stream-only (без сохранения на диске remote).
+
+---
+
 ## [0.4.4] - 2026-04-30
 
 ### Добавлено

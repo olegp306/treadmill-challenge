@@ -469,9 +469,13 @@ npm run td:callback:smoke -- --autoFromQueue --runTypeId 1 --sex female --result
 | Script | Description |
 |--------|-------------|
 | `npm run build:shared` | Build `packages/shared` |
-| `npm run dev:backend` | Start backend (tsx watch) |
-| `npm run dev:frontend` | Start frontend (Vite dev server) |
-| `npm run dev` | Run dev in all workspaces |
+| `npm run dev:backend` | Start local backend (tsx watch) |
+| `npm run dev:frontend` | Start local frontend (Vite dev server) |
+| `npm run dev:local` | Start local backend + frontend (default ports) |
+| `npm run dev:remote` | Start remote-backend + remote-frontend (default ports) |
+| `npm run dev:all` | Start local + remote together |
+| `npm run dev:stop` | Kill listeners on dev ports (Windows-friendly) |
+| `npm run dev` | Alias for `dev:local` |
 | `npm run build` | Build all workspaces |
 | `npm run start:backend` | Run backend from `dist` (run `build:backend` first) |
 | `npm run preview:frontend` | Vite preview (run `build:frontend` first) |
@@ -484,10 +488,10 @@ npm run td:callback:smoke -- --autoFromQueue --runTypeId 1 --sex female --result
 ## Environment (optional)
 
 - **Backend**
-  - `PORT` – default `3001`
+  - `BACKEND_PORT` (or `PORT`) – default `3001`
   - `HOST` – default `0.0.0.0`
   - `DB_PATH` – path to SQLite file; default `./data/treadmill.db` (relative to backend process cwd)
 
-Copy `apps/backend/.env.example` to `apps/backend/.env` to override (e.g. `PORT=3001`).
+Copy `apps/backend/.env.example` to `apps/backend/.env` to override (e.g. `BACKEND_PORT=3001`).
 
 No authentication, Docker, or cloud services; everything runs locally.

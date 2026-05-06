@@ -20,7 +20,7 @@ import { startDataSnapshotBackupScheduler } from './services/dataSnapshotBackup.
 import { startHealthPushScheduler } from './services/healthPushScheduler.js';
 import * as eventLogs from './db/events.js';
 
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = Number(process.env.BACKEND_PORT ?? process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 function listLanIPv4Addresses(): string[] {
