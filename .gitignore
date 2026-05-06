@@ -9,5 +9,8 @@ apps/remote-backend/runtime/
 .DS_Store
 *.log
 coverage
+*.tsbuildinfo
+apps/remote-frontend/vite.config.js
+apps/remote-frontend/vite.config.d.ts
 .idea
 .vscode
