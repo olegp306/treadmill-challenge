@@ -1,10 +1,10 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { signRemoteAdminJwt } from '../auth/jwt.js';
 import { requireRemoteAdmin } from '../auth/requireRemoteAdmin.js';
 import { writeAudit } from '../audit/auditLog.js';
 import path from 'node:path';
 import { readFile, readdir } from 'node:fs/promises';
-import { runtimeRootDir } from '../runtimePaths.js';
+import { backupDir } from '../services/remoteBackupDir.js';
 import {
   getLocalAdminRecentRuns,
   getLocalAdminRunSessions,
@@ -12,11 +12,14 @@ import {
   getLocalAdminToken,
   getLocalBaseUrl,
   deleteLocalAdminRunSessionEntry,
+  LocalProxyHttpError,
   proxyLocalAdminImportJson,
   proxyLocalAdminJsonExport,
   proxyLocalAdminLeaderboardsXlsx,
   updateLocalAdminRunSessionResult,
 } from '../local/localClient.js';
+import { getBackupMirrorState, runRemoteBackupMirrorOnce } from '../services/backupMirrorScheduler.js';
+import { readBackupLatestMeta, lastBackupAtFromDatedFiles } from '../services/backupLatestMeta.js';
 
 function normalizeHours(raw: unknown, fallback: number): number {
   const n = Number(raw ?? fallback);
@@ -24,8 +27,15 @@ function normalizeHours(raw: unknown, fallback: number): number {
   return Math.min(24 * 14, Math.max(1, Math.floor(n)));
 }
 
+/** For Content-Disposition only; payloads unchanged. */
+function remoteDownloadStamp(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}-${p(d.getMinutes())}`;
+}
+
 async function readLatestRemoteBackupJson(): Promise<{ fileName: string; raw: string; parsed: unknown } | null> {
-  const dir = path.join(runtimeRootDir(), 'backups');
+  const dir = backupDir();
   const files = (await readdir(dir).catch(() => [] as string[]))
     .filter((f) => /^remote-backup-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/.test(f))
     .sort();
@@ -84,6 +94,55 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       metadata: null,
     }).catch(() => undefined);
     return reply.send({ ok: true });
+  });
+
+  function backupLog(request: FastifyRequest) {
+    return {
+      info: (o: Record<string, unknown>) => request.log.info(o),
+      warn: (o: Record<string, unknown>) => request.log.warn(o),
+      error: (o: Record<string, unknown>) => request.log.error(o),
+    };
+  }
+
+  function remoteBackupLogsHours(): number {
+    const raw = Number(process.env.REMOTE_BACKUP_LOG_HOURS ?? 48);
+    if (!Number.isFinite(raw)) return 48;
+    return Math.min(24 * 14, Math.max(1, Math.floor(raw)));
+  }
+
+  app.get('/api/remote/admin/backup/status', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const mirror = getBackupMirrorState();
+    const meta = await readBackupLatestMeta();
+    const datedIso = await lastBackupAtFromDatedFiles();
+    const lastBackupAt = meta?.lastBackupAt ?? mirror.lastSuccessAt ?? datedIso;
+    const hasBackup = Boolean(lastBackupAt);
+    return reply.send({
+      backup: {
+        hasBackup,
+        lastBackupAt,
+        lastBackupSha16: meta?.lastBackupSha16 ?? null,
+        logsHours: meta?.logsHours ?? remoteBackupLogsHours(),
+        lastError: mirror.lastError,
+      },
+    });
+  });
+
+  app.post('/api/remote/admin/backup/pull', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const r = await runRemoteBackupMirrorOnce(backupLog(request));
+    if (!r.ok) {
+      return reply.status(502).send({ error: r.error ?? 'Backup pull failed' });
+    }
+    await writeAudit({
+      userId: null,
+      userEmail: null,
+      action: 'BACKUP_PULL',
+      entityType: 'remote_backup',
+      entityId: null,
+      ip: request.ip ?? null,
+      userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+      metadata: { pulledAt: r.lastBackupAt ?? null },
+    }).catch(() => undefined);
+    return reply.send({ ok: true as const, pulledAt: r.lastBackupAt ?? new Date().toISOString() });
   });
 
   // ===== Proxy + mirror APIs (remote admin only) =====
@@ -225,7 +284,10 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
         }).catch(() => undefined);
 
         if (format === 'json') {
-          return reply.header('Content-Type', 'application/json; charset=utf-8').send(latest.raw);
+          return reply
+            .header('Content-Type', 'application/json; charset=utf-8')
+            .header('Content-Disposition', `attachment; filename="${latest.fileName}"`)
+            .send(latest.raw);
         }
         return reply
           .header('Content-Type', 'application/json; charset=utf-8')
@@ -250,7 +312,6 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       }
       const body = await res.text();
       const contentType = res.headers.get('Content-Type') ?? 'application/json; charset=utf-8';
-      const cd = res.headers.get('Content-Disposition') ?? 'attachment; filename="backup.json"';
       await writeAudit({
         userId: null,
         userEmail: null,
@@ -261,7 +322,10 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
         userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
         metadata: { hours, bytes: Buffer.byteLength(body, 'utf8') },
       }).catch(() => undefined);
-      return reply.header('Content-Type', contentType).header('Content-Disposition', cd).send(body);
+      return reply
+        .header('Content-Type', contentType)
+        .header('Content-Disposition', `attachment; filename="remote-backup-${remoteDownloadStamp()}.json"`)
+        .send(body);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       await writeAudit({
@@ -299,7 +363,6 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       const bytes = new Uint8Array(await res.arrayBuffer());
       const contentType =
         res.headers.get('Content-Type') ?? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      const cd = res.headers.get('Content-Disposition') ?? 'attachment; filename="leaderboards.xlsx"';
       await writeAudit({
         userId: null,
         userEmail: null,
@@ -310,7 +373,10 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
         userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
         metadata: { bytes: bytes.byteLength },
       }).catch(() => undefined);
-      return reply.header('Content-Type', contentType).header('Content-Disposition', cd).send(Buffer.from(bytes));
+      return reply
+        .header('Content-Type', contentType)
+        .header('Content-Disposition', `attachment; filename="remote-leaderboards-${remoteDownloadStamp()}.xlsx"`)
+        .send(Buffer.from(bytes));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       await writeAudit({
@@ -365,7 +431,21 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
         metadata: { error: msg },
       }).catch(() => undefined);
       request.log.warn({ msg: 'remote_proxy_import_failed', error: msg });
-      return reply.status(502).send({ error: `Local backend unavailable: ${msg}` });
+      if (e instanceof LocalProxyHttpError) {
+        if (e.httpStatus === 400) {
+          return reply.status(400).send({ error: msg });
+        }
+        if (e.httpStatus === 413) {
+          return reply.status(413).send({ error: msg });
+        }
+        if (e.httpStatus === 401 || e.httpStatus === 403) {
+          return reply
+            .status(502)
+            .send({ error: 'Локальный сервер отклонил авторизацию. Проверьте LOCAL_BACKEND_AUTH_TOKEN.' });
+        }
+        return reply.status(502).send({ error: msg });
+      }
+      return reply.status(500).send({ error: msg });
     }
   });
 }

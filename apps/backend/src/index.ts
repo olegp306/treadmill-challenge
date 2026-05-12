@@ -1,6 +1,7 @@
 import os from 'node:os';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import { backupImportFileTooLargeMessage, parseBackupImportMaxBytes, resolveFastifyBodyLimitBytes } from '@treadmill-challenge/shared';
 import { ensureDb, getDb } from './db/index.js';
 import registerRoutes from './routes/register.js';
 import leaderboardRoutes from './routes/leaderboard.js';
@@ -47,10 +48,19 @@ async function main() {
     });
   });
 
+  const backupImportBytes = parseBackupImportMaxBytes(process.env.BACKUP_IMPORT_MAX_BYTES);
   const app = Fastify({
     logger: true,
-    /** Large JSON bodies when TouchDesigner sends `verificationPhotoBase64` with `/api/run-result`. */
-    bodyLimit: 10 * 1024 * 1024,
+    /** TouchDesigner run-result photos + JSON backup import (`BACKUP_IMPORT_MAX_BYTES`, default 50 MiB). */
+    bodyLimit: resolveFastifyBodyLimitBytes(process.env.BACKUP_IMPORT_MAX_BYTES),
+  });
+
+  app.setErrorHandler((error, _request, reply) => {
+    const err = error as { statusCode?: number; code?: string };
+    if (err.statusCode === 413 || err.code === 'FST_ERR_CTP_BODY_TOO_LARGE') {
+      return reply.status(413).send({ error: backupImportFileTooLargeMessage(backupImportBytes) });
+    }
+    void reply.send(error);
   });
 
   const corsOrigin =

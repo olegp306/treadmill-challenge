@@ -1,7 +1,9 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import { backupImportFileTooLargeMessage, parseBackupImportMaxBytes, resolveFastifyBodyLimitBytes } from '@treadmill-challenge/shared';
 import { registerRemoteAdminRoutes } from './routes/remoteAdmin.js';
 import { registerRemoteSystemRoutes } from './routes/remoteSystem.js';
+import { registerPublicLeaderboardRoutes } from './routes/publicLeaderboard.js';
 import { registerMonitoringIngestRoutes } from './routes/monitoringIngest.js';
 import { startBackupMirrorScheduler } from './services/backupMirrorScheduler.js';
 import { cleanupOldHealthEvents } from './monitoring/storage.js';
@@ -11,7 +13,20 @@ const PORT = Number(process.env.REMOTE_BACKEND_PORT ?? process.env.PORT) || 3002
 const HOST = process.env.HOST || '0.0.0.0';
 
 async function main(): Promise<void> {
-  const app = Fastify({ logger: true });
+  const backupImportBytes = parseBackupImportMaxBytes(process.env.BACKUP_IMPORT_MAX_BYTES);
+  const app = Fastify({
+    logger: true,
+    /** Must accept full JSON backup before proxying to local (`BACKUP_IMPORT_MAX_BYTES`, default 50 MiB). */
+    bodyLimit: resolveFastifyBodyLimitBytes(process.env.BACKUP_IMPORT_MAX_BYTES),
+  });
+
+  app.setErrorHandler((error, _request, reply) => {
+    const err = error as { statusCode?: number; code?: string };
+    if (err.statusCode === 413 || err.code === 'FST_ERR_CTP_BODY_TOO_LARGE') {
+      return reply.status(413).send({ error: backupImportFileTooLargeMessage(backupImportBytes) });
+    }
+    void reply.send(error);
+  });
 
   const corsOrigin = process.env.REMOTE_CORS_ORIGIN?.trim() || '*';
   await app.register(cors, {
@@ -24,6 +39,7 @@ async function main(): Promise<void> {
 
   await registerRemoteAdminRoutes(app);
   await registerRemoteSystemRoutes(app);
+  await registerPublicLeaderboardRoutes(app);
   await registerMonitoringIngestRoutes(app);
 
   const backupMirror = startBackupMirrorScheduler({

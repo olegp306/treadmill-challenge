@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getRunTypeName } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
+import { formatRunResult } from '../../utils/runResultFormat';
 import { AdminLayout } from '../../features/admin/AdminLayout';
 
 type Tab = 'queue' | 'leaderboard' | 'participants' | 'actions';
@@ -278,7 +279,9 @@ export default function AdminCompetitionPage() {
                 <strong>#{row.rank}</strong>
                 <span style={{ flex: '1 1 200px' }}>{row.participantName}</span>
                 <span style={{ color: '#888' }}>
-                  {row.resultTime.toFixed(2)} c · {Math.round(row.distance)} м
+                  {detail
+                    ? formatRunResult(detail.runTypeId, row.resultTime, row.distance)
+                    : `${row.resultTime.toFixed(2)} c · ${Math.round(row.distance)} м`}
                 </span>
                 {row.verificationPhotoAvailable && row.runSessionId ? (
                   <button

@@ -1,4 +1,4 @@
-import type { Db } from '../db/sqlite.js';
+import { deferDbFlushDuring, type Db } from '../db/sqlite.js';
 import { getAppVersion } from '../version.js';
 
 /** Bump when export payload shape changes (importer may support older values later). */
@@ -147,126 +147,128 @@ export function validateDataSnapshot(input: unknown): { ok: true; snapshot: Data
  * Не трогает файлы на диске (фото); пути в БД остаются как в JSON — при переносе скопируйте каталог `data/photos` отдельно при необходимости.
  */
 export function applyDataSnapshot(db: Db, snapshot: DataSnapshotV1): void {
-  db.exec('BEGIN IMMEDIATE');
-  try {
-    db.exec('DELETE FROM events');
-    db.exec('DELETE FROM runs');
-    db.exec('DELETE FROM run_sessions');
-    db.exec('DELETE FROM competitions');
-    db.exec('DELETE FROM participants');
-    db.exec('DELETE FROM admin_settings');
+  deferDbFlushDuring(() => {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.exec('DELETE FROM events');
+      db.exec('DELETE FROM runs');
+      db.exec('DELETE FROM run_sessions');
+      db.exec('DELETE FROM competitions');
+      db.exec('DELETE FROM participants');
+      db.exec('DELETE FROM admin_settings');
 
-    const insP = db.prepare(`
+      const insP = db.prepare(`
       INSERT INTO participants (id, firstName, lastName, phone, createdAt, sex)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
-    for (const r of snapshot.participants) {
-      insP.run(
-        r.id,
-        r.firstName,
-        r.lastName,
-        r.phone,
-        r.createdAt,
-        r.sex ?? 'male'
-      );
-    }
+      for (const r of snapshot.participants) {
+        insP.run(
+          r.id,
+          r.firstName,
+          r.lastName,
+          r.phone,
+          r.createdAt,
+          r.sex ?? 'male'
+        );
+      }
 
-    const insC = db.prepare(`
+      const insC = db.prepare(`
       INSERT INTO competitions (
         id, runTypeId, runTypeKey, gender, title, status, startedAt, stoppedAt,
         winnerParticipantId, winnerRunSessionId, queuePaused
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const r of snapshot.competitions) {
-      insC.run(
-        r.id,
-        r.runTypeId,
-        r.runTypeKey,
-        r.gender,
-        r.title,
-        r.status,
-        r.startedAt,
-        r.stoppedAt ?? null,
-        r.winnerParticipantId ?? null,
-        r.winnerRunSessionId ?? null,
-        r.queuePaused != null ? Number(r.queuePaused) : 0
-      );
-    }
+      for (const r of snapshot.competitions) {
+        insC.run(
+          r.id,
+          r.runTypeId,
+          r.runTypeKey,
+          r.gender,
+          r.title,
+          r.status,
+          r.startedAt,
+          r.stoppedAt ?? null,
+          r.winnerParticipantId ?? null,
+          r.winnerRunSessionId ?? null,
+          r.queuePaused != null ? Number(r.queuePaused) : 0
+        );
+      }
 
-    const insS = db.prepare(`
+      const insS = db.prepare(`
       INSERT INTO run_sessions (
         id, participantId, runTypeId, runType, status, queueNumber, resultTime, resultDistance,
         createdAt, startedAt, finishedAt, competitionId, pending_photo_path
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const r of snapshot.runSessions) {
-      insS.run(
-        r.id,
-        r.participantId,
-        r.runTypeId,
-        r.runType,
-        r.status,
-        r.queueNumber,
-        r.resultTime ?? null,
-        r.resultDistance ?? null,
-        r.createdAt,
-        r.startedAt ?? null,
-        r.finishedAt ?? null,
-        r.competitionId ?? null,
-        r.pending_photo_path ?? null
-      );
-    }
+      for (const r of snapshot.runSessions) {
+        insS.run(
+          r.id,
+          r.participantId,
+          r.runTypeId,
+          r.runType,
+          r.status,
+          r.queueNumber,
+          r.resultTime ?? null,
+          r.resultDistance ?? null,
+          r.createdAt,
+          r.startedAt ?? null,
+          r.finishedAt ?? null,
+          r.competitionId ?? null,
+          r.pending_photo_path ?? null
+        );
+      }
 
-    const insRun = db.prepare(`
+      const insRun = db.prepare(`
       INSERT INTO runs (
         id, participantId, competitionId, runSessionId, resultTime, distance, speed, createdAt, verification_photo_path
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const r of snapshot.runs) {
-      insRun.run(
-        r.id,
-        r.participantId,
-        r.competitionId,
-        r.runSessionId ?? null,
-        r.resultTime,
-        r.distance,
-        r.speed,
-        r.createdAt,
-        r.verification_photo_path ?? null
-      );
-    }
+      for (const r of snapshot.runs) {
+        insRun.run(
+          r.id,
+          r.participantId,
+          r.competitionId,
+          r.runSessionId ?? null,
+          r.resultTime,
+          r.distance,
+          r.speed,
+          r.createdAt,
+          r.verification_photo_path ?? null
+        );
+      }
 
-    if (Array.isArray(snapshot.events)) {
-      const insE = db.prepare(`
+      if (Array.isArray(snapshot.events)) {
+        const insE = db.prepare(`
         INSERT INTO events (id, sessionId, participantId, runSessionId, type, payload, readableMessage, createdAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
-      for (const r of snapshot.events) {
-        insE.run(
-          r.id,
-          r.sessionId,
-          r.participantId ?? null,
-          r.runSessionId ?? null,
-          r.type,
-          r.payload,
-          r.readableMessage != null ? String(r.readableMessage) : '',
-          r.createdAt
-        );
+        for (const r of snapshot.events) {
+          insE.run(
+            r.id,
+            r.sessionId,
+            r.participantId ?? null,
+            r.runSessionId ?? null,
+            r.type,
+            r.payload,
+            r.readableMessage != null ? String(r.readableMessage) : '',
+            r.createdAt
+          );
+        }
       }
-    }
 
-    const insA = db.prepare(`INSERT INTO admin_settings (key, value) VALUES (?, ?)`);
-    for (const r of snapshot.adminSettings) {
-      insA.run(r.key, r.value);
-    }
+      const insA = db.prepare(`INSERT INTO admin_settings (key, value) VALUES (?, ?)`);
+      for (const r of snapshot.adminSettings) {
+        insA.run(r.key, r.value);
+      }
 
-    db.exec('COMMIT');
-  } catch (e) {
-    try {
-      db.exec('ROLLBACK');
-    } catch {
-      /* ignore */
+      db.exec('COMMIT');
+    } catch (e) {
+      try {
+        db.exec('ROLLBACK');
+      } catch {
+        /* ignore */
+      }
+      throw e;
     }
-    throw e;
-  }
+  });
 }

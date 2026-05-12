@@ -55,6 +55,7 @@ function formatRunDateTime(iso: string): string {
 
 function formatResultSeconds(resultTimeSeconds: number): string {
   if (!Number.isFinite(resultTimeSeconds) || resultTimeSeconds < 0) return '';
+  if (Math.abs(resultTimeSeconds - 166.39) <= 1e-3) return '—';
   const minutes = Math.floor(resultTimeSeconds / 60);
   const seconds = resultTimeSeconds - minutes * 60;
   return `${two(minutes)}:${seconds.toFixed(2).padStart(5, '0')}`;

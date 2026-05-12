@@ -2,9 +2,10 @@ import type { FastifyInstance } from 'fastify';
 import path from 'node:path';
 import { readdir, stat } from 'node:fs/promises';
 import { getBackupMirrorState } from '../services/backupMirrorScheduler.js';
+import { readBackupLatestMeta } from '../services/backupLatestMeta.js';
+import { backupDir } from '../services/remoteBackupDir.js';
 import { getLocalBaseUrl, getLocalHealthStatus } from '../local/localClient.js';
 import { requireRemoteAdmin } from '../auth/requireRemoteAdmin.js';
-import { runtimeRootDir } from '../runtimePaths.js';
 
 function boolEnv(name: string, fallback: boolean): boolean {
   const raw = process.env[name];
@@ -16,10 +17,6 @@ function intEnv(name: string, fallback: number, min: number, max: number): numbe
   const raw = Number(process.env[name] ?? fallback);
   if (!Number.isFinite(raw)) return fallback;
   return Math.min(max, Math.max(min, Math.floor(raw)));
-}
-
-function backupDir(): string {
-  return path.join(runtimeRootDir(), 'backups');
 }
 
 type LocalState = { lastHealthCheckAt: string | null; lastError: string | null };
@@ -67,6 +64,8 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
     const retentionCount = intEnv('REMOTE_BACKUP_RETENTION_COUNT', 24, 1, 10_000);
     const backups = await readBackupFolderStatus();
     const mirror = getBackupMirrorState();
+    const latestMeta = await readBackupLatestMeta();
+    const lastBackupAt = latestMeta?.lastBackupAt ?? backups.latestCreatedAt ?? mirror.lastSuccessAt ?? null;
 
     return reply.send({
       remote: {
@@ -86,6 +85,9 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
         folderPath: backups.folderPath,
         latestFileName: backups.latestFileName ?? (mirror.latestFilePath ? path.basename(mirror.latestFilePath) : null),
         latestCreatedAt: backups.latestCreatedAt ?? mirror.lastSuccessAt,
+        lastBackupAt,
+        lastBackupSha16: latestMeta?.lastBackupSha16 ?? null,
+        backupLogsHours: latestMeta?.logsHours ?? 48,
         totalCount: backups.totalCount,
         lastError: mirror.lastError,
       },

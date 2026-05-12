@@ -82,6 +82,31 @@ function wrapDb(nativeDb: SqlJsDatabase, save: () => void): Db {
 
 let db: Db | null = null;
 
+/** Persists the current in-memory DB to disk (set in initDb). */
+let persistDatabaseToDisk: (() => void) | null = null;
+
+/**
+ * sql.js ends the active SQL transaction when `export()` runs (used by our per-statement save()).
+ * Long transactions (e.g. JSON import) must not flush mid-flight or COMMIT fails with
+ * "cannot commit - no transaction is active". Wrap the whole BEGIN…COMMIT block with this.
+ */
+let dbPersistenceDeferDepth = 0;
+
+export function deferDbFlushDuring<T>(fn: () => T): T {
+  if (!persistDatabaseToDisk) {
+    return fn();
+  }
+  dbPersistenceDeferDepth++;
+  try {
+    return fn();
+  } finally {
+    dbPersistenceDeferDepth--;
+    if (dbPersistenceDeferDepth === 0) {
+      persistDatabaseToDisk();
+    }
+  }
+}
+
 export async function initDb(): Promise<Db> {
   if (db) return db;
   const wasmPath = WASM_CANDIDATES.find((p) => existsSync(p));
@@ -96,13 +121,18 @@ export async function initDb(): Promise<Db> {
   } else {
     nativeDb = new SQL.Database();
   }
-  const save = () => {
+  const flushToDisk = () => {
     try {
       const data = nativeDb.export();
       writeFileSync(DB_PATH, Buffer.from(data));
     } catch (e) {
       console.warn('Could not persist SQLite DB:', e);
     }
+  };
+  persistDatabaseToDisk = flushToDisk;
+  const save = () => {
+    if (dbPersistenceDeferDepth > 0) return;
+    flushToDisk();
   };
   db = wrapDb(nativeDb, save);
   return db;

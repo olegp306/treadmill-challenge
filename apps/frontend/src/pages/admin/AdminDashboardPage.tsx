@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeName } from '@treadmill-challenge/shared';
 import { api } from '../../api/client';
+import { formatRunResult } from '../../utils/runResultFormat';
 import { AdminLayout } from '../../features/admin/AdminLayout';
 
 type Slot = Awaited<ReturnType<typeof api.adminDashboard>>['slots'][number];
@@ -60,7 +61,7 @@ function CompetitionCard({
           <>
             {slot.leader.participantName}{' '}
             <span style={{ color: '#888' }}>
-              ({slot.leader.resultTime.toFixed(1)} c / {Math.round(slot.leader.distance)} м)
+              ({formatRunResult(slot.runTypeId, slot.leader.resultTime, slot.leader.distance)})
             </span>
             {slot.leader.runSessionId && slot.leader.verificationPhotoAvailable ? (
               <button

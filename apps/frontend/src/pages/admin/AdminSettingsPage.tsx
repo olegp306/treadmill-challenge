@@ -283,7 +283,7 @@ export default function AdminSettingsPage() {
                       try {
                         parsed = JSON.parse(text) as unknown;
                       } catch {
-                        setDataToolMsg({ kind: 'err', text: 'Некорректный JSON в файле.' });
+                        setDataToolMsg({ kind: 'err', text: 'Некорректный JSON backup' });
                         return;
                       }
                       await api.adminImportData(parsed);

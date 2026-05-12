@@ -1,4 +1,8 @@
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
+import {
+  BACKUP_IMPORT_DEFAULT_BYTES,
+  backupImportFileTooLargeMessage,
+} from '@treadmill-challenge/shared';
 
 const API_BASE = '/api';
 
@@ -20,13 +24,26 @@ async function request<T>(
     ...(hasNonEmptyRequestBody(rest.body) ? { 'Content-Type': 'application/json' } : {}),
     ...(incomingHeaders ?? {}),
   };
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...rest,
-    headers: mergedHeaders,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...rest,
+      headers: mergedHeaders,
+    });
+  } catch (e) {
+    if (e instanceof TypeError || (e instanceof Error && e.message === 'Failed to fetch')) {
+      throw new Error('Не удалось связаться с сервером. Проверьте, что backend запущен и адрес прокси верный.');
+    }
+    throw e;
+  }
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error(
+        (data as { error?: string }).error ?? backupImportFileTooLargeMessage(BACKUP_IMPORT_DEFAULT_BYTES)
+      );
+    }
     throw new Error((data as { error?: string }).error ?? `Request failed: ${res.status}`);
   }
   return data as T;

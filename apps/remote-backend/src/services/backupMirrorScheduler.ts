@@ -1,8 +1,11 @@
+import crypto from 'node:crypto';
 import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { proxyLocalAdminJsonExport } from '../local/localClient.js';
 import { runtimeRootDir } from '../runtimePaths.js';
-import crypto from 'node:crypto';
+import { backupDir } from './remoteBackupDir.js';
+
+export { backupDir } from './remoteBackupDir.js';
 
 type Log = {
   info: (obj: Record<string, unknown>) => void;
@@ -40,8 +43,10 @@ function intEnv(name: string, fallback: number, min: number, max: number): numbe
   return Math.min(max, Math.max(min, Math.floor(raw)));
 }
 
-function backupDir(): string {
-  return path.join(runtimeRootDir(), 'backups');
+function logsHoursForExport(): number {
+  const raw = Number(process.env.REMOTE_BACKUP_LOG_HOURS ?? 48);
+  if (!Number.isFinite(raw)) return 48;
+  return Math.min(24 * 14, Math.max(1, Math.floor(raw)));
 }
 
 function fileName(now: Date): string {
@@ -161,6 +166,73 @@ async function applyRetention(dir: string, keepCount: number): Promise<void> {
   }
 }
 
+/** One backup pull + write dated file, `latest.json`, and `latest-meta.json`. */
+export async function runRemoteBackupMirrorOnce(log: Log): Promise<{ ok: boolean; lastBackupAt?: string; error?: string }> {
+  const startedAt = Date.now();
+  const logsHours = logsHoursForExport();
+  const keepCount = intEnv('REMOTE_BACKUP_RETENTION_COUNT', 24, 1, 10_000);
+  try {
+    const dir = backupDir();
+    await mkdir(dir, { recursive: true });
+    const res = await proxyLocalAdminJsonExport(logsHours);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+    }
+    const body = await res.text();
+    const localSnapshot = JSON.parse(body) as unknown;
+
+    const [remoteAuditRaw, remoteHealthEventsRaw, remoteLatestStatesRaw] = await Promise.all([
+      readLastJsonlRecords(auditDir(), 'audit.jsonl', 2000),
+      readLastJsonlRecords(path.join(monitoringDir(), 'events'), 'events.jsonl', 2000),
+      readLatestHealthStates(200),
+    ]);
+
+    const remoteAudit = remoteAuditRaw.map((e) => truncateJsonObject(redactSecrets(e), 2 * 1024));
+    const remoteHealthEvents = remoteHealthEventsRaw.map((e) => truncateJsonObject(redactSecrets(e), 2 * 1024));
+    const remoteLatestStates = remoteLatestStatesRaw.map((e) => truncateJsonObject(redactSecrets(e), 2 * 1024));
+
+    const envelope = buildRemoteBackupEnvelope({
+      localSnapshot,
+      remoteAudit,
+      remoteHealthEvents,
+      remoteLatestStates,
+    });
+
+    const outBody = JSON.stringify(envelope, null, 2);
+    const sha = crypto.createHash('sha256').update(outBody).digest('hex').slice(0, 16);
+    const p = path.join(dir, fileName(new Date()));
+    await writeFile(p, outBody, 'utf8');
+    await writeFile(path.join(dir, 'latest.json'), outBody, 'utf8');
+    const lastBackupAt = new Date().toISOString();
+    await writeFile(
+      path.join(dir, 'latest-meta.json'),
+      JSON.stringify(
+        {
+          lastBackupAt,
+          lastBackupSha16: sha,
+          logsHours,
+          sourceFile: path.basename(p),
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+    await applyRetention(dir, keepCount);
+    state.lastSuccessAt = lastBackupAt;
+    state.lastError = null;
+    state.latestFilePath = p;
+    log.info({ msg: 'remote_backup_mirrored', path: p, sha16: sha, elapsedMs: Date.now() - startedAt });
+    return { ok: true, lastBackupAt };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    state.lastError = msg;
+    log.warn({ msg: 'remote_backup_mirror_failed', error: msg });
+    return { ok: false, error: msg };
+  }
+}
+
 export function startBackupMirrorScheduler(log: Log): BackupMirrorHandle {
   const enabled = boolEnv('REMOTE_BACKUP_ENABLED', true);
   if (!enabled) {
@@ -168,7 +240,7 @@ export function startBackupMirrorScheduler(log: Log): BackupMirrorHandle {
     return { stop: () => {} };
   }
 
-  const intervalMinutes = intEnv('REMOTE_BACKUP_INTERVAL_MINUTES', 60, 1, 24 * 60);
+  const intervalMinutes = intEnv('REMOTE_BACKUP_INTERVAL_MINUTES', 30, 1, 24 * 60);
   const keepCount = intEnv('REMOTE_BACKUP_RETENTION_COUNT', 24, 1, 10_000);
   let running = false;
   const firstRunDelayMs = 2_000;
@@ -176,49 +248,8 @@ export function startBackupMirrorScheduler(log: Log): BackupMirrorHandle {
   const tick = async () => {
     if (running) return;
     running = true;
-    const startedAt = Date.now();
     try {
-      const dir = backupDir();
-      await mkdir(dir, { recursive: true });
-      const res = await proxyLocalAdminJsonExport();
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
-      }
-      const body = await res.text();
-      const localSnapshot = JSON.parse(body) as unknown;
-
-      const [remoteAuditRaw, remoteHealthEventsRaw, remoteLatestStatesRaw] = await Promise.all([
-        readLastJsonlRecords(auditDir(), 'audit.jsonl', 2000),
-        readLastJsonlRecords(path.join(monitoringDir(), 'events'), 'events.jsonl', 2000),
-        readLatestHealthStates(200),
-      ]);
-
-      const remoteAudit = remoteAuditRaw.map((e) => truncateJsonObject(redactSecrets(e), 2 * 1024));
-      const remoteHealthEvents = remoteHealthEventsRaw.map((e) => truncateJsonObject(redactSecrets(e), 2 * 1024));
-      const remoteLatestStates = remoteLatestStatesRaw.map((e) => truncateJsonObject(redactSecrets(e), 2 * 1024));
-
-      const envelope = buildRemoteBackupEnvelope({
-        localSnapshot,
-        remoteAudit,
-        remoteHealthEvents,
-        remoteLatestStates,
-      });
-
-      const outBody = JSON.stringify(envelope, null, 2);
-      // Small integrity hash (debug aid)
-      const sha = crypto.createHash('sha256').update(outBody).digest('hex').slice(0, 16);
-      const p = path.join(dir, fileName(new Date()));
-      await writeFile(p, outBody, 'utf8');
-      await applyRetention(dir, keepCount);
-      state.lastSuccessAt = new Date().toISOString();
-      state.lastError = null;
-      state.latestFilePath = p;
-      log.info({ msg: 'remote_backup_mirrored', path: p, sha16: sha, elapsedMs: Date.now() - startedAt });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      state.lastError = msg;
-      log.warn({ msg: 'remote_backup_mirror_failed', error: msg });
+      await runRemoteBackupMirrorOnce(log);
     } finally {
       running = false;
     }

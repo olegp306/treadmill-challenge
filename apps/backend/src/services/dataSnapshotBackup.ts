@@ -1,6 +1,7 @@
 import { mkdir, rename, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { getDb } from '../db/index.js';
+import { getLocalBackupBaseDir } from './backupStoragePath.js';
 import { buildDataSnapshot } from './dataSnapshot.js';
 
 type BackupLog = {
@@ -30,9 +31,7 @@ function fileName(d: Date): string {
 }
 
 function resolveBaseDir(): string {
-  const raw = process.env.DATA_SNAPSHOT_BACKUP_DIR?.trim();
-  if (!raw) return path.resolve(process.cwd(), 'backup');
-  return path.isAbsolute(raw) ? raw : path.resolve(process.cwd(), raw);
+  return getLocalBackupBaseDir();
 }
 
 export type DataSnapshotBackupScheduler = {

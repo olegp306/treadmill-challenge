@@ -13,6 +13,15 @@ export {
   estimatedRunDurationMinutes,
   sumEstimatedWaitMinutesForRunTypes,
 } from './queueEstimate.js';
+export {
+  BACKUP_IMPORT_DEFAULT_BYTES,
+  BACKUP_IMPORT_ENV_CAP_BYTES,
+  BACKUP_IMPORT_MIN_BYTES,
+  backupImportFileTooLargeMessage,
+  formatBytesAsMbLabel,
+  parseBackupImportMaxBytes,
+  resolveFastifyBodyLimitBytes,
+} from './backupImport.js';
 
 /**
  * API route paths (for consistency between frontend and backend).

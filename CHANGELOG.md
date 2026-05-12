@@ -7,6 +7,31 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.4.6] - 2026-05-12
+
+### Добавлено
+
+- **`BACKUP_STORAGE_PATH`:** опциональный каталог вне `runtime/` для JSON-бэкапов (local scheduled backup, suspension state, remote mirror `latest.json` / `latest-meta.json` / `remote-backup-*.json`); `mkdir` при старте, валидация (не корень диска), без тихого fallback при ошибке пути.
+- **`BACKUP_IMPORT_MAX_BYTES`:** единый лимит тела JSON для импорта (shared, default 50 MiB, clamp 25–100 MiB); Fastify `bodyLimit` на local и remote backend; сообщения об ошибках на remote/local клиентах (413, сеть, «локальный сервер недоступен»).
+- **Публичный remote leaderboard:** `GET /api/remote/leaderboard-data`, сборка таблиц из `latest.json` (envelope `local.snapshot`); страница `remote-frontend` с `LeaderboardExperience` и polling.
+- **Shared:** `backupImport.ts`, `backupStoragePath.ts` (resolve/validate пути бэкапов).
+
+### Изменено
+
+- **Remote backend:** прокси import (400/413/502), `LocalProxyHttpError`, `bodyLimit` и error handler 413; `backupDir()` через `remoteBackupDir`; `remoteSystem` / `remoteAdmin` читают ту же папку бэкапов.
+- **Remote / local admin UI:** улучшенные сообщения при импорте backup; `layoutMode="desktop"` для remote leaderboard (отдельный viewport, локальный scroll подсветки вместо `scrollIntoView` по окну).
+- **`ArOzioViewport`:** вариант `remote` для публичной веб-страницы (прокрутка оболочки).
+- **Leaderboard (ожидание + remote):** стрелки карусели и поиска — встроенный SVG вместо временных URL Figma CDN.
+- **Регистрация, шаг телефона (iPad):** после iOS `readOnly`-фокуса повторно выставляются `tel` / `inputmode` / `autocomplete` / `enterkeyhint` (`scheduleWizardStepPhoneFocus`).
+
+### Исправлено
+
+- **Импорт JSON ~1.6 MB через remote panel:** причина — дефолтный лимит тела Fastify на remote-backend; выровнено с local.
+- **Пустой remote leaderboard при наличии данных в backup:** чтение массива сессий как `runSessions` (camelCase экспорта), с fallback на `run_sessions`.
+- **Клиенты:** `fetch` / 413 / 502 для remote API и local admin `request`.
+
+---
+
 ## [0.4.5] - 2026-05-06
 
 ### Добавлено

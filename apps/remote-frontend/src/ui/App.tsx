@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Route, Routes } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import RemoteLeaderboardPage from '../pages/RemoteLeaderboardPage';
 import { LoginScreen } from './LoginScreen';
 import { RemoteAdminShell } from './RemoteAdminShell';
 
@@ -22,8 +24,13 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {authed ? <RemoteAdminShell /> : <LoginScreen onLoggedIn={() => setAuthed(true)} />}
+      <Routes>
+        <Route path="/leaderboard" element={<RemoteLeaderboardPage />} />
+        <Route
+          path="*"
+          element={authed ? <RemoteAdminShell /> : <LoginScreen onLoggedIn={() => setAuthed(true)} />}
+        />
+      </Routes>
     </ThemeProvider>
   );
 }
-

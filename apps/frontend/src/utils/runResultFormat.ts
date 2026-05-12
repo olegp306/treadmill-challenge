@@ -1,20 +1,25 @@
 import type { RunTypeId } from '@treadmill-challenge/shared';
 
 const KNOWN_INVALID_TIME_VALUE = 166.39;
+/** DB/JSON float noise around the legacy sentinel time (seconds). */
+const SENTINEL_TIME_EPS = 1e-3;
 
 function isMmSsString(value: string): boolean {
   return /^\d{1,3}:[0-5]\d$/.test(value.trim());
 }
 
-function isKnownInvalidTimeValue(value: number): boolean {
-  return Math.abs(value - KNOWN_INVALID_TIME_VALUE) < 1e-9;
+/** True for 166.39 and close floats / numeric strings (1 km & 5 km invalid placeholder). */
+export function isInvalidSentinelResultTime(value: unknown): boolean {
+  const n = typeof value === 'string' ? Number.parseFloat(value.trim()) : Number(value);
+  if (!Number.isFinite(n)) return false;
+  return Math.abs(n - KNOWN_INVALID_TIME_VALUE) <= SENTINEL_TIME_EPS;
 }
 
 export function formatTimeResult(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return '--';
   if (value < 0) return '--';
   if (value === 0) return '0:00';
-  if (isKnownInvalidTimeValue(value)) return '--:--';
+  if (isInvalidSentinelResultTime(value)) return '—';
   const t = Math.round(value);
   const m = Math.floor(t / 60);
   const s = t % 60;
@@ -43,5 +48,5 @@ export function formatRunResult(
     if (resultDistance == null || !Number.isFinite(resultDistance)) return '—';
     return `${Math.round(resultDistance)} м`;
   }
-  return formatTimeResult(resultTime);
+  return formatTimeResultMmSs(resultTime);
 }

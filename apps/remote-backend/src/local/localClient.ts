@@ -17,6 +17,17 @@ function localAdminHeaders(): HeadersInit {
   return { Authorization: `Bearer ${token}` };
 }
 
+/** Thrown when proxying to local backend returns a non-OK HTTP status. */
+export class LocalProxyHttpError extends Error {
+  readonly httpStatus: number;
+
+  constructor(message: string, httpStatus: number) {
+    super(message);
+    this.name = 'LocalProxyHttpError';
+    this.httpStatus = httpStatus;
+  }
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -60,12 +71,21 @@ export async function proxyLocalAdminLeaderboardsXlsx(): Promise<Response> {
 export async function proxyLocalAdminImportJson(body: unknown): Promise<unknown> {
   const base = localBaseUrl();
   if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
-  const res = await fetch(`${base}/api/admin/data/import`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...localAdminHeaders() },
-    body: JSON.stringify(body),
-  });
-  return parseJson(res);
+  let res: Response;
+  try {
+    res = await fetch(`${base}/api/admin/data/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...localAdminHeaders() },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new LocalProxyHttpError('Локальный сервер недоступен', 502);
+  }
+  const data = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) {
+    throw new LocalProxyHttpError(data.error ?? `HTTP ${res.status}`, res.status);
+  }
+  return data;
 }
 
 export async function getLocalAdminRunSessions(): Promise<unknown> {

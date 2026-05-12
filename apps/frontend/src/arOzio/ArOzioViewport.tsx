@@ -1,7 +1,15 @@
 import type { ReactNode } from 'react';
 import { useLayoutEffect, useRef } from 'react';
 
-export function ArOzioViewport({ children }: { children: ReactNode }) {
+export type ArOzioViewportVariant = 'kiosk' | 'remote';
+
+type Props = {
+  children: ReactNode;
+  /** `kiosk` = iPad fullscreen letterbox (default). `remote` = public desktop page, scrollable shell. */
+  variant?: ArOzioViewportVariant;
+};
+
+export function ArOzioViewport({ children, variant = 'kiosk' }: Props) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
@@ -40,8 +48,17 @@ export function ArOzioViewport({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <main className="ar-ozio-ipad ar-ozio-ipad-viewport">
-      <div ref={canvasRef} className="ar-ozio-ipad-canvas">
+    <main
+      className={
+        variant === 'remote'
+          ? 'ar-ozio-ipad ar-ozio-remote-lb-viewport'
+          : 'ar-ozio-ipad ar-ozio-ipad-viewport'
+      }
+    >
+      <div
+        ref={canvasRef}
+        className={variant === 'remote' ? 'ar-ozio-ipad-canvas ar-ozio-remote-lb-canvas' : 'ar-ozio-ipad-canvas'}
+      >
         {children}
       </div>
     </main>

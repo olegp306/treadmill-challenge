@@ -14,6 +14,13 @@ test('formatRunResult renders zero metrics explicitly', () => {
   assert.equal(formatRunResult(2, 0, 0), '0:00');
 });
 
+test('formatRunResult maps legacy 166.39 invalid time to em dash for 1 km / 5 km', () => {
+  assert.equal(formatRunResult(1, 166.39, 1000), '—');
+  assert.equal(formatRunResult(2, 166.39, 5000), '—');
+  assert.equal(formatRunResult(1, '166.39', 1000), '—');
+  assert.equal(formatRunResult(1, 166.3900001, 1000), '—');
+});
+
 test('validateRunSessionResultBody accepts zero/missing metrics as valid finish payload', () => {
   const withZero = validateRunSessionResultBody({ runSessionId: 'rs-1', resultTime: 0, distance: 0 });
   assert.equal(withZero.success, true);

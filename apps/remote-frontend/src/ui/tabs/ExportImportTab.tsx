@@ -39,7 +39,13 @@ export function ExportImportTab() {
     setBusy('import');
     try {
       const text = await file.text();
-      const parsed = JSON.parse(text) as unknown;
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text) as unknown;
+      } catch {
+        setError('Некорректный JSON backup');
+        return;
+      }
       const res = await api.importJson(parsed);
       setImportOk(res.imported ? 'Импорт выполнен' : 'Импорт: OK');
     } catch (e) {

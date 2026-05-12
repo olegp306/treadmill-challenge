@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@treadmill-challenge/shared": "*",
     "@fastify/cors": "^8.5.0",
     "fastify": "^4.24.3",
     "jsonwebtoken": "^9.0.2",

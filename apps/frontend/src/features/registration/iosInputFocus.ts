@@ -2,7 +2,22 @@
  * Focus an input in a way that reliably opens the software keyboard on iOS Safari / PWA.
  * Plain `focus()` after navigation often does not show the keyboard; a one-frame readOnly toggle is a common fix.
  */
-export function focusInputForMobileKeyboard(input: HTMLInputElement | null): void {
+export type FocusInputForMobileKeyboardOptions = {
+  /**
+   * When true (phone step only), re-apply telephone keyboard hints after the iOS `readOnly` focus trick.
+   * Safari/iPad can otherwise keep a full keyboard until the field is blurred and refocused.
+   */
+  telephoneKeyboard?: boolean;
+};
+
+/**
+ * Focus an input in a way that reliably opens the software keyboard on iOS Safari / PWA.
+ * Plain `focus()` after navigation often does not show the keyboard; a one-frame readOnly toggle is a common fix.
+ */
+export function focusInputForMobileKeyboard(
+  input: HTMLInputElement | null,
+  options?: FocusInputForMobileKeyboardOptions
+): void {
   if (!input) return;
 
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
@@ -29,6 +44,18 @@ export function focusInputForMobileKeyboard(input: HTMLInputElement | null): voi
       } catch {
         /* ignore */
       }
+      if (options?.telephoneKeyboard) {
+        requestAnimationFrame(() => {
+          try {
+            input.setAttribute('type', 'tel');
+            input.setAttribute('inputmode', 'tel');
+            input.setAttribute('autocomplete', 'tel');
+            input.setAttribute('enterkeyhint', 'done');
+          } catch {
+            /* ignore */
+          }
+        });
+      }
     });
   }
 }
@@ -44,7 +71,7 @@ export function scheduleWizardStepPhoneFocus(input: HTMLInputElement | null): ()
   let raf1 = 0;
   let raf2 = 0;
 
-  const run = () => focusInputForMobileKeyboard(input);
+  const run = () => focusInputForMobileKeyboard(input, { telephoneKeyboard: true });
 
   run();
 

@@ -1,18 +1,66 @@
+import {
+  BACKUP_IMPORT_DEFAULT_BYTES,
+  backupImportFileTooLargeMessage,
+} from '@treadmill-challenge/shared';
+
 type LoginResponse = { ok: true; token: string };
 
 const API_BASE = (import.meta.env.VITE_REMOTE_API_BASE_URL as string | undefined)?.trim() || '';
 
+function readBackupImportMaxBytesFromVite(): number {
+  const raw = (import.meta.env.VITE_BACKUP_IMPORT_MAX_BYTES as string | undefined)?.trim();
+  if (!raw) return BACKUP_IMPORT_DEFAULT_BYTES;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : BACKUP_IMPORT_DEFAULT_BYTES;
+}
+
 async function requestJson<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(options.headers ?? {}),
-    },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
-  return data as T;
+  const url = `${API_BASE}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.headers ?? {}),
+      },
+    });
+  } catch (e) {
+    if (e instanceof TypeError || (e instanceof Error && e.message === 'Failed to fetch')) {
+      throw new Error(
+        'Не удалось выполнить запрос к remote API. Проверьте VITE_REMOTE_API_BASE_URL, сеть, HTTPS и CORS.'
+      );
+    }
+    throw e;
+  }
+
+  const readJson = async (): Promise<{ error?: string }> => {
+    const ct = res.headers.get('Content-Type') ?? '';
+    if (!ct.includes('application/json')) return {};
+    return (await res.json().catch(() => ({}))) as { error?: string };
+  };
+
+  if (!res.ok) {
+    const data = await readJson();
+    const errText = data.error ?? `HTTP ${res.status}`;
+    if (res.status === 413) {
+      throw new Error(
+        data.error ?? backupImportFileTooLargeMessage(readBackupImportMaxBytesFromVite())
+      );
+    }
+    if (res.status === 502 && path === '/api/remote/import-json') {
+      if (
+        errText === 'Локальный сервер недоступен' ||
+        errText.startsWith('Local backend unavailable')
+      ) {
+        throw new Error('Локальный сервер недоступен');
+      }
+    }
+    throw new Error(errText);
+  }
+
+  const data = (await res.json().catch(() => ({}))) as T;
+  return data;
 }
 
 function getToken(): string {
@@ -47,7 +95,17 @@ export const api = {
   },
 
   async downloadBackupJson(): Promise<void> {
-    const res = await fetch(`${API_BASE}/api/remote/downloads/backup-json`, { headers: { ...authHeaders() } });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/api/remote/downloads/backup-json`, { headers: { ...authHeaders() } });
+    } catch (e) {
+      if (e instanceof TypeError || (e instanceof Error && e.message === 'Failed to fetch')) {
+        throw new Error(
+          'Не удалось выполнить запрос к remote API. Проверьте VITE_REMOTE_API_BASE_URL, сеть, HTTPS и CORS.'
+        );
+      }
+      throw e;
+    }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
@@ -78,7 +136,17 @@ export const api = {
   },
 
   async downloadLeaderboardsXlsx(): Promise<void> {
-    const res = await fetch(`${API_BASE}/api/remote/downloads/leaderboards-xlsx`, { headers: { ...authHeaders() } });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/api/remote/downloads/leaderboards-xlsx`, { headers: { ...authHeaders() } });
+    } catch (e) {
+      if (e instanceof TypeError || (e instanceof Error && e.message === 'Failed to fetch')) {
+        throw new Error(
+          'Не удалось выполнить запрос к remote API. Проверьте VITE_REMOTE_API_BASE_URL, сеть, HTTPS и CORS.'
+        );
+      }
+      throw e;
+    }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
@@ -131,6 +199,26 @@ export const api = {
 
   systemStatus() {
     return requestJson<unknown>('/api/remote/system/status', { headers: { ...authHeaders() } });
+  },
+
+  backupStatus() {
+    return requestJson<{
+      backup: {
+        hasBackup: boolean;
+        lastBackupAt: string | null;
+        lastBackupSha16: string | null;
+        logsHours: number;
+        lastError: string | null;
+      };
+    }>('/api/remote/admin/backup/status', { headers: { ...authHeaders() } });
+  },
+
+  pullBackupNow() {
+    return requestJson<{ ok: true; pulledAt: string }>('/api/remote/admin/backup/pull', {
+      method: 'POST',
+      headers: { ...authHeaders() },
+      body: JSON.stringify({}),
+    });
   },
 };
 

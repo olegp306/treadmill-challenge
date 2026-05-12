@@ -9,6 +9,7 @@ import {
   getRunTypeName,
   isRunTypeId,
   normalizeGender,
+  parseBackupImportMaxBytes,
 } from '@treadmill-challenge/shared';
 import { touchDesignerAdapter } from '../integrations/touchdesigner/index.js';
 import { promoteNextQueuedSessionAfterFinish } from '../services/runSessionPromotion.js';
@@ -43,6 +44,7 @@ import {
   buildLeaderboardsWorkbookXlsxBuffer,
 } from '../services/leaderboardExcelExport.js';
 import { getRankedRuns } from '../services/rankingService.js';
+import { getLocalBackupBaseDir } from '../services/backupStoragePath.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
   if (token) {
@@ -108,14 +110,8 @@ type SuspensionState = {
   createdAt: string;
 };
 
-function resolveBackupBaseDir(): string {
-  const raw = process.env.DATA_SNAPSHOT_BACKUP_DIR?.trim();
-  if (!raw) return path.resolve(process.cwd(), 'backup');
-  return path.isAbsolute(raw) ? raw : path.resolve(process.cwd(), raw);
-}
-
 function suspensionStateFilePath(): string {
-  return path.join(resolveBackupBaseDir(), 'suspension-state.json');
+  return path.join(getLocalBackupBaseDir(), 'suspension-state.json');
 }
 
 async function readSuspensionState(): Promise<SuspensionState | null> {
@@ -1048,7 +1044,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
 
     scoped.post<{ Body: unknown }>(
       '/api/admin/data/import',
-      { bodyLimit: 52 * 1024 * 1024 },
+      { bodyLimit: parseBackupImportMaxBytes(process.env.BACKUP_IMPORT_MAX_BYTES) },
       async (request, reply) => {
         const parsed = validateDataSnapshot(request.body);
         if (!parsed.ok) {

@@ -401,7 +401,7 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
       try {
         parsed = JSON.parse(text) as unknown;
       } catch {
-        setError('Некорректный JSON в файле.');
+        setError('Некорректный JSON backup');
         return;
       }
       await api.adminImportData(parsed);
