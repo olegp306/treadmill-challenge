@@ -7,7 +7,36 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.0] - 2026-05-14
+
+### Remote: ACTIVE backup, маршруты и панель
+
+#### Добавлено
+
+- **ACTIVE backup** на remote-backend: `backups/active/active.json` + `active-meta.json` — единственный снимок, с которого строятся публичный leaderboard, забеги, recent-runs, логи (JSON для вкладки Logs), блок monitoring из вложенного `remote` в снимке.
+- **История зеркал** только в `backups/history/` (`remote-backup-*.json`); планировщик зеркала **не** переключает ACTIVE сам по себе.
+- **«Получить обновление»:** pull с local → новый файл в `history/` → promote в ACTIVE (`local_refresh`).
+- **«Импорт данных для Remote обновления»:** только remote (`manual-remote-*.json` в history + ACTIVE), **без** вызова local import API.
+- **«Импортировать данные на беговую дорожку»** — по-прежнему remote → local restore (`POST /api/remote/import-json`).
+- API: `POST /api/remote/admin/backup/import-remote-active`, расширенный `GET /api/remote/admin/backup/status`, `GET /api/remote/admin/active-backup/monitoring`.
+- Сервисы: `activeBackupStore`, `remoteBackupPaths`, `remoteEnvelope`, `snapshotQueueHistory`, `snapshotRecentRuns`; при старте — миграция legacy `latest.json` и перенос датированных файлов из корня backup в `history/`.
+
+#### Изменено
+
+- `GET /api/remote/leaderboard-data` и read-only админ-данные читают **ACTIVE** (fallback на legacy `latest.json` для миграции).
+- UI remote: вкладки Export/Import, Monitoring, System, шапка панели; мониторинг live — вручную, снимок monitoring — из ACTIVE; Edit/Delete забегов остаются на live local (с пояснением в UI).
+- **remote-frontend routing:** `/` и `/leaderboard` — публичный leaderboard без PIN; `/admin` — Remote Admin + PIN; прочие пути → `/`. После выхода из админки — навигация на `/`.
+- Форма PIN: атрибуты против автозаполнения браузера (`autoComplete`, неочевидный `name`).
+- **docs/ARCHITECTURE.md** — отражение модели ACTIVE / history и публичного leaderboard.
+
+---
+
 ## [0.4.6] - 2026-05-12
+
+### Удалённый мониторинг и публичный leaderboard
+
+- **Remote Panel** — отдельное приложение (`apps/remote-frontend`, свой URL), доступ по **PIN** (логин → JWT). Просмотр и операции идут **не из live SQLite**: remote-backend сначала получает актуальный **JSON backup** с локального backend (экспорт / зеркало `latest.json`), затем на этой основе показывает **leaderboard**, **забеги**, **состояние системы**, работает с **backup / import / export**. **Источник правды для отображения и аналитики на remote — последний согласованный JSON backup**, а не прямое чтение живой БД.
+- **Public Leaderboard** — отдельный публичный экран (тот же `remote-frontend`, другой маршрут), **без авторизации**. Данные **только** из последнего зеркала: `GET /api/remote/leaderboard-data` читает **`latest.json`** на remote-backend.
 
 ### Добавлено
 

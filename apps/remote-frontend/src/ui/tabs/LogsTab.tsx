@@ -171,7 +171,7 @@ export function LogsTab() {
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
         <Typography sx={{ fontWeight: 900, mb: 0.5 }}>Логи</Typography>
-        <Typography sx={{ color: '#bbb' }}>Данные взяты из последнего remote backup JSON</Typography>
+        <Typography sx={{ color: '#bbb' }}>Данные взяты из ACTIVE remote backup JSON</Typography>
         <Typography sx={{ color: '#777', fontSize: 12, mt: 0.5 }}>
           Период событий: {formatIso(period.from)} — {formatIso(period.to)}
         </Typography>

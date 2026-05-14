@@ -22,7 +22,10 @@
   - Severity calculation
   - Telegram/email alerts + dedup/cooldown
   - Audit log + retention
-- **Remote frontend (Remote Administrator UI)**: `apps/remote-frontend` (React + Vite + MUI)
+  - Зеркалирование **JSON backup** с local (`remote-backup-*.json`, `latest.json`, `latest-meta.json`) — см. `BACKUP_STORAGE_PATH` / runtime
+- **Remote frontend** (`apps/remote-frontend`, React + Vite + MUI), два сценария:
+  - **Remote Panel (Remote Administrator UI)** — отдельный URL, **защита PIN → JWT**; запросы к remote-backend (`/api/remote/...`). Для вкладок «данные / leaderboard / система / импорт-экспорт» **источник правды — последний JSON backup** (pull с local + файлы на remote), **не** прямой доступ к live SQLite на магазине.
+  - **Public Leaderboard** — отдельный URL **без авторизации**; только чтение снимка из **`latest.json`** через `GET /api/remote/leaderboard-data` (тот же принцип: **нет live БД** на remote).
 
 ---
 
@@ -65,12 +68,23 @@
 ### 2.3 Remote Admin (управление удалённо)
 
 ```text
-[Remote Admin UI (apps/remote-frontend)]
+[Remote Admin UI (apps/remote-frontend) — Remote Panel]
    ↓ Authorization: Bearer <remote-jwt>
 [Remote Backend (apps/remote-backend)]
    ├─ выдаёт JWT по PIN
    ├─ пишет audit log (login/logout/export/import/edit/delete/view)
+   ├─ зеркало JSON backup с local → latest.json / remote-backup-*.json (источник для «read-only» вкладок)
    └─ proxy → [Local Backend (apps/backend)] (Authorization: Bearer <local token> в dev)
+        ↑ live DB только здесь; remote UI для данных опирается на backup-снимок после pull/зеркала
+```
+
+### 2.4 Public Leaderboard (без авторизации)
+
+```text
+[Browser — Public Leaderboard route]
+   ↓ GET /api/remote/leaderboard-data (без JWT)
+[Remote Backend]
+   └─ читает latest.json (зеркало local export), строит payload для UI
 ```
 
 ---
@@ -147,6 +161,7 @@
 - **Remote Admin**:
   - PIN → JWT login: `POST /api/remote/admin/login`
   - Proxy endpoints для действий в локальном backend (runs/export/import/health/recent, и т.д.)
+  - Хранит **зеркало JSON backup** с local; **leaderboard / публичный leaderboard / read-only представления данных** строятся из **`latest.json`** (или эквивалентного последнего снимка), а не из прямого чтения SQLite на магазине.
   - Audit log событий admin действий (login/logout/view/export/import/edit/delete)
 - **Health Monitoring (host monitoring)**:
   - `POST /api/monitoring/health` с API key auth
@@ -167,9 +182,9 @@
 
 ### Remote frontend/admin (apps/remote-frontend)
 **Что делает**
-- UI удалённого администратора (Мониторинг/Экспорт-импорт/Забеги/Система)
-- Авторизация по JWT, хранение токена в `sessionStorage`
-- Делает запросы **только** в remote backend (`/api/remote/...`)
+- **Remote Panel:** UI удалённого администратора (Мониторинг/Экспорт-импорт/Забеги/Система и т.д.), отдельный URL; авторизация по JWT (PIN на логине), токен в `sessionStorage`.
+- **Public Leaderboard:** отдельный маршрут/URL **без JWT**; только `GET /api/remote/leaderboard-data` (данные из `latest.json` на remote-backend).
+- Делает запросы **только** в remote backend (`/api/remote/...` и публичный endpoint leaderboard).
 
 **Что НЕ делает**
 - Не является источником health data.

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Alert, Box, Chip, Divider, Paper, Typography } from '@mui/material';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Box, Button, Chip, Divider, Paper, Typography } from '@mui/material';
 import { api } from '../../api/client';
 
 type HealthStatusPayload = {
@@ -60,32 +60,65 @@ function StatusChip({ ok, okLabel, badLabel }: { ok: boolean | null | undefined;
   );
 }
 
+function safeJsonPreview(v: unknown, maxLen: number): string {
+  try {
+    const s = JSON.stringify(v);
+    return s.length > maxLen ? `${s.slice(0, maxLen)}…` : s;
+  } catch {
+    return '—';
+  }
+}
+
 export function MonitoringTab() {
   const [health, setHealth] = useState<HealthStatusPayload | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+  const [healthBusy, setHealthBusy] = useState(false);
+  const [healthLoadedAt, setHealthLoadedAt] = useState<string | null>(null);
+
+  const [activeMon, setActiveMon] = useState<unknown>(null);
+  const [activeMonEmpty, setActiveMonEmpty] = useState(true);
+  const [activeMonError, setActiveMonError] = useState<string | null>(null);
+  const [activeMonLoadedAt, setActiveMonLoadedAt] = useState<string | null>(null);
+
+  const loadLiveHealth = useCallback(async () => {
+    try {
+      setHealthError(null);
+      setHealthBusy(true);
+      const h = (await api.healthStatus()) as HealthStatusPayload;
+      setHealth(h);
+      setHealthLoadedAt(new Date().toISOString());
+    } catch (e) {
+      setHealthError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setHealthBusy(false);
+    }
+  }, []);
+
+  const loadActiveMonitoring = useCallback(async () => {
+    try {
+      setActiveMonError(null);
+      const r = await api.activeBackupMonitoring();
+      setActiveMonEmpty(r.empty);
+      setActiveMon(r.remote);
+      setActiveMonLoadedAt(new Date().toISOString());
+    } catch (e) {
+      setActiveMonError(e instanceof Error ? e.message : 'Failed');
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        setError(null);
-        const h = (await api.healthStatus()) as HealthStatusPayload;
-        if (cancelled) return;
-        setHealth(h);
-        setLastSyncAt(new Date().toISOString());
-      } catch (e) {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Failed');
-      }
-    };
-    void load();
-    const t = window.setInterval(() => void load(), 15_000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(t);
-    };
-  }, []);
+    void loadActiveMonitoring();
+  }, [loadActiveMonitoring]);
+
+  useEffect(() => {
+    void loadLiveHealth();
+  }, [loadLiveHealth]);
+
+  useEffect(() => {
+    const onUpdated = () => void loadActiveMonitoring();
+    window.addEventListener('remote-backup-updated', onUpdated);
+    return () => window.removeEventListener('remote-backup-updated', onUpdated);
+  }, [loadActiveMonitoring]);
 
   const tdOnline = (() => {
     const last = health?.td?.lastTdEventAt;
@@ -105,14 +138,23 @@ export function MonitoringTab() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {error ? <Alert severity="error">{error}</Alert> : null}
+      {healthError ? <Alert severity="error">{healthError}</Alert> : null}
+      {activeMonError ? <Alert severity="warning">{activeMonError}</Alert> : null}
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-          <Typography sx={{ fontWeight: 900 }}>Main system status</Typography>
-          <Typography sx={{ color: '#777', fontSize: 12 }}>Last updated: {formatIso(lastSyncAt)}</Typography>
+          <Typography sx={{ fontWeight: 900 }}>Live: статус с локального backend</Typography>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Typography sx={{ color: '#777', fontSize: 12 }}>обновлено: {formatIso(healthLoadedAt)}</Typography>
+            <Button size="small" variant="contained" disabled={healthBusy} onClick={() => void loadLiveHealth()} sx={{ fontWeight: 800 }}>
+              {healthBusy ? '...' : 'Обновить live'}
+            </Button>
+          </Box>
         </Box>
         <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
+        <Typography sx={{ color: '#777', fontSize: 12, mb: 1 }}>
+          Не авто-polling: только по кнопке. Данные таблиц/лидерборда на remote идут из ACTIVE backup, не отсюда.
+        </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -126,13 +168,10 @@ export function MonitoringTab() {
           <Typography sx={{ color: '#bbb' }}>appVersion: {health?.appVersion ?? '—'}</Typography>
           <Typography sx={{ color: '#bbb' }}>timestamp: {formatIso(health?.timestamp)}</Typography>
         </Box>
-        <Typography sx={{ color: '#777', mt: 1, fontSize: 12 }}>
-          (Auto refresh каждые 15 секунд)
-        </Typography>
       </Paper>
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>iPad status</Typography>
+        <Typography sx={{ fontWeight: 900, mb: 1 }}>iPad status (live)</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Typography sx={{ color: '#bbb', minWidth: 140 }}>online</Typography>
           <StatusChip ok={health?.ipad?.online} okLabel="online" badLabel="offline" />
@@ -144,7 +183,7 @@ export function MonitoringTab() {
       </Paper>
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>TouchDesigner status</Typography>
+        <Typography sx={{ fontWeight: 900, mb: 1 }}>TouchDesigner (live)</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Typography sx={{ color: '#bbb', minWidth: 140 }}>online</Typography>
           <StatusChip ok={tdOnline} okLabel="online" badLabel="offline" />
@@ -159,7 +198,7 @@ export function MonitoringTab() {
       </Paper>
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>Queue / Runs</Typography>
+        <Typography sx={{ fontWeight: 900, mb: 1 }}>Queue / Runs (live)</Typography>
         <Typography sx={{ color: '#bbb' }}>current queue length: {health?.queue?.queuedCount ?? '—'}</Typography>
         <Typography sx={{ color: '#bbb' }}>
           waiting participants: {health?.queue?.waitingParticipants ?? health?.queue?.queuedCount ?? '—'}
@@ -171,19 +210,15 @@ export function MonitoringTab() {
       </Paper>
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>System metrics</Typography>
+        <Typography sx={{ fontWeight: 900, mb: 1 }}>System metrics (live)</Typography>
         <Typography sx={{ color: '#bbb' }}>cpuPct: {health?.system?.cpuPct ?? '—'}</Typography>
         <Typography sx={{ color: '#bbb' }}>ramPct: {health?.system?.ramPct ?? '—'}</Typography>
         <Typography sx={{ color: '#bbb' }}>diskFreeGb: {health?.system?.diskFreeGb ?? '—'}</Typography>
         <Typography sx={{ color: '#bbb' }}>uptimeSec: {health?.system?.uptimeSec ?? '—'}</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mt: 1 }}>
-          <Typography sx={{ color: '#bbb', minWidth: 140 }}>internetOk</Typography>
-          <StatusChip ok={health?.system?.internetOk} okLabel="ok" badLabel="offline" />
-        </Box>
       </Paper>
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>Warnings / Errors</Typography>
+        <Typography sx={{ fontWeight: 900, mb: 1 }}>Warnings / Errors (live)</Typography>
         <Typography sx={{ fontWeight: 800, color: '#bbb', mb: 0.5 }}>warnings</Typography>
         {health?.warnings?.length ? (
           <Typography sx={{ color: '#fdd835' }}>{health.warnings.join(', ')}</Typography>
@@ -198,7 +233,26 @@ export function MonitoringTab() {
           <Typography sx={{ color: '#777' }}>Нет ошибок</Typography>
         )}
       </Paper>
+
+      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+          <Typography sx={{ fontWeight: 900 }}>ACTIVE backup: вложенный monitoring (remote)</Typography>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Typography sx={{ color: '#777', fontSize: 12 }}>загружено: {formatIso(activeMonLoadedAt)}</Typography>
+            <Button size="small" variant="outlined" onClick={() => void loadActiveMonitoring()} sx={{ fontWeight: 800 }}>
+              Обновить
+            </Button>
+          </Box>
+        </Box>
+        <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
+        {activeMonEmpty ? (
+          <Typography sx={{ color: '#777' }}>Нет ACTIVE backup или блок remote отсутствует.</Typography>
+        ) : (
+          <Typography sx={{ color: '#bbb', fontSize: 13, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {safeJsonPreview(activeMon, 8000)}
+          </Typography>
+        )}
+      </Paper>
     </Box>
   );
 }
-

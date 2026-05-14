@@ -190,7 +190,7 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
         order: sortModeForRankedApi,
       })
       .then((res) => {
-        if (!cancelled) setRankedHistoryRows(res.entries as HistoryRow[]);
+        if (!cancelled) setRankedHistoryRows(res.entries as unknown as HistoryRow[]);
       })
       .catch((e) => {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Не удалось загрузить рейтинг');
@@ -660,6 +660,9 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
           </div>
           <div style={styles.recoveryWrap}>
             {queueRecoveryReason ? <p style={styles.recoveryReason}>{queueRecoveryReason}</p> : null}
+            {queueRecoveryHint ? (
+              <p style={{ ...styles.recoveryReason, color: '#3fb950', marginTop: 6 }}>{queueRecoveryHint}</p>
+            ) : null}
           </div>
           <div style={styles.tableScrollWrapShort}>
             <table style={styles.table}>

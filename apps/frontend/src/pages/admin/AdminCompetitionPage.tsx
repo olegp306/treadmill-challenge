@@ -280,7 +280,7 @@ export default function AdminCompetitionPage() {
                 <span style={{ flex: '1 1 200px' }}>{row.participantName}</span>
                 <span style={{ color: '#888' }}>
                   {detail
-                    ? formatRunResult(detail.runTypeId, row.resultTime, row.distance)
+                    ? formatRunResult(detail.competition.runTypeId, row.resultTime, row.distance)
                     : `${row.resultTime.toFixed(2)} c · ${Math.round(row.distance)} м`}
                 </span>
                 {row.verificationPhotoAvailable && row.runSessionId ? (

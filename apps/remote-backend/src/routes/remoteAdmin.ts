@@ -3,11 +3,24 @@ import { signRemoteAdminJwt } from '../auth/jwt.js';
 import { requireRemoteAdmin } from '../auth/requireRemoteAdmin.js';
 import { writeAudit } from '../audit/auditLog.js';
 import path from 'node:path';
-import { readFile, readdir } from 'node:fs/promises';
-import { backupDir } from '../services/remoteBackupDir.js';
+import { mkdir, writeFile } from 'node:fs/promises';
 import {
-  getLocalAdminRecentRuns,
-  getLocalAdminRunSessions,
+  promoteHistoryFileToActive,
+  readActiveBackupMetaFile,
+  readActiveBackupParsed,
+  readActiveBackupRaw,
+  writeActiveBackupEnvelope,
+} from '../services/activeBackupStore.js';
+import {
+  getBackupMirrorState,
+  runRemoteBackupMirrorOnce,
+} from '../services/backupMirrorScheduler.js';
+import { readBackupLatestMeta, lastBackupAtFromDatedFiles } from '../services/backupLatestMeta.js';
+import { normalizeUserUploadToEnvelope } from '../services/remoteEnvelope.js';
+import { remoteHistoryDir } from '../services/remoteBackupPaths.js';
+import { runSessionsResponseFromEnvelope } from '../services/snapshotQueueHistory.js';
+import { recentRunsFromEnvelope } from '../services/snapshotRecentRuns.js';
+import {
   getLocalHealthStatus,
   getLocalAdminToken,
   getLocalBaseUrl,
@@ -18,8 +31,6 @@ import {
   proxyLocalAdminLeaderboardsXlsx,
   updateLocalAdminRunSessionResult,
 } from '../local/localClient.js';
-import { getBackupMirrorState, runRemoteBackupMirrorOnce } from '../services/backupMirrorScheduler.js';
-import { readBackupLatestMeta, lastBackupAtFromDatedFiles } from '../services/backupLatestMeta.js';
 
 function normalizeHours(raw: unknown, fallback: number): number {
   const n = Number(raw ?? fallback);
@@ -34,16 +45,16 @@ function remoteDownloadStamp(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}-${p(d.getMinutes())}`;
 }
 
-async function readLatestRemoteBackupJson(): Promise<{ fileName: string; raw: string; parsed: unknown } | null> {
-  const dir = backupDir();
-  const files = (await readdir(dir).catch(() => [] as string[]))
-    .filter((f) => /^remote-backup-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/.test(f))
-    .sort();
-  const latest = files.length ? files[files.length - 1]! : null;
-  if (!latest) return null;
-  const raw = await readFile(path.join(dir, latest), 'utf8');
-  const parsed = JSON.parse(raw) as unknown;
-  return { fileName: latest, raw, parsed };
+async function readActiveBackupForDownload(): Promise<{ fileName: string; raw: string } | null> {
+  const raw = await readActiveBackupRaw();
+  if (!raw) return null;
+  const meta = await readActiveBackupMetaFile();
+  const base =
+    meta?.historySourceFile && meta.historySourceFile.trim().length > 0
+      ? `active-${meta.historySourceFile.replace(/[^\w.-]+/g, '_')}`
+      : 'active-backup';
+  const fileName = base.endsWith('.json') ? base : `${base}.json`;
+  return { fileName, raw };
 }
 
 export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<void> {
@@ -110,19 +121,25 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
     return Math.min(24 * 14, Math.max(1, Math.floor(raw)));
   }
 
-  app.get('/api/remote/admin/backup/status', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+  app.get('/api/remote/admin/backup/status', { preHandler: requireRemoteAdmin }, async (_request, reply) => {
     const mirror = getBackupMirrorState();
     const meta = await readBackupLatestMeta();
+    const activeMeta = await readActiveBackupMetaFile();
     const datedIso = await lastBackupAtFromDatedFiles();
-    const lastBackupAt = meta?.lastBackupAt ?? mirror.lastSuccessAt ?? datedIso;
-    const hasBackup = Boolean(lastBackupAt);
+    const hasActive = Boolean(activeMeta?.activeUpdatedAt);
+    const lastBackupAt = meta?.lastBackupAt ?? null;
     return reply.send({
       backup: {
-        hasBackup,
+        hasBackup: hasActive,
         lastBackupAt,
         lastBackupSha16: meta?.lastBackupSha16 ?? null,
         logsHours: meta?.logsHours ?? remoteBackupLogsHours(),
         lastError: mirror.lastError,
+        lastMirrorSuccessAt: mirror.lastSuccessAt,
+        lastHistoryMirrorAt: datedIso,
+        activeUpdatedAt: activeMeta?.activeUpdatedAt ?? null,
+        activeSource: activeMeta?.source ?? null,
+        activeEnvelopeCreatedAt: activeMeta?.envelopeCreatedAt ?? null,
       },
     });
   });
@@ -132,6 +149,13 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
     if (!r.ok) {
       return reply.status(502).send({ error: r.error ?? 'Backup pull failed' });
     }
+    try {
+      await promoteHistoryFileToActive(r.historyPath, 'local_refresh');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      request.log.warn({ msg: 'remote_active_promote_failed', error: msg });
+      return reply.status(500).send({ error: msg });
+    }
     await writeAudit({
       userId: null,
       userEmail: null,
@@ -140,9 +164,9 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       entityId: null,
       ip: request.ip ?? null,
       userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
-      metadata: { pulledAt: r.lastBackupAt ?? null },
+      metadata: { pulledAt: r.lastBackupAt, historyPath: r.historyPath, activeRefreshed: true },
     }).catch(() => undefined);
-    return reply.send({ ok: true as const, pulledAt: r.lastBackupAt ?? new Date().toISOString() });
+    return reply.send({ ok: true as const, pulledAt: r.lastBackupAt, activeRefreshed: true as const });
   });
 
   // ===== Proxy + mirror APIs (remote admin only) =====
@@ -167,44 +191,40 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
   });
 
   app.get('/api/remote/admin/recent-runs', { preHandler: requireRemoteAdmin }, async (request, reply) => {
-    try {
-      await writeAudit({
-        userId: null,
-        userEmail: null,
-        action: 'RECENT_RUNS_VIEWED',
-        entityType: null,
-        entityId: null,
-        ip: request.ip ?? null,
-        userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
-        metadata: null,
-      }).catch(() => undefined);
-      return reply.send(await getLocalAdminRecentRuns());
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      request.log.warn({ msg: 'remote_proxy_recent_runs_failed', error: msg });
-      return reply.status(502).send({ error: `Local backend unavailable: ${msg}` });
+    await writeAudit({
+      userId: null,
+      userEmail: null,
+      action: 'RECENT_RUNS_VIEWED',
+      entityType: null,
+      entityId: null,
+      ip: request.ip ?? null,
+      userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+      metadata: { source: 'active_backup' },
+    }).catch(() => undefined);
+    const root = await readActiveBackupParsed();
+    if (!root) {
+      return reply.send({ lastRegistration: null, recentRuns: [] });
     }
+    return reply.send(recentRunsFromEnvelope(root));
   });
 
   // ===== Runs / run sessions (Stage 2) =====
   app.get('/api/remote/admin/run-sessions', { preHandler: requireRemoteAdmin }, async (request, reply) => {
-    try {
-      await writeAudit({
-        userId: null,
-        userEmail: null,
-        action: 'RUN_SESSIONS_VIEWED',
-        entityType: null,
-        entityId: null,
-        ip: request.ip ?? null,
-        userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
-        metadata: null,
-      }).catch(() => undefined);
-      return reply.send(await getLocalAdminRunSessions());
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      request.log.warn({ msg: 'remote_proxy_run_sessions_failed', error: msg });
-      return reply.status(502).send({ error: `Local backend unavailable: ${msg}` });
+    await writeAudit({
+      userId: null,
+      userEmail: null,
+      action: 'RUN_SESSIONS_VIEWED',
+      entityType: null,
+      entityId: null,
+      ip: request.ip ?? null,
+      userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+      metadata: { source: 'active_backup' },
+    }).catch(() => undefined);
+    const root = await readActiveBackupParsed();
+    if (!root) {
+      return reply.send({ entries: [] });
     }
+    return reply.send(runSessionsResponseFromEnvelope(root));
   });
 
   app.put('/api/remote/admin/run-sessions/:runSessionId/result', { preHandler: requireRemoteAdmin }, async (request, reply) => {
@@ -269,8 +289,8 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
     const format = typeof q.format === 'string' ? q.format.trim().toLowerCase() : '';
     try {
       if (source === 'remote-backup') {
-        const latest = await readLatestRemoteBackupJson();
-        if (!latest) return reply.status(404).send({ error: 'No remote backups found' });
+        const latest = await readActiveBackupForDownload();
+        if (!latest) return reply.status(404).send({ error: 'Нет активного backup на remote (active.json)' });
 
         await writeAudit({
           userId: null,
@@ -392,6 +412,45 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       request.log.warn({ msg: 'remote_proxy_download_xlsx_failed', error: msg });
       return reply.status(502).send({ error: `Local backend unavailable: ${msg}` });
     }
+  });
+
+  app.get('/api/remote/admin/active-backup/monitoring', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const root = await readActiveBackupParsed();
+    if (!root || typeof root !== 'object') {
+      return reply.send({ empty: true as const, remote: null });
+    }
+    const rec = root as Record<string, unknown>;
+    const remote = rec.remote;
+    return reply.send({ empty: false as const, remote: remote ?? null });
+  });
+
+  app.post('/api/remote/admin/backup/import-remote-active', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const norm = normalizeUserUploadToEnvelope(request.body);
+    if (!norm.ok) {
+      return reply.status(400).send({ error: norm.error });
+    }
+    const hist = remoteHistoryDir();
+    await mkdir(hist, { recursive: true });
+    const stamp = remoteDownloadStamp();
+    const histName = `manual-remote-${stamp}.json`;
+    const histPath = path.join(hist, histName);
+    await writeFile(histPath, JSON.stringify(norm.envelope, null, 2), 'utf8');
+    const w = await writeActiveBackupEnvelope({
+      envelope: norm.envelope,
+      source: 'manual_import',
+      historySourceFile: histName,
+    });
+    await writeAudit({
+      userId: null,
+      userEmail: null,
+      action: 'REMOTE_ACTIVE_IMPORT',
+      entityType: 'remote_active_backup',
+      entityId: null,
+      ip: request.ip ?? null,
+      userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+      metadata: { activeUpdatedAt: w.activeUpdatedAt, historyFile: histName },
+    }).catch(() => undefined);
+    return reply.send({ ok: true as const, activeUpdatedAt: w.activeUpdatedAt });
   });
 
   app.post('/api/remote/import-json', { preHandler: requireRemoteAdmin }, async (request, reply) => {

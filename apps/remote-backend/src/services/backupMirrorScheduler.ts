@@ -1,9 +1,11 @@
 import crypto from 'node:crypto';
-import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { proxyLocalAdminJsonExport } from '../local/localClient.js';
 import { runtimeRootDir } from '../runtimePaths.js';
+import { migrateLooseHistoryFilesToSubdir } from './activeBackupStore.js';
 import { backupDir } from './remoteBackupDir.js';
+import { remoteHistoryDir } from './remoteBackupPaths.js';
 
 export { backupDir } from './remoteBackupDir.js';
 
@@ -166,14 +168,22 @@ async function applyRetention(dir: string, keepCount: number): Promise<void> {
   }
 }
 
-/** One backup pull + write dated file, `latest.json`, and `latest-meta.json`. */
-export async function runRemoteBackupMirrorOnce(log: Log): Promise<{ ok: boolean; lastBackupAt?: string; error?: string }> {
+export type MirrorOnceResult =
+  | { ok: true; historyPath: string; lastBackupAt: string }
+  | { ok: false; error: string };
+
+/**
+ * Pull from local, write dated file under `backups/history/` only.
+ * Does **not** update the operator-controlled active backup (see `promoteHistoryFileToActive`).
+ */
+export async function runRemoteBackupMirrorOnce(log: Log): Promise<MirrorOnceResult> {
   const startedAt = Date.now();
   const logsHours = logsHoursForExport();
   const keepCount = intEnv('REMOTE_BACKUP_RETENTION_COUNT', 24, 1, 10_000);
   try {
-    const dir = backupDir();
-    await mkdir(dir, { recursive: true });
+    await migrateLooseHistoryFilesToSubdir(log);
+    const hist = remoteHistoryDir();
+    await mkdir(hist, { recursive: true });
     const res = await proxyLocalAdminJsonExport(logsHours);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -201,30 +211,15 @@ export async function runRemoteBackupMirrorOnce(log: Log): Promise<{ ok: boolean
 
     const outBody = JSON.stringify(envelope, null, 2);
     const sha = crypto.createHash('sha256').update(outBody).digest('hex').slice(0, 16);
-    const p = path.join(dir, fileName(new Date()));
+    const p = path.join(hist, fileName(new Date()));
     await writeFile(p, outBody, 'utf8');
-    await writeFile(path.join(dir, 'latest.json'), outBody, 'utf8');
     const lastBackupAt = new Date().toISOString();
-    await writeFile(
-      path.join(dir, 'latest-meta.json'),
-      JSON.stringify(
-        {
-          lastBackupAt,
-          lastBackupSha16: sha,
-          logsHours,
-          sourceFile: path.basename(p),
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
-    await applyRetention(dir, keepCount);
+    await applyRetention(hist, keepCount);
     state.lastSuccessAt = lastBackupAt;
     state.lastError = null;
     state.latestFilePath = p;
     log.info({ msg: 'remote_backup_mirrored', path: p, sha16: sha, elapsedMs: Date.now() - startedAt });
-    return { ok: true, lastBackupAt };
+    return { ok: true, historyPath: p, lastBackupAt };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     state.lastError = msg;
@@ -257,8 +252,13 @@ export function startBackupMirrorScheduler(log: Log): BackupMirrorHandle {
 
   setTimeout(() => void tick(), firstRunDelayMs);
   const timer = setInterval(() => void tick(), intervalMinutes * 60_000);
-  log.info({ msg: 'remote_backup_mirror_started', intervalMinutes, keepCount, firstRunDelayMs, dir: backupDir() });
+  log.info({
+    msg: 'remote_backup_mirror_started',
+    intervalMinutes,
+    keepCount,
+    firstRunDelayMs,
+    historyDir: remoteHistoryDir(),
+  });
 
   return { stop: () => clearInterval(timer) };
 }
-

@@ -9,10 +9,14 @@ type Log = {
 };
 
 /**
- * Root directory for remote mirrored backups (`remote-backup-*.json`, `latest.json`, `latest-meta.json`).
+ * Root directory for remote backups.
+ *
+ * Layout:
+ * - `history/` — dated mirror files from scheduled / background pulls (`remote-backup-*.json`).
+ * - `active/` — operator-controlled snapshot: `active.json`, `active-meta.json`.
  *
  * - If `BACKUP_STORAGE_PATH` is set: that directory (validated, not a drive root).
- * - Otherwise: `{REMOTE_RUNTIME_DIR or runtime/remote}/backups` (unchanged legacy layout).
+ * - Otherwise: `{REMOTE_RUNTIME_DIR or runtime/remote}/backups`.
  */
 export function getRemoteBackupRootDir(): string {
   const storage = process.env.BACKUP_STORAGE_PATH?.trim();

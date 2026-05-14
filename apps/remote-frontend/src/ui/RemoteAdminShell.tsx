@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppBar, Box, Button, Container, Tab, Tabs, Toolbar, Typography } from '@mui/material';
 import { MonitoringTab } from './tabs/MonitoringTab';
 import { ExportImportTab } from './tabs/ExportImportTab';
 import { RunsTab } from './tabs/RunsTab';
 import { SystemTab } from './tabs/SystemTab';
-import { api } from '../api/client';
+import { api, type RemoteBackupStatus } from '../api/client';
 
 type TabKey = 'monitoring' | 'export' | 'runs' | 'system';
 
@@ -48,12 +49,17 @@ function relativeTimeRu(iso: string | null | undefined): string {
   return ruPluralForm(diffD, 'день', 'дня', 'дней') + ' назад';
 }
 
+function activeSourceRu(s: RemoteBackupStatus['activeSource']): string {
+  if (s === 'local_refresh') return 'с дорожки';
+  if (s === 'manual_import') return 'ручной (remote)';
+  if (s === 'migrated_legacy') return 'миграция';
+  return '';
+}
+
 export function RemoteAdminShell() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>('monitoring');
-  const [backupStatus, setBackupStatus] = useState<{
-    lastBackupAt: string | null;
-    lastError: string | null;
-  }>({ lastBackupAt: null, lastError: null });
+  const [backupStatus, setBackupStatus] = useState<RemoteBackupStatus | null>(null);
   const [pullBusy, setPullBusy] = useState(false);
 
   useEffect(() => {
@@ -66,9 +72,8 @@ export function RemoteAdminShell() {
   const close = () => {
     void api.logout().catch(() => undefined);
     sessionStorage.removeItem('remoteAdminToken');
-    // Try closing (works only if opened by script); fallback to reload (login screen).
     window.close();
-    window.location.reload();
+    navigate('/', { replace: true });
   };
 
   const pullNow = async () => {
@@ -76,7 +81,7 @@ export function RemoteAdminShell() {
     try {
       await api.pullBackupNow();
       const st = await api.backupStatus();
-      setBackupStatus({ lastBackupAt: st.backup.lastBackupAt, lastError: st.backup.lastError });
+      setBackupStatus(st.backup);
       window.dispatchEvent(new CustomEvent('remote-backup-updated'));
     } catch {
       // Status tab and Monitoring tab will show details; keep header stable.
@@ -97,10 +102,10 @@ export function RemoteAdminShell() {
       try {
         const st = await api.backupStatus();
         if (cancelled) return;
-        setBackupStatus({ lastBackupAt: st.backup.lastBackupAt, lastError: st.backup.lastError });
+        setBackupStatus(st.backup);
       } catch {
         if (cancelled) return;
-        setBackupStatus({ lastBackupAt: null, lastError: null });
+        setBackupStatus(null);
       }
     };
     void load();
@@ -112,11 +117,16 @@ export function RemoteAdminShell() {
   }, [tick]);
 
   const backupMetaLine = useMemo(() => {
-    if (!backupStatus.lastBackupAt) return 'Бэкап: не получен';
-    const abs = formatBackupAbsolute(backupStatus.lastBackupAt);
-    const rel = relativeTimeRu(backupStatus.lastBackupAt);
-    return `Бэкап: ${abs} (${rel})`;
-  }, [backupStatus.lastBackupAt, tick]);
+    if (!backupStatus?.hasBackup && !backupStatus?.activeUpdatedAt) {
+      return 'ACTIVE backup: не задан (нажмите «Получить обновление» или импорт для remote)';
+    }
+    const envAt = backupStatus.activeEnvelopeCreatedAt ?? backupStatus.lastBackupAt;
+    const abs = envAt ? formatBackupAbsolute(envAt) : '—';
+    const rel = envAt ? relativeTimeRu(envAt) : '';
+    const src = activeSourceRu(backupStatus.activeSource);
+    const applied = backupStatus.activeUpdatedAt ? formatBackupAbsolute(backupStatus.activeUpdatedAt) : '—';
+    return `ACTIVE: снимок ${abs}${rel ? ` (${rel})` : ''} · применён ${applied}${src ? ` · ${src}` : ''}`;
+  }, [backupStatus, tick]);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#0d0d0d', color: '#eee' }}>
@@ -147,9 +157,9 @@ export function RemoteAdminShell() {
             >
               {backupMetaLine}
             </Typography>
-            {backupStatus.lastError ? (
+            {backupStatus?.lastError ? (
               <Typography sx={{ fontSize: 12, color: 'rgba(0,0,0,0.85)' }}>
-                Ошибка: {backupStatus.lastError}
+                Ошибка зеркала: {backupStatus.lastError}
               </Typography>
             ) : null}
           </Box>

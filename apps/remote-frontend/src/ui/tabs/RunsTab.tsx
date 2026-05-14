@@ -192,6 +192,11 @@ export function RunsTab() {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {error ? <Alert severity="error">{error}</Alert> : null}
 
+      <Alert severity="info" sx={{ bgcolor: '#1a237e', color: '#e8eaf6' }}>
+        Забеги и поиск — из <strong>ACTIVE</strong> JSON backup на remote. Кнопки Edit и Delete обращаются к локальному
+        backend и меняют <strong>живую</strong> систему на дорожке.
+      </Alert>
+
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
           <Typography sx={{ fontWeight: 900 }}>Забеги</Typography>

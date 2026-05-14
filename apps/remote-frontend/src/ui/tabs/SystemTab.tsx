@@ -18,10 +18,19 @@ type SystemStatus = {
   };
   backups: {
     folderPath: string;
+    backupRoot?: string;
+    historyDir?: string;
+    activeDir?: string;
     latestFileName: string | null;
     latestCreatedAt: string | null;
+    lastBackupAt?: string | null;
+    lastBackupSha16?: string | null;
+    backupLogsHours?: number;
     totalCount: number;
     lastError: string | null;
+    activeUpdatedAt?: string | null;
+    activeSource?: string | null;
+    activeEnvelopeCreatedAt?: string | null;
   };
 };
 
@@ -94,12 +103,19 @@ export function SystemTab() {
       </Paper>
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>Backup mirror status</Typography>
-        <Typography sx={{ color: '#bbb' }}>backup folder path: {data?.backups.folderPath ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>latest remote backup filename: {data?.backups.latestFileName ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>latest remote backup createdAt: {formatIso(data?.backups.latestCreatedAt)}</Typography>
-        <Typography sx={{ color: '#bbb' }}>total number of remote backups: {data?.backups.totalCount ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>last backup error: {data?.backups.lastError ?? '—'}</Typography>
+        <Typography sx={{ fontWeight: 900, mb: 1 }}>Backup storage (remote)</Typography>
+        <Typography sx={{ color: '#bbb' }}>backup root: {data?.backups.backupRoot ?? '—'}</Typography>
+        <Typography sx={{ color: '#bbb' }}>history (scheduled pulls): {data?.backups.historyDir ?? data?.backups.folderPath ?? '—'}</Typography>
+        <Typography sx={{ color: '#bbb' }}>active (operator snapshot): {data?.backups.activeDir ?? '—'}</Typography>
+        <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
+        <Typography sx={{ color: '#bbb' }}>latest history file: {data?.backups.latestFileName ?? '—'}</Typography>
+        <Typography sx={{ color: '#bbb' }}>latest history mtime: {formatIso(data?.backups.latestCreatedAt)}</Typography>
+        <Typography sx={{ color: '#bbb' }}>history file count: {data?.backups.totalCount ?? '—'}</Typography>
+        <Typography sx={{ color: '#bbb' }}>mirror last error: {data?.backups.lastError ?? '—'}</Typography>
+        <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
+        <Typography sx={{ color: '#bbb' }}>ACTIVE envelope createdAt: {formatIso(data?.backups.activeEnvelopeCreatedAt)}</Typography>
+        <Typography sx={{ color: '#bbb' }}>ACTIVE applied on remote: {formatIso(data?.backups.activeUpdatedAt)}</Typography>
+        <Typography sx={{ color: '#bbb' }}>ACTIVE source: {data?.backups.activeSource ?? '—'}</Typography>
         {loading ? <Typography sx={{ color: '#777', mt: 1 }}>Loading…</Typography> : null}
       </Paper>
     </Box>

@@ -6,6 +6,7 @@ import { registerRemoteSystemRoutes } from './routes/remoteSystem.js';
 import { registerPublicLeaderboardRoutes } from './routes/publicLeaderboard.js';
 import { registerMonitoringIngestRoutes } from './routes/monitoringIngest.js';
 import { startBackupMirrorScheduler } from './services/backupMirrorScheduler.js';
+import { migrateLegacyLatestToActiveIfNeeded, migrateLooseHistoryFilesToSubdir } from './services/activeBackupStore.js';
 import { cleanupOldHealthEvents } from './monitoring/storage.js';
 import { cleanupAudit } from './audit/auditLog.js';
 
@@ -41,6 +42,9 @@ async function main(): Promise<void> {
   await registerRemoteSystemRoutes(app);
   await registerPublicLeaderboardRoutes(app);
   await registerMonitoringIngestRoutes(app);
+
+  await migrateLooseHistoryFilesToSubdir(app.log);
+  await migrateLegacyLatestToActiveIfNeeded(app.log);
 
   const backupMirror = startBackupMirrorScheduler({
     info: (o) => app.log.info(o),

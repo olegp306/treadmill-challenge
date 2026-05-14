@@ -1,9 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import path from 'node:path';
 import { readdir, stat } from 'node:fs/promises';
-import { getBackupMirrorState } from '../services/backupMirrorScheduler.js';
+import { readActiveBackupMetaFile } from '../services/activeBackupStore.js';
 import { readBackupLatestMeta } from '../services/backupLatestMeta.js';
+import { getBackupMirrorState } from '../services/backupMirrorScheduler.js';
 import { backupDir } from '../services/remoteBackupDir.js';
+import { remoteActiveDir, remoteHistoryDir } from '../services/remoteBackupPaths.js';
 import { getLocalBaseUrl, getLocalHealthStatus } from '../local/localClient.js';
 import { requireRemoteAdmin } from '../auth/requireRemoteAdmin.js';
 
@@ -28,7 +30,7 @@ async function readBackupFolderStatus(): Promise<{
   latestCreatedAt: string | null;
   totalCount: number;
 }> {
-  const dir = backupDir();
+  const dir = remoteHistoryDir();
   const files = (await readdir(dir).catch(() => [] as string[]))
     .filter((f) => /^remote-backup-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/.test(f))
     .sort();
@@ -65,6 +67,7 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
     const backups = await readBackupFolderStatus();
     const mirror = getBackupMirrorState();
     const latestMeta = await readBackupLatestMeta();
+    const activeMeta = await readActiveBackupMetaFile();
     const lastBackupAt = latestMeta?.lastBackupAt ?? backups.latestCreatedAt ?? mirror.lastSuccessAt ?? null;
 
     return reply.send({
@@ -83,6 +86,9 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
       },
       backups: {
         folderPath: backups.folderPath,
+        backupRoot: backupDir(),
+        historyDir: remoteHistoryDir(),
+        activeDir: remoteActiveDir(),
         latestFileName: backups.latestFileName ?? (mirror.latestFilePath ? path.basename(mirror.latestFilePath) : null),
         latestCreatedAt: backups.latestCreatedAt ?? mirror.lastSuccessAt,
         lastBackupAt,
@@ -90,6 +96,9 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
         backupLogsHours: latestMeta?.logsHours ?? 48,
         totalCount: backups.totalCount,
         lastError: mirror.lastError,
+        activeUpdatedAt: activeMeta?.activeUpdatedAt ?? null,
+        activeSource: activeMeta?.source ?? null,
+        activeEnvelopeCreatedAt: activeMeta?.envelopeCreatedAt ?? null,
       },
     });
   });

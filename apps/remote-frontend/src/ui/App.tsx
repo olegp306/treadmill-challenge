@@ -1,9 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import RemoteLeaderboardPage from '../pages/RemoteLeaderboardPage';
 import { LoginScreen } from './LoginScreen';
 import { RemoteAdminShell } from './RemoteAdminShell';
+
+function RemoteAdminGate() {
+  const [authed, setAuthed] = useState(() => Boolean(sessionStorage.getItem('remoteAdminToken')));
+  return authed ? <RemoteAdminShell /> : <LoginScreen onLoggedIn={() => setAuthed(true)} />;
+}
 
 export default function App() {
   const theme = useMemo(
@@ -19,17 +24,14 @@ export default function App() {
     []
   );
 
-  const [authed, setAuthed] = useState(() => Boolean(sessionStorage.getItem('remoteAdminToken')));
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Routes>
+        <Route path="/" element={<RemoteLeaderboardPage />} />
         <Route path="/leaderboard" element={<RemoteLeaderboardPage />} />
-        <Route
-          path="*"
-          element={authed ? <RemoteAdminShell /> : <LoginScreen onLoggedIn={() => setAuthed(true)} />}
-        />
+        <Route path="/admin" element={<RemoteAdminGate />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ThemeProvider>
   );

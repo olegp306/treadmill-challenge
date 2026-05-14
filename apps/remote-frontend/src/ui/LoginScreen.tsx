@@ -37,7 +37,12 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
           REMOTE ADMINISTRATOR
         </Typography>
         <Typography sx={{ mt: 1, color: '#aaa' }}>Введите PIN администратора</Typography>
-        <Box component="form" onSubmit={submit} sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box
+          component="form"
+          autoComplete="off"
+          onSubmit={submit}
+          sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
           <TextField
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -46,6 +51,10 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
             label="PIN"
             fullWidth
             autoFocus
+            inputProps={{
+              autoComplete: 'new-password',
+              name: 'trc_remote_panel_pin_v1',
+            }}
           />
           {error ? (
             <Typography sx={{ color: '#f85149', fontSize: 14 }}>

@@ -2,7 +2,9 @@ import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
 import { getRunTypeName } from '@treadmill-challenge/shared';
+import { readActiveBackupMetaFile, readActiveBackupRaw } from './activeBackupStore.js';
 import { backupDir } from './backupMirrorScheduler.js';
+import { extractLocalSnapshot } from './remoteEnvelope.js';
 
 export type RemoteLeaderboardEntry = {
   rank?: number;
@@ -65,18 +67,6 @@ function snapshotArray(snapshot: Record<string, unknown>, camelKey: string, snak
   const snake = snapshot[snakeKey];
   if (Array.isArray(snake)) return snake;
   return [];
-}
-
-function extractLocalSnapshot(root: unknown): Record<string, unknown> | null {
-  if (!isRecord(root)) return null;
-  const loc = root.local;
-  if (isRecord(loc) && loc.snapshot != null && isRecord(loc.snapshot)) {
-    return loc.snapshot as Record<string, unknown>;
-  }
-  if (Array.isArray(root.participants) && Array.isArray(root.runSessions)) {
-    return root as Record<string, unknown>;
-  }
-  return null;
 }
 
 function str(v: unknown): string {
@@ -190,12 +180,14 @@ export type LeaderboardDataResult =
   | { ok: false; error: string };
 
 export async function buildLeaderboardDataFromLatestBackup(): Promise<LeaderboardDataResult> {
-  const fp = path.join(backupDir(), 'latest.json');
-  let rawText: string;
-  try {
-    rawText = await readFile(fp, 'utf8');
-  } catch {
-    return { ok: true, empty: true, lastBackupAt: null, message: 'Данные пока недоступны' };
+  let rawText = await readActiveBackupRaw();
+  if (!rawText) {
+    const legacy = path.join(backupDir(), 'latest.json');
+    try {
+      rawText = await readFile(legacy, 'utf8');
+    } catch {
+      return { ok: true, empty: true, lastBackupAt: null, message: 'Данные пока недоступны' };
+    }
   }
 
   let root: unknown;
@@ -210,8 +202,9 @@ export async function buildLeaderboardDataFromLatestBackup(): Promise<Leaderboar
     return { ok: true, empty: true, lastBackupAt: null, message: 'Данные пока недоступны' };
   }
 
-  let lastBackupAt: string | null = null;
-  if (isRecord(root)) {
+  const am = await readActiveBackupMetaFile();
+  let lastBackupAt: string | null = am?.envelopeCreatedAt ?? am?.activeUpdatedAt ?? null;
+  if (!lastBackupAt && isRecord(root)) {
     const m = root.meta;
     if (isRecord(m) && typeof m.createdAt === 'string') lastBackupAt = m.createdAt;
   }

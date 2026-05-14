@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { buildLeaderboardDataFromLatestBackup } from '../services/leaderboardFromLatestBackup.js';
 
-/** Public read-only leaderboard built from `backups/latest.json` (no live DB). */
+/** Public read-only leaderboard built from `backups/active/active.json` (no live DB). */
 export async function registerPublicLeaderboardRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/remote/leaderboard-data', async (_request, reply) => {
     const result = await buildLeaderboardDataFromLatestBackup();

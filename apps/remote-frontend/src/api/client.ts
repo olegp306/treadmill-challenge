@@ -73,6 +73,19 @@ function authHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export type RemoteBackupStatus = {
+  hasBackup: boolean;
+  lastBackupAt: string | null;
+  lastBackupSha16: string | null;
+  logsHours: number;
+  lastError: string | null;
+  lastMirrorSuccessAt: string | null;
+  lastHistoryMirrorAt: string | null;
+  activeUpdatedAt: string | null;
+  activeSource: 'local_refresh' | 'manual_import' | 'migrated_legacy' | null;
+  activeEnvelopeCreatedAt: string | null;
+};
+
 export const api = {
   async login(pin: string): Promise<void> {
     const res = await requestJson<LoginResponse>('/api/remote/admin/login', {
@@ -92,6 +105,12 @@ export const api = {
 
   recentRuns() {
     return requestJson<unknown>('/api/remote/admin/recent-runs', { headers: { ...authHeaders() } });
+  },
+
+  activeBackupMonitoring() {
+    return requestJson<{ empty: boolean; remote: unknown }>('/api/remote/admin/active-backup/monitoring', {
+      headers: { ...authHeaders() },
+    });
   },
 
   async downloadBackupJson(): Promise<void> {
@@ -129,6 +148,7 @@ export const api = {
     }
   },
 
+  /** Current ACTIVE remote backup (operator snapshot), same JSON as Logs tab. */
   latestRemoteBackupJson() {
     return requestJson<unknown>('/api/remote/downloads/backup-json?source=remote-backup&format=json', {
       headers: { ...authHeaders() },
@@ -170,8 +190,18 @@ export const api = {
     }
   },
 
-  importJson(snapshot: unknown) {
+  /** Restore / import JSON on the local treadmill backend (remote → local). */
+  importJsonToLocalTreadmill(snapshot: unknown) {
     return requestJson<{ ok: boolean; imported?: boolean }>('/api/remote/import-json', {
+      method: 'POST',
+      headers: { ...authHeaders() },
+      body: JSON.stringify(snapshot),
+    });
+  },
+
+  /** Set ACTIVE backup on this remote server only (does not call local backend). */
+  importRemoteActiveBackup(snapshot: unknown) {
+    return requestJson<{ ok: true; activeUpdatedAt: string }>('/api/remote/admin/backup/import-remote-active', {
       method: 'POST',
       headers: { ...authHeaders() },
       body: JSON.stringify(snapshot),
@@ -202,23 +232,16 @@ export const api = {
   },
 
   backupStatus() {
-    return requestJson<{
-      backup: {
-        hasBackup: boolean;
-        lastBackupAt: string | null;
-        lastBackupSha16: string | null;
-        logsHours: number;
-        lastError: string | null;
-      };
-    }>('/api/remote/admin/backup/status', { headers: { ...authHeaders() } });
+    return requestJson<{ backup: RemoteBackupStatus }>('/api/remote/admin/backup/status', {
+      headers: { ...authHeaders() },
+    });
   },
 
   pullBackupNow() {
-    return requestJson<{ ok: true; pulledAt: string }>('/api/remote/admin/backup/pull', {
+    return requestJson<{ ok: true; pulledAt: string; activeRefreshed: true }>('/api/remote/admin/backup/pull', {
       method: 'POST',
       headers: { ...authHeaders() },
       body: JSON.stringify({}),
     });
   },
 };
-
