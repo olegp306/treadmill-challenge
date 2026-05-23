@@ -7,6 +7,7 @@ import '@fontsource/oswald/600.css';
 import '@fontsource/oswald/700.css';
 import App from './ui/App';
 import '../../frontend/src/index.css';
+import './ui/remoteAdmin.css';
 
 function setupKioskViewport(): void {
   if (typeof document === 'undefined') return;

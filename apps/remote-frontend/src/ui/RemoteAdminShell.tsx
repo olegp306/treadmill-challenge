@@ -63,8 +63,10 @@ export function RemoteAdminShell() {
   const [pullBusy, setPullBusy] = useState(false);
 
   useEffect(() => {
+    document.body.classList.add('remote-admin-route');
     document.body.style.background = '#0d0d0d';
     return () => {
+      document.body.classList.remove('remote-admin-route');
       document.body.style.background = '';
     };
   }, []);
@@ -203,4 +205,3 @@ export function RemoteAdminShell() {
     </Box>
   );
 }
-

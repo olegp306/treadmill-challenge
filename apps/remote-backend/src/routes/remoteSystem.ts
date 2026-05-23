@@ -8,6 +8,13 @@ import { backupDir } from '../services/remoteBackupDir.js';
 import { remoteActiveDir, remoteHistoryDir } from '../services/remoteBackupPaths.js';
 import { getLocalBaseUrl, getLocalHealthStatus } from '../local/localClient.js';
 import { requireRemoteAdmin } from '../auth/requireRemoteAdmin.js';
+import {
+  readEffectiveLocalConnectionSettings,
+  readPublicLocalConnectionSettings,
+  readStoreHeartbeat,
+  updateLocalConnectionSettings,
+  writeStoreHeartbeat,
+} from '../local/localConnectionSettings.js';
 
 function boolEnv(name: string, fallback: boolean): boolean {
   const raw = process.env[name];
@@ -45,6 +52,54 @@ async function readBackupFolderStatus(): Promise<{
 }
 
 export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<void> {
+  app.route({
+    method: ['GET', 'POST'],
+    url: '/api/remote/store-heartbeat',
+    handler: async (request, reply) => {
+      const settings = await readEffectiveLocalConnectionSettings();
+      const expected = settings.heartbeatToken;
+      if (expected) {
+        const q = (request.query ?? {}) as { token?: unknown };
+        const header = request.headers['x-store-heartbeat-token'];
+        const got = typeof q.token === 'string' ? q.token : typeof header === 'string' ? header : '';
+        if (got !== expected) {
+          return reply.status(401).send({ ok: false, error: 'Unauthorized' });
+        }
+      }
+      const heartbeat = await writeStoreHeartbeat({
+        lastRemoteAddress: request.ip ?? null,
+        lastUserAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+      });
+      return reply.send({ ok: true, receivedAt: heartbeat.lastHeartbeatAt });
+    },
+  });
+
+  app.get('/api/remote/admin/local-connection/settings', { preHandler: requireRemoteAdmin }, async (_request, reply) => {
+    return reply.send({
+      settings: await readPublicLocalConnectionSettings(),
+      heartbeat: await readStoreHeartbeat(),
+    });
+  });
+
+  app.put('/api/remote/admin/local-connection/settings', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const body = (request.body ?? {}) as {
+      localBackendBaseUrl?: unknown;
+      localBackendAuthToken?: unknown;
+      remoteBackendPublicUrl?: unknown;
+      heartbeatToken?: unknown;
+    };
+    const settings = await updateLocalConnectionSettings({
+      localBackendBaseUrl:
+        typeof body.localBackendBaseUrl === 'string' || body.localBackendBaseUrl === null ? body.localBackendBaseUrl : undefined,
+      localBackendAuthToken:
+        typeof body.localBackendAuthToken === 'string' || body.localBackendAuthToken === null ? body.localBackendAuthToken : undefined,
+      remoteBackendPublicUrl:
+        typeof body.remoteBackendPublicUrl === 'string' || body.remoteBackendPublicUrl === null ? body.remoteBackendPublicUrl : undefined,
+      heartbeatToken: typeof body.heartbeatToken === 'string' || body.heartbeatToken === null ? body.heartbeatToken : undefined,
+    });
+    return reply.send({ settings, heartbeat: await readStoreHeartbeat() });
+  });
+
   app.get('/api/remote/system/status', { preHandler: requireRemoteAdmin }, async (request, reply) => {
     const serverTime = new Date().toISOString();
     const localBaseUrl = getLocalBaseUrl() || null;
@@ -83,6 +138,7 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
         online: localOnline,
         lastHealthCheckAt: localState.lastHealthCheckAt,
         lastError: localState.lastError,
+        storeHeartbeat: await readStoreHeartbeat(),
       },
       backups: {
         folderPath: backups.folderPath,
@@ -103,4 +159,3 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
     });
   });
 }
-

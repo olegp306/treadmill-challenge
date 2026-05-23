@@ -1,5 +1,7 @@
+import { readEffectiveLocalConnectionSettingsSync } from './localConnectionSettings.js';
+
 function localBaseUrl(): string {
-  return (process.env.LOCAL_BACKEND_BASE_URL?.trim() || '').replace(/\/+$/, '');
+  return readEffectiveLocalConnectionSettingsSync().localBackendBaseUrl ?? '';
 }
 
 export function getLocalBaseUrl(): string {
@@ -7,11 +9,11 @@ export function getLocalBaseUrl(): string {
 }
 
 export function getLocalAdminToken(): string {
-  return process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim() || '';
+  return readEffectiveLocalConnectionSettingsSync().localBackendAuthToken ?? '';
 }
 
 function localAdminHeaders(): HeadersInit {
-  const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
+  const token = getLocalAdminToken();
   if (!token) return {};
   // Stage 1 dev: use token-based auth for local admin endpoints.
   return { Authorization: `Bearer ${token}` };
@@ -116,4 +118,3 @@ export async function deleteLocalAdminRunSessionEntry(runSessionId: string, pin:
   });
   return parseJson(res);
 }
-

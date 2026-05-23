@@ -14,3 +14,4 @@ apps/remote-frontend/vite.config.js
 apps/remote-frontend/vite.config.d.ts
 .idea
 .vscode
+.superpowers/

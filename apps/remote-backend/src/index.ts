@@ -5,6 +5,7 @@ import { registerRemoteAdminRoutes } from './routes/remoteAdmin.js';
 import { registerRemoteSystemRoutes } from './routes/remoteSystem.js';
 import { registerPublicLeaderboardRoutes } from './routes/publicLeaderboard.js';
 import { registerMonitoringIngestRoutes } from './routes/monitoringIngest.js';
+import { registerTelegramBotRoutes } from './telegram/telegramBot.js';
 import { startBackupMirrorScheduler } from './services/backupMirrorScheduler.js';
 import { migrateLegacyLatestToActiveIfNeeded, migrateLooseHistoryFilesToSubdir } from './services/activeBackupStore.js';
 import { cleanupOldHealthEvents } from './monitoring/storage.js';
@@ -42,6 +43,7 @@ async function main(): Promise<void> {
   await registerRemoteSystemRoutes(app);
   await registerPublicLeaderboardRoutes(app);
   await registerMonitoringIngestRoutes(app);
+  await registerTelegramBotRoutes(app);
 
   await migrateLooseHistoryFilesToSubdir(app.log);
   await migrateLegacyLatestToActiveIfNeeded(app.log);

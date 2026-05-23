@@ -86,6 +86,42 @@ export type RemoteBackupStatus = {
   activeEnvelopeCreatedAt: string | null;
 };
 
+export type TelegramSettings = {
+  botTokenConfigured: boolean;
+  botTokenPreview: string | null;
+  chatId: string | null;
+  statusPageUrl: string | null;
+  webhookSecretConfigured: boolean;
+  alertsEnabled: boolean;
+  source: {
+    botToken: 'runtime' | 'env' | 'missing';
+    chatId: 'runtime' | 'env' | 'missing';
+    statusPageUrl: 'runtime' | 'env' | 'derived' | 'missing';
+    webhookSecret: 'runtime' | 'env' | 'missing';
+  };
+};
+
+export type LocalConnectionSettings = {
+  localBackendBaseUrl: string | null;
+  localBackendAuthTokenConfigured: boolean;
+  remoteBackendPublicUrl: string | null;
+  heartbeatTokenConfigured: boolean;
+  heartbeatTokenPreview: string | null;
+  heartbeatUrl: string | null;
+  source: {
+    localBackendBaseUrl: 'runtime' | 'env' | 'missing';
+    localBackendAuthToken: 'runtime' | 'env' | 'missing';
+    remoteBackendPublicUrl: 'runtime' | 'env' | 'missing';
+    heartbeatToken: 'runtime' | 'env' | 'missing';
+  };
+};
+
+export type StoreHeartbeat = {
+  lastHeartbeatAt: string | null;
+  lastRemoteAddress: string | null;
+  lastUserAgent: string | null;
+};
+
 export const api = {
   async login(pin: string): Promise<void> {
     const res = await requestJson<LoginResponse>('/api/remote/admin/login', {
@@ -234,6 +270,57 @@ export const api = {
   backupStatus() {
     return requestJson<{ backup: RemoteBackupStatus }>('/api/remote/admin/backup/status', {
       headers: { ...authHeaders() },
+    });
+  },
+
+  telegramSettings() {
+    return requestJson<{ settings: TelegramSettings }>('/api/remote/admin/telegram/settings', {
+      headers: { ...authHeaders() },
+    });
+  },
+
+  localConnectionSettings() {
+    return requestJson<{ settings: LocalConnectionSettings; heartbeat: StoreHeartbeat }>(
+      '/api/remote/admin/local-connection/settings',
+      { headers: { ...authHeaders() } }
+    );
+  },
+
+  updateLocalConnectionSettings(payload: {
+    localBackendBaseUrl?: string | null;
+    localBackendAuthToken?: string | null;
+    remoteBackendPublicUrl?: string | null;
+    heartbeatToken?: string | null;
+  }) {
+    return requestJson<{ settings: LocalConnectionSettings; heartbeat: StoreHeartbeat }>(
+      '/api/remote/admin/local-connection/settings',
+      {
+        method: 'PUT',
+        headers: { ...authHeaders() },
+        body: JSON.stringify(payload),
+      }
+    );
+  },
+
+  updateTelegramSettings(payload: {
+    botToken?: string | null;
+    chatId?: string | null;
+    statusPageUrl?: string | null;
+    webhookSecret?: string | null;
+    alertsEnabled?: boolean;
+  }) {
+    return requestJson<{ settings: TelegramSettings }>('/api/remote/admin/telegram/settings', {
+      method: 'PUT',
+      headers: { ...authHeaders() },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  sendTelegramTestAlert() {
+    return requestJson<{ ok: boolean }>('/api/remote/admin/telegram/test-alert', {
+      method: 'POST',
+      headers: { ...authHeaders() },
+      body: JSON.stringify({}),
     });
   },
 

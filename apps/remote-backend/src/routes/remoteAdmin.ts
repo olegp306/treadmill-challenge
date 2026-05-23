@@ -31,6 +31,8 @@ import {
   proxyLocalAdminLeaderboardsXlsx,
   updateLocalAdminRunSessionResult,
 } from '../local/localClient.js';
+import { readPublicTelegramSettings, updateTelegramSettings } from '../telegram/telegramSettings.js';
+import { sendTelegramAlert } from '../telegram/telegramBot.js';
 
 function normalizeHours(raw: unknown, fallback: number): number {
   const n = Number(raw ?? fallback);
@@ -105,6 +107,65 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       metadata: null,
     }).catch(() => undefined);
     return reply.send({ ok: true });
+  });
+
+  app.get('/api/remote/admin/telegram/settings', { preHandler: requireRemoteAdmin }, async (_request, reply) => {
+    return reply.send({ settings: await readPublicTelegramSettings() });
+  });
+
+  app.put('/api/remote/admin/telegram/settings', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const body = (request.body ?? {}) as {
+      botToken?: unknown;
+      chatId?: unknown;
+      statusPageUrl?: unknown;
+      webhookSecret?: unknown;
+      alertsEnabled?: unknown;
+    };
+    const settings = await updateTelegramSettings({
+      botToken: typeof body.botToken === 'string' || body.botToken === null ? body.botToken : undefined,
+      chatId: typeof body.chatId === 'string' || body.chatId === null ? body.chatId : undefined,
+      statusPageUrl: typeof body.statusPageUrl === 'string' || body.statusPageUrl === null ? body.statusPageUrl : undefined,
+      webhookSecret: typeof body.webhookSecret === 'string' || body.webhookSecret === null ? body.webhookSecret : undefined,
+      alertsEnabled: typeof body.alertsEnabled === 'boolean' ? body.alertsEnabled : undefined,
+    });
+    await writeAudit({
+      userId: null,
+      userEmail: null,
+      action: 'TELEGRAM_SETTINGS_UPDATED',
+      entityType: 'telegram_settings',
+      entityId: null,
+      ip: request.ip ?? null,
+      userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+      metadata: {
+        botTokenConfigured: settings.botTokenConfigured,
+        chatIdConfigured: Boolean(settings.chatId),
+        statusPageUrlConfigured: Boolean(settings.statusPageUrl),
+        webhookSecretConfigured: settings.webhookSecretConfigured,
+        alertsEnabled: settings.alertsEnabled,
+      },
+    }).catch(() => undefined);
+    return reply.send({ settings });
+  });
+
+  app.post('/api/remote/admin/telegram/test-alert', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    try {
+      await sendTelegramAlert('[TEST] Treadmill Challenge alerts connected');
+      await writeAudit({
+        userId: null,
+        userEmail: null,
+        action: 'TELEGRAM_TEST_ALERT_SENT',
+        entityType: 'telegram_settings',
+        entityId: null,
+        ip: request.ip ?? null,
+        userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+        metadata: null,
+      }).catch(() => undefined);
+      return reply.send({ ok: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      request.log.warn({ msg: 'telegram_test_alert_failed', error: msg });
+      return reply.status(502).send({ error: msg });
+    }
   });
 
   function backupLog(request: FastifyRequest) {
@@ -508,4 +569,3 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
     }
   });
 }
-

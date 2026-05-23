@@ -2,6 +2,7 @@ import path from 'node:path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import type { Severity, HealthProblem } from './severity.js';
 import { runtimeRootDir } from '../runtimePaths.js';
+import { sendTelegramAlert } from '../telegram/telegramBot.js';
 
 type AlertState = Record<string, { lastSentAt: string }>;
 
@@ -39,23 +40,6 @@ function formatAlertText(input: {
   const sev = input.severity.toUpperCase();
   const last = input.lastSignalAt ? input.lastSignalAt : '—';
   return `[${sev}] ${input.projectId} / ${input.locationId} / ${input.deviceId}\nProblem: ${input.problem.message}\nLast signal: ${last}\nDetected at: ${input.detectedAt}`;
-}
-
-async function sendTelegram(text: string): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
-  if (!token || !chatId) return;
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
-  await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  }).then(async (r) => {
-    if (!r.ok) {
-      const t = await r.text().catch(() => '');
-      throw new Error(`telegram_http_${r.status}${t ? `: ${t}` : ''}`);
-    }
-  });
 }
 
 async function sendEmail(subject: string, text: string): Promise<void> {
@@ -113,7 +97,7 @@ export async function emitAlerts(input: {
       lastSignalAt: input.lastSignalAt,
     });
     const subject = `[${input.severity.toUpperCase()}] ${input.projectId}/${input.locationId}/${input.deviceId} ${p.code}`;
-    await Promise.all([sendTelegram(text), sendEmail(subject, text)]).catch((e) => {
+    await Promise.all([sendTelegramAlert(text), sendEmail(subject, text)]).catch((e) => {
       // Do not throw hard; still update cooldown to avoid loops if provider is down.
       void e;
     });
@@ -124,4 +108,3 @@ export async function emitAlerts(input: {
   await writeState(state);
   return { sent, skipped };
 }
-

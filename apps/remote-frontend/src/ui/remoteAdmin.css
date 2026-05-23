@@ -1,0 +1,10 @@
+body.remote-admin-route {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+}
+
+body.remote-admin-route #root {
+  height: auto;
+  min-height: 100dvh;
+}
