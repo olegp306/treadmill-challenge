@@ -122,6 +122,39 @@ export type StoreHeartbeat = {
   lastUserAgent: string | null;
 };
 
+export type RemoteSystemStatus = {
+  remote: {
+    online: boolean;
+    appVersion: string | null;
+    serverTime: string;
+    backupMirrorEnabled: boolean;
+    backupRetentionCount: number;
+  };
+  local: {
+    baseUrl: string | null;
+    online: boolean;
+    lastHealthCheckAt: string | null;
+    lastError: string | null;
+    storeHeartbeat?: StoreHeartbeat;
+  };
+  backups: {
+    folderPath: string;
+    backupRoot: string;
+    historyDir: string;
+    activeDir: string;
+    latestFileName: string | null;
+    latestCreatedAt: string | null;
+    lastBackupAt: string | null;
+    lastBackupSha16: string | null;
+    backupLogsHours: number;
+    totalCount: number;
+    lastError: string | null;
+    activeUpdatedAt: string | null;
+    activeSource: string | null;
+    activeEnvelopeCreatedAt: string | null;
+  };
+};
+
 export const api = {
   async login(pin: string): Promise<void> {
     const res = await requestJson<LoginResponse>('/api/remote/admin/login', {
@@ -264,7 +297,7 @@ export const api = {
   },
 
   systemStatus() {
-    return requestJson<unknown>('/api/remote/system/status', { headers: { ...authHeaders() } });
+    return requestJson<RemoteSystemStatus>('/api/remote/system/status', { headers: { ...authHeaders() } });
   },
 
   backupStatus() {

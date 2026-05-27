@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Box, Button, Chip, Divider, Paper, Typography } from '@mui/material';
-import { api, type RemoteBackupStatus } from '../../api/client';
+import { api, type RemoteBackupStatus, type RemoteSystemStatus } from '../../api/client';
 import { buildStatusMapModel, type StatusMapMetric, type StatusSeverity } from './statusMapModel';
 
 type HealthStatusPayload = {
@@ -122,12 +122,14 @@ function MetricRows({ rows }: { rows: StatusMapMetric[] }) {
 function StatusMapOverview({
   health,
   backupStatus,
+  systemStatus,
   activeMonEmpty,
   healthLoadedAt,
   activeMonLoadedAt,
 }: {
   health: HealthStatusPayload | null;
   backupStatus: RemoteBackupStatus | null;
+  systemStatus: RemoteSystemStatus | null;
   activeMonEmpty: boolean;
   healthLoadedAt: string | null;
   activeMonLoadedAt: string | null;
@@ -135,6 +137,7 @@ function StatusMapOverview({
   const model = buildStatusMapModel({
     health,
     backupStatus,
+    systemStatus,
     activeMonitoringEmpty: activeMonEmpty,
     healthLoadedAt,
     activeMonLoadedAt,
@@ -336,6 +339,7 @@ export function MonitoringTab() {
   const [activeMonError, setActiveMonError] = useState<string | null>(null);
   const [activeMonLoadedAt, setActiveMonLoadedAt] = useState<string | null>(null);
   const [backupStatus, setBackupStatus] = useState<RemoteBackupStatus | null>(null);
+  const [systemStatus, setSystemStatus] = useState<RemoteSystemStatus | null>(null);
 
   const loadLiveHealth = useCallback(async () => {
     try {
@@ -344,6 +348,7 @@ export function MonitoringTab() {
       const h = (await api.healthStatus()) as HealthStatusPayload;
       setHealth(h);
       setHealthLoadedAt(new Date().toISOString());
+      setSystemStatus(await api.systemStatus());
     } catch (e) {
       setHealthError(e instanceof Error ? e.message : 'Failed');
     } finally {
@@ -372,10 +377,19 @@ export function MonitoringTab() {
     }
   }, []);
 
+  const loadSystemStatus = useCallback(async () => {
+    try {
+      setSystemStatus(await api.systemStatus());
+    } catch {
+      setSystemStatus(null);
+    }
+  }, []);
+
   useEffect(() => {
     void loadActiveMonitoring();
     void loadBackupStatus();
-  }, [loadActiveMonitoring, loadBackupStatus]);
+    void loadSystemStatus();
+  }, [loadActiveMonitoring, loadBackupStatus, loadSystemStatus]);
 
   useEffect(() => {
     void loadLiveHealth();
@@ -385,6 +399,7 @@ export function MonitoringTab() {
     const onUpdated = () => {
       void loadActiveMonitoring();
       void loadBackupStatus();
+      void loadSystemStatus();
     };
     window.addEventListener('remote-backup-updated', onUpdated);
     return () => window.removeEventListener('remote-backup-updated', onUpdated);
@@ -414,6 +429,7 @@ export function MonitoringTab() {
       <StatusMapOverview
         health={health}
         backupStatus={backupStatus}
+        systemStatus={systemStatus}
         activeMonEmpty={activeMonEmpty}
         healthLoadedAt={healthLoadedAt}
         activeMonLoadedAt={activeMonLoadedAt}
