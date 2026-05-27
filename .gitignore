@@ -8,6 +8,7 @@ apps/remote-backend/runtime/
 .env.local
 .DS_Store
 *.log
+logs/
 coverage
 *.tsbuildinfo
 apps/remote-frontend/vite.config.js

@@ -199,8 +199,8 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
       description: 'Публичная таблица и ручное управление JSON.',
       rows: [
         { label: 'Админка', value: 'доступна' },
-        { label: 'Публичный leaderboard', value: leaderboardStatus === 'ok' ? 'online' : 'ждет ACTIVE backup' },
-        { label: 'JSON', value: backup?.activeSource === 'manual_import' ? 'ручной' : 'из ACTIVE backup' },
+        { label: 'Публичный leaderboard', value: leaderboardStatus === 'ok' ? 'online' : 'ждет активный JSON' },
+        { label: 'JSON', value: backup?.activeSource === 'manual_import' ? 'ручной' : 'активный JSON лидерборда' },
       ],
     },
     {
@@ -209,7 +209,7 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
       description: 'Автоматическое хранение последних снимков.',
       rows: [
         { label: 'Последний backup', value: formatTime(backup?.lastBackupAt ?? backup?.lastMirrorSuccessAt ?? system?.backups.lastBackupAt) },
-        { label: 'ACTIVE backup', value: backup?.activeUpdatedAt || system?.backups.activeUpdatedAt ? 'выбран' : 'не выбран' },
+        { label: 'Активный JSON лидерборда', value: backup?.activeUpdatedAt || system?.backups.activeUpdatedAt ? 'выбран' : 'не выбран' },
         { label: 'Ошибка', value: backup?.lastError ?? system?.backups.lastError ?? 'нет' },
       ],
     },
@@ -297,8 +297,8 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
   if (backup?.activeUpdatedAt) {
     events.push({
       status: leaderboardStatus,
-      title: 'Обновлен ACTIVE leaderboard JSON',
-      detail: backup.activeSource === 'manual_import' ? 'Публичная таблица показывает ручную версию.' : 'Публичная таблица использует актуальный ACTIVE backup.',
+      title: 'Обновлен активный JSON лидерборда',
+      detail: backup.activeSource === 'manual_import' ? 'Публичная таблица показывает ручную версию.' : 'Публичная таблица использует выбранный JSON лидерборда.',
       time: formatTime(backup.activeUpdatedAt),
     });
   }

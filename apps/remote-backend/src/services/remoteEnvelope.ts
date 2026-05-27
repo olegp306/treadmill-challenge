@@ -1,3 +1,5 @@
+import { remoteBackendVersion } from '../version.js';
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
@@ -21,7 +23,7 @@ export function buildRemoteBackupEnvelopeV1(localSnapshot: unknown): unknown {
     meta: {
       kind: 'remote-backup-v1',
       createdAt,
-      remoteBackendVersion: process.env.REMOTE_APP_VERSION?.trim() || null,
+      remoteBackendVersion: remoteBackendVersion(),
     },
     local: { snapshot: localSnapshot },
     remote: {

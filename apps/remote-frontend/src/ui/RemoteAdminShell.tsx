@@ -2,18 +2,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppBar, Box, Button, Container, Tab, Tabs, Toolbar, Typography } from '@mui/material';
 import { MonitoringTab } from './tabs/MonitoringTab';
-import { ExportImportTab } from './tabs/ExportImportTab';
-import { RunsTab } from './tabs/RunsTab';
-import { SystemTab } from './tabs/SystemTab';
+import { BackupTab } from './tabs/BackupTab';
+import { LeaderboardsTab } from './tabs/LeaderboardsTab';
+import { LogsTab } from './tabs/LogsTab';
 import { api, type RemoteBackupStatus } from '../api/client';
 
-type TabKey = 'monitoring' | 'export' | 'runs' | 'system';
+const REMOTE_ADMIN_VERSION = __REMOTE_ADMIN_VERSION__;
+
+type TabKey = 'monitoring' | 'backup' | 'leaderboards' | 'logs';
 
 const TAB_ORDER: Array<{ key: TabKey; label: string }> = [
-  { key: 'monitoring', label: 'Мониторинг' },
-  { key: 'export', label: 'Экспорт-импорт' },
-  { key: 'runs', label: 'Забеги' },
-  { key: 'system', label: 'Система' },
+  { key: 'monitoring', label: 'Мониторинг системы' },
+  { key: 'logs', label: 'Логи' },
+  { key: 'backup', label: 'Бэкапирование системы' },
+  { key: 'leaderboards', label: 'Лидерборды' },
 ];
 
 function formatBackupAbsolute(iso: string): string {
@@ -47,13 +49,6 @@ function relativeTimeRu(iso: string | null | undefined): string {
   if (diffH < 24) return ruPluralForm(diffH, 'час', 'часа', 'часов') + ' назад';
   const diffD = Math.floor(diffH / 24);
   return ruPluralForm(diffD, 'день', 'дня', 'дней') + ' назад';
-}
-
-function activeSourceRu(s: RemoteBackupStatus['activeSource']): string {
-  if (s === 'local_refresh') return 'с дорожки';
-  if (s === 'manual_import') return 'ручной (remote)';
-  if (s === 'migrated_legacy') return 'миграция';
-  return '';
 }
 
 export function RemoteAdminShell() {
@@ -119,21 +114,34 @@ export function RemoteAdminShell() {
   }, [tick]);
 
   const backupMetaLine = useMemo(() => {
-    if (!backupStatus?.hasBackup && !backupStatus?.activeUpdatedAt) {
-      return 'ACTIVE backup: не задан (нажмите «Получить обновление» или импорт для remote)';
+    if (!backupStatus?.hasBackup) {
+      return 'Backup history: пока нет сохраненных backup';
     }
-    const envAt = backupStatus.activeEnvelopeCreatedAt ?? backupStatus.lastBackupAt;
+    const envAt = backupStatus.lastBackupAt ?? backupStatus.lastMirrorSuccessAt;
     const abs = envAt ? formatBackupAbsolute(envAt) : '—';
     const rel = envAt ? relativeTimeRu(envAt) : '';
-    const src = activeSourceRu(backupStatus.activeSource);
-    const applied = backupStatus.activeUpdatedAt ? formatBackupAbsolute(backupStatus.activeUpdatedAt) : '—';
-    return `ACTIVE: снимок ${abs}${rel ? ` (${rel})` : ''} · применён ${applied}${src ? ` · ${src}` : ''}`;
+    const file = backupStatus.lastBackupFileName ? ` · ${backupStatus.lastBackupFileName}` : '';
+    return `Последний backup: ${abs}${rel ? ` (${rel})` : ''}${file}`;
   }, [backupStatus, tick]);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#0d0d0d', color: '#eee' }}>
       <AppBar position="sticky" sx={{ bgcolor: '#e6233a' }}>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+          <Typography
+            sx={{
+              position: 'absolute',
+              top: 6,
+              right: 10,
+              fontSize: 10,
+              lineHeight: 1,
+              color: 'rgba(255,255,255,0.62)',
+              fontWeight: 700,
+              letterSpacing: 0.2,
+            }}
+          >
+            admin v{REMOTE_ADMIN_VERSION} · backend v{backupStatus?.remoteBackendVersion ?? '—'}
+          </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 240 }}>
             <Typography
               component="h1"
@@ -172,7 +180,7 @@ export function RemoteAdminShell() {
               disabled={pullBusy}
               sx={{ bgcolor: '#111', color: '#fff', fontWeight: 900 }}
             >
-              {pullBusy ? '...' : 'Получить обновление'}
+              {pullBusy ? '...' : 'Получить backup'}
             </Button>
             <Button onClick={close} variant="contained" sx={{ bgcolor: '#111', color: '#fff', fontWeight: 900 }}>
               Закрыть
@@ -198,9 +206,9 @@ export function RemoteAdminShell() {
 
       <Container maxWidth="xl" sx={{ py: 3 }}>
         {tab === 'monitoring' ? <MonitoringTab /> : null}
-        {tab === 'export' ? <ExportImportTab /> : null}
-        {tab === 'runs' ? <RunsTab /> : null}
-        {tab === 'system' ? <SystemTab /> : null}
+        {tab === 'backup' ? <BackupTab /> : null}
+        {tab === 'leaderboards' ? <LeaderboardsTab /> : null}
+        {tab === 'logs' ? <LogsTab /> : null}
       </Container>
     </Box>
   );

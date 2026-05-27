@@ -447,7 +447,7 @@ export function MonitoringTab() {
         </Box>
         <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
         <Typography sx={{ color: '#777', fontSize: 12, mb: 1 }}>
-          Не авто-polling: только по кнопке. Данные таблиц/лидерборда на remote идут из ACTIVE backup, не отсюда.
+          Не авто-polling: только по кнопке. Данные таблиц/лидерборда на remote идут из активного JSON лидерборда, не отсюда.
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -530,7 +530,7 @@ export function MonitoringTab() {
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-          <Typography sx={{ fontWeight: 900 }}>ACTIVE backup: вложенный monitoring (remote)</Typography>
+          <Typography sx={{ fontWeight: 900 }}>Активный JSON лидерборда: вложенный monitoring (remote)</Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Typography sx={{ color: '#777', fontSize: 12 }}>загружено: {formatIso(activeMonLoadedAt)}</Typography>
             <Button size="small" variant="outlined" onClick={() => void loadActiveMonitoring()} sx={{ fontWeight: 800 }}>
@@ -540,7 +540,7 @@ export function MonitoringTab() {
         </Box>
         <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
         {activeMonEmpty ? (
-          <Typography sx={{ color: '#777' }}>Нет ACTIVE backup или блок remote отсутствует.</Typography>
+          <Typography sx={{ color: '#777' }}>Нет активного JSON лидерборда или блок remote отсутствует.</Typography>
         ) : (
           <Typography sx={{ color: '#bbb', fontSize: 13, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
             {safeJsonPreview(activeMon, 8000)}

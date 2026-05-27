@@ -77,6 +77,7 @@ export type RemoteBackupStatus = {
   hasBackup: boolean;
   lastBackupAt: string | null;
   lastBackupSha16: string | null;
+  lastBackupFileName: string | null;
   logsHours: number;
   lastError: string | null;
   lastMirrorSuccessAt: string | null;
@@ -84,6 +85,7 @@ export type RemoteBackupStatus = {
   activeUpdatedAt: string | null;
   activeSource: 'local_refresh' | 'manual_import' | 'migrated_legacy' | null;
   activeEnvelopeCreatedAt: string | null;
+  remoteBackendVersion: string | null;
 };
 
 export type TelegramSettings = {
@@ -224,6 +226,47 @@ export const api = {
     });
   },
 
+  latestHistoryBackupJson() {
+    return requestJson<unknown>('/api/remote/downloads/backup-json?source=latest-history&format=json', {
+      headers: { ...authHeaders() },
+    });
+  },
+
+  async downloadLatestHistoryBackup(): Promise<void> {
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/api/remote/downloads/backup-json?source=latest-history`, { headers: { ...authHeaders() } });
+    } catch (e) {
+      if (e instanceof TypeError || (e instanceof Error && e.message === 'Failed to fetch')) {
+        throw new Error(
+          'Не удалось выполнить запрос к remote API. Проверьте VITE_REMOTE_API_BASE_URL, сеть, HTTPS и CORS.'
+        );
+      }
+      throw e;
+    }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition') ?? '';
+    const quoted = cd.match(/filename="([^"]+)"/);
+    const bare = cd.match(/filename=([^;\s]+)/);
+    const filename = quoted?.[1] ?? bare?.[1]?.replace(/^"|"$/g, '') ?? 'remote-backup-latest.json';
+    const url = URL.createObjectURL(blob);
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  },
+
   async downloadLeaderboardsXlsx(): Promise<void> {
     let res: Response;
     try {
@@ -268,9 +311,18 @@ export const api = {
     });
   },
 
-  /** Set ACTIVE backup on this remote server only (does not call local backend). */
+  /** Set the active leaderboard JSON on this remote server only (does not call local backend). */
   importRemoteActiveBackup(snapshot: unknown) {
     return requestJson<{ ok: true; activeUpdatedAt: string }>('/api/remote/admin/backup/import-remote-active', {
+      method: 'POST',
+      headers: { ...authHeaders() },
+      body: JSON.stringify(snapshot),
+    });
+  },
+
+  /** Store a JSON backup in remote history without making it the leaderboard JSON. */
+  importRemoteHistoryBackup(snapshot: unknown) {
+    return requestJson<{ ok: true; importedAt: string; historyFile: string }>('/api/remote/admin/backup/import-history', {
       method: 'POST',
       headers: { ...authHeaders() },
       body: JSON.stringify(snapshot),
@@ -358,7 +410,7 @@ export const api = {
   },
 
   pullBackupNow() {
-    return requestJson<{ ok: true; pulledAt: string; activeRefreshed: true }>('/api/remote/admin/backup/pull', {
+    return requestJson<{ ok: true; pulledAt: string; activeRefreshed: false }>('/api/remote/admin/backup/pull', {
       method: 'POST',
       headers: { ...authHeaders() },
       body: JSON.stringify({}),

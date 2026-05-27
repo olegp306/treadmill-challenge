@@ -72,6 +72,7 @@ describe('buildStatusMapModel', () => {
         hasBackup: true,
         lastBackupAt: '2026-05-23T09:57:00.000Z',
         lastBackupSha16: 'abc123',
+        lastBackupFileName: 'remote-backup.json',
         logsHours: 48,
         lastError: null,
         lastMirrorSuccessAt: '2026-05-23T09:57:00.000Z',
@@ -79,6 +80,7 @@ describe('buildStatusMapModel', () => {
         activeUpdatedAt: '2026-05-23T09:58:00.000Z',
         activeSource: 'local_refresh',
         activeEnvelopeCreatedAt: '2026-05-23T09:57:00.000Z',
+        remoteBackendVersion: '0.1.0',
       },
       activeMonitoringEmpty: false,
     });
@@ -149,6 +151,7 @@ describe('buildStatusMapModel', () => {
         hasBackup: false,
         lastBackupAt: null,
         lastBackupSha16: null,
+        lastBackupFileName: null,
         logsHours: 48,
         lastError: 'mirror failed',
         lastMirrorSuccessAt: null,
@@ -156,6 +159,7 @@ describe('buildStatusMapModel', () => {
         activeUpdatedAt: null,
         activeSource: null,
         activeEnvelopeCreatedAt: null,
+        remoteBackendVersion: null,
       },
       activeMonitoringEmpty: true,
     });

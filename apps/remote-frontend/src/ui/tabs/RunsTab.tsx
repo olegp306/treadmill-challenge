@@ -193,13 +193,13 @@ export function RunsTab() {
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Alert severity="info" sx={{ bgcolor: '#1a237e', color: '#e8eaf6' }}>
-        Забеги и поиск — из <strong>ACTIVE</strong> JSON backup на remote. Кнопки Edit и Delete обращаются к локальному
-        backend и меняют <strong>живую</strong> систему на дорожке.
+        Забеги и поиск — из <strong>активного JSON лидерборда</strong> на remote. Кнопки Edit и Delete обращаются к локальному
+        backend и меняют <strong>живую</strong> систему в магазине.
       </Alert>
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-          <Typography sx={{ fontWeight: 900 }}>Забеги</Typography>
+          <Typography sx={{ fontWeight: 900 }}>Забеги лидерборда</Typography>
           <Typography sx={{ color: '#777', fontSize: 12 }}>Last updated: {formatIso(lastUpdatedAt)}</Typography>
         </Box>
         <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
@@ -342,4 +342,3 @@ export function RunsTab() {
     </Box>
   );
 }
-

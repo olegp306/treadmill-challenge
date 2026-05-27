@@ -3,9 +3,9 @@ import { signRemoteAdminJwt } from '../auth/jwt.js';
 import { requireRemoteAdmin } from '../auth/requireRemoteAdmin.js';
 import { writeAudit } from '../audit/auditLog.js';
 import path from 'node:path';
-import { mkdir, writeFile } from 'node:fs/promises';
+import crypto from 'node:crypto';
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import {
-  promoteHistoryFileToActive,
   readActiveBackupMetaFile,
   readActiveBackupParsed,
   readActiveBackupRaw,
@@ -33,6 +33,7 @@ import {
 } from '../local/localClient.js';
 import { readPublicTelegramSettings, updateTelegramSettings } from '../telegram/telegramSettings.js';
 import { sendTelegramAlert } from '../telegram/telegramBot.js';
+import { remoteBackendVersion } from '../version.js';
 
 function normalizeHours(raw: unknown, fallback: number): number {
   const n = Number(raw ?? fallback);
@@ -45,6 +46,29 @@ function remoteDownloadStamp(): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}-${p(d.getMinutes())}`;
+}
+
+async function readLatestHistoryBackupForDownload(): Promise<{
+  fileName: string;
+  path: string;
+  raw: string;
+  createdAt: string;
+  sha16: string;
+} | null> {
+  const hist = remoteHistoryDir();
+  const files = await readdir(hist).catch(() => []);
+  const candidates = files.filter((f) => /^remote-backup-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/.test(f)).sort();
+  const fileName = candidates.at(-1);
+  if (!fileName) return null;
+  const p = path.join(hist, fileName);
+  const [raw, st] = await Promise.all([readFile(p, 'utf8'), stat(p)]);
+  return {
+    fileName,
+    path: p,
+    raw,
+    createdAt: st.mtime.toISOString(),
+    sha16: crypto.createHash('sha256').update(raw).digest('hex').slice(0, 16),
+  };
 }
 
 async function readActiveBackupForDownload(): Promise<{ fileName: string; raw: string } | null> {
@@ -186,14 +210,15 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
     const mirror = getBackupMirrorState();
     const meta = await readBackupLatestMeta();
     const activeMeta = await readActiveBackupMetaFile();
+    const latestHistory = await readLatestHistoryBackupForDownload();
     const datedIso = await lastBackupAtFromDatedFiles();
-    const hasActive = Boolean(activeMeta?.activeUpdatedAt);
-    const lastBackupAt = meta?.lastBackupAt ?? null;
+    const lastBackupAt = latestHistory?.createdAt ?? mirror.lastSuccessAt ?? datedIso ?? null;
     return reply.send({
       backup: {
-        hasBackup: hasActive,
+        hasBackup: Boolean(latestHistory),
         lastBackupAt,
-        lastBackupSha16: meta?.lastBackupSha16 ?? null,
+        lastBackupSha16: latestHistory?.sha16 ?? null,
+        lastBackupFileName: latestHistory?.fileName ?? null,
         logsHours: meta?.logsHours ?? remoteBackupLogsHours(),
         lastError: mirror.lastError,
         lastMirrorSuccessAt: mirror.lastSuccessAt,
@@ -201,6 +226,7 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
         activeUpdatedAt: activeMeta?.activeUpdatedAt ?? null,
         activeSource: activeMeta?.source ?? null,
         activeEnvelopeCreatedAt: activeMeta?.envelopeCreatedAt ?? null,
+        remoteBackendVersion: remoteBackendVersion(),
       },
     });
   });
@@ -210,13 +236,6 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
     if (!r.ok) {
       return reply.status(502).send({ error: r.error ?? 'Backup pull failed' });
     }
-    try {
-      await promoteHistoryFileToActive(r.historyPath, 'local_refresh');
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      request.log.warn({ msg: 'remote_active_promote_failed', error: msg });
-      return reply.status(500).send({ error: msg });
-    }
     await writeAudit({
       userId: null,
       userEmail: null,
@@ -225,9 +244,9 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       entityId: null,
       ip: request.ip ?? null,
       userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
-      metadata: { pulledAt: r.lastBackupAt, historyPath: r.historyPath, activeRefreshed: true },
+      metadata: { pulledAt: r.lastBackupAt, historyPath: r.historyPath, activeRefreshed: false },
     }).catch(() => undefined);
-    return reply.send({ ok: true as const, pulledAt: r.lastBackupAt, activeRefreshed: true as const });
+    return reply.send({ ok: true as const, pulledAt: r.lastBackupAt, activeRefreshed: false as const });
   });
 
   // ===== Proxy + mirror APIs (remote admin only) =====
@@ -375,6 +394,29 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
           .header('Content-Disposition', `attachment; filename="${latest.fileName}"`)
           .send(latest.raw);
       }
+      if (source === 'latest-history') {
+        const latest = await readLatestHistoryBackupForDownload();
+        if (!latest) return reply.status(404).send({ error: 'Нет сохраненных backup в history' });
+
+        await writeAudit({
+          userId: null,
+          userEmail: null,
+          action: 'LATEST_BACKUP_DOWNLOADED',
+          entityType: 'remote_backup',
+          entityId: latest.fileName,
+          ip: request.ip ?? null,
+          userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+          metadata: { source: 'latest-history', createdAt: latest.createdAt },
+        }).catch(() => undefined);
+
+        if (format === 'json') {
+          return reply.header('Content-Type', 'application/json; charset=utf-8').send(JSON.parse(latest.raw) as unknown);
+        }
+        return reply
+          .header('Content-Type', 'application/json; charset=utf-8')
+          .header('Content-Disposition', `attachment; filename="${latest.fileName}"`)
+          .send(latest.raw);
+      }
 
       await writeAudit({
         userId: null,
@@ -512,6 +554,30 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       metadata: { activeUpdatedAt: w.activeUpdatedAt, historyFile: histName },
     }).catch(() => undefined);
     return reply.send({ ok: true as const, activeUpdatedAt: w.activeUpdatedAt });
+  });
+
+  app.post('/api/remote/admin/backup/import-history', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const norm = normalizeUserUploadToEnvelope(request.body);
+    if (!norm.ok) {
+      return reply.status(400).send({ error: norm.error });
+    }
+    const hist = remoteHistoryDir();
+    await mkdir(hist, { recursive: true });
+    const stamp = remoteDownloadStamp();
+    const histName = `manual-history-${stamp}.json`;
+    const histPath = path.join(hist, histName);
+    await writeFile(histPath, JSON.stringify(norm.envelope, null, 2), 'utf8');
+    await writeAudit({
+      userId: null,
+      userEmail: null,
+      action: 'REMOTE_HISTORY_IMPORT',
+      entityType: 'remote_backup',
+      entityId: histName,
+      ip: request.ip ?? null,
+      userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+      metadata: { historyFile: histName, activeRefreshed: false },
+    }).catch(() => undefined);
+    return reply.send({ ok: true as const, importedAt: new Date().toISOString(), historyFile: histName });
   });
 
   app.post('/api/remote/import-json', { preHandler: requireRemoteAdmin }, async (request, reply) => {

@@ -15,6 +15,7 @@ import {
   updateLocalConnectionSettings,
   writeStoreHeartbeat,
 } from '../local/localConnectionSettings.js';
+import { remoteBackendVersion } from '../version.js';
 
 function boolEnv(name: string, fallback: boolean): boolean {
   const raw = process.env[name];
@@ -128,7 +129,7 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
     return reply.send({
       remote: {
         online: true,
-        appVersion: process.env.REMOTE_APP_VERSION?.trim() || null,
+        appVersion: remoteBackendVersion(),
         serverTime,
         backupMirrorEnabled: mirrorEnabled,
         backupRetentionCount: retentionCount,

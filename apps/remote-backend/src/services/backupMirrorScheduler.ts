@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promi
 import path from 'node:path';
 import { proxyLocalAdminJsonExport } from '../local/localClient.js';
 import { runtimeRootDir } from '../runtimePaths.js';
+import { remoteBackendVersion } from '../version.js';
 import { migrateLooseHistoryFilesToSubdir } from './activeBackupStore.js';
 import { backupDir } from './remoteBackupDir.js';
 import { remoteHistoryDir } from './remoteBackupPaths.js';
@@ -140,7 +141,7 @@ function buildRemoteBackupEnvelope(input: {
     meta: {
       kind: 'remote-backup-v1',
       createdAt,
-      remoteBackendVersion: process.env.REMOTE_APP_VERSION?.trim() || null,
+      remoteBackendVersion: remoteBackendVersion(),
     },
     local: {
       snapshot: input.localSnapshot,
