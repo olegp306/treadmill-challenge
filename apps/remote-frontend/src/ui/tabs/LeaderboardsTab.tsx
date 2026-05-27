@@ -112,6 +112,9 @@ export function LeaderboardsTab() {
         <Typography sx={{ color: '#777', fontSize: 12, mt: 0.5 }}>
           Именно этот JSON кормит публичный leaderboard и список забегов ниже. Автоматические backup-обновления его не меняют.
         </Typography>
+        <Alert severity="info" sx={{ mt: 1.5, bgcolor: '#10233f', color: '#dbeafe' }}>
+          Лидерборды используют свой активный JSON. Он не связан с последним полученным backup и обновляется только вручную в этой вкладке.
+        </Alert>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2 }}>
           <Button variant="contained" disabled={busy != null || !status?.activeUpdatedAt} onClick={() => void downloadActiveJson()} sx={{ fontWeight: 900 }}>
             {busy === 'download' ? '...' : 'Скачать активный JSON'}

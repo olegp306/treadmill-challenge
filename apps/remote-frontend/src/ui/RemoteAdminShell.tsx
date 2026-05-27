@@ -13,9 +13,9 @@ type TabKey = 'monitoring' | 'backup' | 'leaderboards' | 'logs';
 
 const TAB_ORDER: Array<{ key: TabKey; label: string }> = [
   { key: 'monitoring', label: 'Мониторинг системы' },
+  { key: 'leaderboards', label: 'Лидерборды' },
   { key: 'logs', label: 'Логи' },
   { key: 'backup', label: 'Бэкапирование системы' },
-  { key: 'leaderboards', label: 'Лидерборды' },
 ];
 
 function formatBackupAbsolute(iso: string): string {
