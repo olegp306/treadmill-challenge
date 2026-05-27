@@ -13,7 +13,7 @@ function parseIpadOnlineThresholdSec(): number {
   return Math.max(5, Math.floor(raw));
 }
 
-function readOptionalTdHealthFilePath(): string | null {
+function readOptionalTdHealthFilePath(): string {
   const raw = process.env.TD_HEALTH_FILE_PATH?.trim();
   if (raw) return path.isAbsolute(raw) ? raw : path.resolve(process.cwd(), raw);
   return path.resolve(process.cwd(), 'runtime', 'health', 'TDHealth.json');
@@ -165,8 +165,11 @@ export async function collectHealthStatusPayload(now = new Date()): Promise<Heal
       ipadDeviceId = null;
     }
   }
+  const lastIpadHeartbeatMs = lastIpadHeartbeatAt ? new Date(lastIpadHeartbeatAt).getTime() : null;
   const ipadOnline =
-    lastIpadHeartbeatAt != null && now.getTime() - new Date(lastIpadHeartbeatAt).getTime() <= onlineThresholdSec * 1000;
+    lastIpadHeartbeatMs != null &&
+    Number.isFinite(lastIpadHeartbeatMs) &&
+    now.getTime() - lastIpadHeartbeatMs <= onlineThresholdSec * 1000;
 
   const lastTdEventRow = db
     .prepare(
