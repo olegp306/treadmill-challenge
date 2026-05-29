@@ -7,6 +7,17 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.1] - 2026-05-29
+
+### Fixed
+
+- Leaderboards now show `--:--` for legacy placeholder results: `166.39`, `166:39`, and `9999` seconds.
+- Leaderboard search now runs on Enter and briefly shows the Find button loading state.
+- Registration name validation uses the expanded profanity blocklist.
+- The underage participation notice is split into primary and secondary copy for clearer layout.
+
+---
+
 ## [0.5.0] - 2026-05-14
 
 ### Remote: ACTIVE backup, маршруты и панель
