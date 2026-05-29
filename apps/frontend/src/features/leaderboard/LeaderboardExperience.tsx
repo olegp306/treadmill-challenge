@@ -13,6 +13,10 @@ import { Sheet } from '../../ui/components/Sheet';
 import { ui } from '../../ui/tokens';
 import { formatRunResult, formatTimeResultMmSs } from '../../utils/runResultFormat';
 import { useInactivityReset } from '../../hooks/useInactivityReset';
+import {
+  LEADERBOARD_SEARCH_FEEDBACK_MS,
+  shouldRunLeaderboardSearchOnKey,
+} from './leaderboardSearchInteraction';
 
 /** Стабильная высота фоновых колонок: до 10 строк. */
 const MAX_LEADERBOARD_ROWS = 10;
@@ -138,6 +142,7 @@ export function LeaderboardExperience({
   );
   const [searchInputDraft, setSearchInputDraft] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchFindFeedbackActive, setSearchFindFeedbackActive] = useState(false);
   const [nameSearchMatches, setNameSearchMatches] = useState<NameSearchMatch[]>([]);
   const [nameSearchMatchIndex, setNameSearchMatchIndex] = useState(0);
   /** Подсветка только после успешного разрешения `?runSessionId=` (не из URL participant id). */
@@ -168,6 +173,7 @@ export function LeaderboardExperience({
   const searchRowRef = useRef<HTMLDivElement | null>(null);
   const urlScopeSynced = useRef(false);
   const fadeTimerRef = useRef<number | null>(null);
+  const searchFeedbackTimerRef = useRef<number | null>(null);
 
   /** Загрузка / опрос шести зачётов через переданный источник данных. */
   useEffect(() => {
@@ -268,6 +274,10 @@ export function LeaderboardExperience({
         window.clearTimeout(fadeTimerRef.current);
         fadeTimerRef.current = null;
       }
+      if (searchFeedbackTimerRef.current !== null) {
+        window.clearTimeout(searchFeedbackTimerRef.current);
+        searchFeedbackTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -337,6 +347,20 @@ export function LeaderboardExperience({
     setNameSearchMatchIndex(0);
     applyNameSearchMatch(matches[0]!);
   }, [searchInputDraft, slides, applyNameSearchMatch]);
+
+  const triggerNameSearch = useCallback(() => {
+    const q = searchInputDraft.trim();
+    if (q.length < 3) return;
+    if (searchFeedbackTimerRef.current !== null) {
+      window.clearTimeout(searchFeedbackTimerRef.current);
+    }
+    setSearchFindFeedbackActive(true);
+    runNameSearch();
+    searchFeedbackTimerRef.current = window.setTimeout(() => {
+      setSearchFindFeedbackActive(false);
+      searchFeedbackTimerRef.current = null;
+    }, LEADERBOARD_SEARCH_FEEDBACK_MS);
+  }, [runNameSearch, searchInputDraft]);
 
   const cycleNameSearchMatch = useCallback(
     (delta: -1 | 1) => {
@@ -443,6 +467,11 @@ export function LeaderboardExperience({
                         type="text"
                         value={searchInputDraft}
                         onChange={(e) => setSearchInputDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (!shouldRunLeaderboardSearchOnKey(e.key, searchInputDraft)) return;
+                          e.preventDefault();
+                          triggerNameSearch();
+                        }}
                         placeholder={isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
                         style={{
                           ...styles.searchInput,
@@ -505,9 +534,11 @@ export function LeaderboardExperience({
                         style={{
                           ...styles.searchFindBtn,
                           ...(showSearchFindButton ? styles.searchFindBtnVisible : styles.searchFindBtnHidden),
+                          ...(searchFindFeedbackActive ? styles.searchFindBtnFeedback : {}),
                         }}
-                        onClick={runNameSearch}
-                        disabled={!showSearchFindButton}
+                        onClick={triggerNameSearch}
+                        disabled={!showSearchFindButton || searchFindFeedbackActive}
+                        aria-busy={searchFindFeedbackActive}
                       >
                         <span style={styles.searchFindBtnText}>Найти</span>
                       </button>
@@ -865,6 +896,12 @@ const styles: Record<string, CSSProperties> = {
     opacity: 0,
     transform: 'translateX(-10px)',
     pointerEvents: 'none',
+  },
+  searchFindBtnFeedback: {
+    opacity: 0.68,
+    filter: 'brightness(0.72)',
+    cursor: 'default',
+    transform: 'translateX(0) scale(0.985)',
   },
   searchBar: {
     display: 'flex',
