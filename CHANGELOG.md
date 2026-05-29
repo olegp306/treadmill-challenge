@@ -9,26 +9,38 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ## [0.5.2] - 2026-05-29
 
-### Added
+### Добавлено
 
-- Store backend can now resolve `TDHealth.json` from an admin setting before falling back to `TD_HEALTH_FILE_PATH` or the default runtime path.
-- Added admin diagnostics for the TouchDesigner health file: resolved path, source, file existence, parse status, size, mtime, JSON keys, and read/parse errors.
-- Remote Admin now has a System settings block for configuring and checking the store PC `TDHealth.json` path through the remote backend.
+- **TouchDesigner health diagnostics:** local backend теперь умеет брать путь к `TDHealth.json` из настройки админки (`tdHealthFilePath`), затем из `TD_HEALTH_FILE_PATH`, затем из дефолтного `runtime/health/TDHealth.json`.
+- **Диагностический endpoint магазина:** `/api/admin/td/health-diagnostics` показывает resolved path, источник пути, `cwd`, наличие файла, читаемость, валидность JSON, размер, `mtime`, ключи JSON и ошибку чтения/парсинга.
+- **Remote Admin → System:** добавлен блок `TouchDesigner health file`, где можно указать путь к `TDHealth.json` на магазинном ПК, сохранить его и вручную проверить состояние файла кнопкой `Check now`.
+- **Тесты диагностики TD Health:** добавлен backend-тест на приоритет источников пути и чтение валидного JSON-файла.
 
-### Changed
+### Изменено
 
-- Remote backend proxies TouchDesigner health diagnostics and path updates to the local store backend over the configured local connection.
+- **Remote backend:** добавлен прокси для диагностики TD Health и сохранения пути на local backend через существующее подключение к магазину.
+- **Версии:** product/local поднят до `0.5.2`, `remote-backend` и `remote-frontend` подняты до `0.1.3`.
 
 ---
 
 ## [0.5.1] - 2026-05-29
 
-### Fixed
+### Добавлено
 
-- Leaderboards now show `--:--` for legacy placeholder results: `166.39`, `166:39`, and `9999` seconds.
-- Leaderboard search now runs on Enter and briefly shows the Find button loading state.
-- Registration name validation uses the expanded profanity blocklist.
-- The underage participation notice is split into primary and secondary copy for clearer layout.
+- **Glin Profanity:** подключена библиотека `glin-profanity` для проверки имени и фамилии при регистрации.
+- **Расширенный банлист:** добавлен временный расширенный список запрещённых слов для русскоязычной валидации имени/фамилии.
+
+### Изменено
+
+- **Лидерборды ожидания и Remote Leaderboard:** поиск теперь запускается по `Enter` в строке поиска так же, как по кнопке «Найти».
+- **Кнопка «Найти»:** при поиске по `Enter` кнопка кратко показывает состояние загрузки/disabled, чтобы было видно, что действие сработало.
+- **Экран несовершеннолетнего участника:** текст разделён на две строки: основная фраза «Участие в забеге доступно только совершеннолетним» и вторичная фраза «Вы можете вернуться на главную» меньшим шрифтом.
+
+### Исправлено
+
+- **Лидерборды 1 км и 5 км:** legacy-заглушки результатов `166.39`, `166:39` и `9999` теперь отображаются как `--:--`.
+- **Remote Leaderboard и лидерборд ожидания:** одинаково применяют отображение `--:--` для legacy-заглушек, без изменения исходных данных.
+- **Регистрация:** валидация имени и фамилии сохраняет прежнее поведение для плохих слов, но дополняется новым фильтром и списком.
 
 ---
 
