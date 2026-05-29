@@ -19,7 +19,7 @@ export function formatTimeResult(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return '--';
   if (value < 0) return '--';
   if (value === 0) return '0:00';
-  if (isInvalidSentinelResultTime(value)) return '—';
+  if (isInvalidSentinelResultTime(value)) return '--:--';
   const t = Math.round(value);
   const m = Math.floor(t / 60);
   const s = t % 60;
