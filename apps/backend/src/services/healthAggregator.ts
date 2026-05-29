@@ -1,11 +1,12 @@
 import os from 'node:os';
 import path from 'node:path';
 import dns from 'node:dns/promises';
-import { readFile, statfs } from 'node:fs/promises';
-import { getDb, runSessions } from '../db/index.js';
+import { readFile, stat, statfs } from 'node:fs/promises';
+import { adminSettings, getDb, runSessions } from '../db/index.js';
 import { getAppVersion } from '../version.js';
 
 const DEFAULT_IPAD_ONLINE_THRESHOLD_SEC = 90;
+const DEFAULT_TD_HEALTH_FILE_PATH = path.join('runtime', 'health', 'TDHealth.json');
 
 function parseIpadOnlineThresholdSec(): number {
   const raw = Number(process.env.IPAD_ONLINE_THRESHOLD_SEC ?? DEFAULT_IPAD_ONLINE_THRESHOLD_SEC);
@@ -13,10 +14,126 @@ function parseIpadOnlineThresholdSec(): number {
   return Math.max(5, Math.floor(raw));
 }
 
-function readOptionalTdHealthFilePath(): string {
-  const raw = process.env.TD_HEALTH_FILE_PATH?.trim();
-  if (raw) return path.isAbsolute(raw) ? raw : path.resolve(process.cwd(), raw);
-  return path.resolve(process.cwd(), 'runtime', 'health', 'TDHealth.json');
+export type TdHealthFilePathSource = 'admin_setting' | 'env' | 'default';
+
+export type TdHealthFilePathResolution = {
+  path: string;
+  source: TdHealthFilePathSource;
+  configuredValue: string | null;
+  cwd: string;
+};
+
+export type TdHealthDiagnostics = TdHealthFilePathResolution & {
+  exists: boolean;
+  readable: boolean;
+  parseOk: boolean;
+  sizeBytes: number | null;
+  mtime: string | null;
+  jsonKeys: string[];
+  error: string | null;
+};
+
+function resolvePathValue(value: string, cwd: string): string {
+  return path.isAbsolute(value) ? value : path.resolve(cwd, value);
+}
+
+export function resolveTdHealthFilePathFromSources(input: {
+  adminSetting?: string | null;
+  envValue?: string | null;
+  cwd?: string;
+} = {}): TdHealthFilePathResolution {
+  const cwd = input.cwd ?? process.cwd();
+  const adminSetting = input.adminSetting?.trim();
+  if (adminSetting) {
+    return {
+      path: resolvePathValue(adminSetting, cwd),
+      source: 'admin_setting',
+      configuredValue: adminSetting,
+      cwd,
+    };
+  }
+
+  const envValue = input.envValue?.trim();
+  if (envValue) {
+    return {
+      path: resolvePathValue(envValue, cwd),
+      source: 'env',
+      configuredValue: envValue,
+      cwd,
+    };
+  }
+
+  return {
+    path: path.resolve(cwd, DEFAULT_TD_HEALTH_FILE_PATH),
+    source: 'default',
+    configuredValue: null,
+    cwd,
+  };
+}
+
+export function resolveTdHealthFilePath(): TdHealthFilePathResolution {
+  const db = getDb();
+  return resolveTdHealthFilePathFromSources({
+    adminSetting: adminSettings.getSetting(db, 'tdHealthFilePath'),
+    envValue: process.env.TD_HEALTH_FILE_PATH,
+    cwd: process.cwd(),
+  });
+}
+
+function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+export async function readTdHealthDiagnosticsForPath(
+  resolution: TdHealthFilePathResolution
+): Promise<TdHealthDiagnostics> {
+  const base: TdHealthDiagnostics = {
+    ...resolution,
+    exists: false,
+    readable: false,
+    parseOk: false,
+    sizeBytes: null,
+    mtime: null,
+    jsonKeys: [] as string[],
+    error: null as string | null,
+  };
+
+  let raw: string;
+  try {
+    const fileStat = await stat(resolution.path);
+    raw = await readFile(resolution.path, 'utf8');
+    base.exists = true;
+    base.readable = true;
+    base.sizeBytes = fileStat.size;
+    base.mtime = fileStat.mtime.toISOString();
+  } catch (e) {
+    return {
+      ...base,
+      error: (e as NodeJS.ErrnoException).code === 'ENOENT' ? 'file_not_found' : errorMessage(e),
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return { ...base, error: 'json_root_not_object' };
+    }
+    return {
+      ...base,
+      parseOk: true,
+      jsonKeys: Object.keys(parsed as Record<string, unknown>),
+    };
+  } catch (e) {
+    return { ...base, error: errorMessage(e) };
+  }
+}
+
+export function getTdHealthFilePathSetting(): string {
+  return adminSettings.getSetting(getDb(), 'tdHealthFilePath') ?? '';
+}
+
+export async function getTdHealthDiagnostics(): Promise<TdHealthDiagnostics> {
+  return readTdHealthDiagnosticsForPath(resolveTdHealthFilePath());
 }
 
 function toIsoOrNull(value: unknown): string | null {
@@ -214,7 +331,7 @@ export async function collectHealthStatusPayload(now = new Date()): Promise<Heal
   const ramPct = readRamPct();
   const uptimeSec = Number.isFinite(process.uptime()) ? Math.floor(process.uptime()) : null;
 
-  const tdHealthFile = await readTdHealthFile(readOptionalTdHealthFilePath());
+  const tdHealthFile = await readTdHealthFile(resolveTdHealthFilePath().path);
 
   const warnings: string[] = [];
   const errors: string[] = [];

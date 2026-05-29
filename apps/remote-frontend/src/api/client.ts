@@ -124,6 +124,20 @@ export type StoreHeartbeat = {
   lastUserAgent: string | null;
 };
 
+export type TdHealthDiagnostics = {
+  path: string;
+  source: 'admin_setting' | 'env' | 'default';
+  configuredValue: string | null;
+  cwd: string;
+  exists: boolean;
+  readable: boolean;
+  parseOk: boolean;
+  sizeBytes: number | null;
+  mtime: string | null;
+  jsonKeys: string[];
+  error: string | null;
+};
+
 export type RemoteSystemStatus = {
   remote: {
     online: boolean;
@@ -385,6 +399,20 @@ export const api = {
         body: JSON.stringify(payload),
       }
     );
+  },
+
+  localTdHealthDiagnostics() {
+    return requestJson<{ diagnostics: TdHealthDiagnostics }>('/api/remote/admin/local-td-health/diagnostics', {
+      headers: { ...authHeaders() },
+    });
+  },
+
+  updateLocalTdHealthSettings(payload: { tdHealthFilePath: string | null }) {
+    return requestJson<{ diagnostics: TdHealthDiagnostics }>('/api/remote/admin/local-td-health/settings', {
+      method: 'PUT',
+      headers: { ...authHeaders() },
+      body: JSON.stringify(payload),
+    });
   },
 
   updateTelegramSettings(payload: {

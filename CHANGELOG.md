@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.2] - 2026-05-29
+
+### Added
+
+- Store backend can now resolve `TDHealth.json` from an admin setting before falling back to `TD_HEALTH_FILE_PATH` or the default runtime path.
+- Added admin diagnostics for the TouchDesigner health file: resolved path, source, file existence, parse status, size, mtime, JSON keys, and read/parse errors.
+- Remote Admin now has a System settings block for configuring and checking the store PC `TDHealth.json` path through the remote backend.
+
+### Changed
+
+- Remote backend proxies TouchDesigner health diagnostics and path updates to the local store backend over the configured local connection.
+
+---
+
 ## [0.5.1] - 2026-05-29
 
 ### Fixed

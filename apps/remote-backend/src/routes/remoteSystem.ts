@@ -6,7 +6,12 @@ import { readBackupLatestMeta } from '../services/backupLatestMeta.js';
 import { getBackupMirrorState } from '../services/backupMirrorScheduler.js';
 import { backupDir } from '../services/remoteBackupDir.js';
 import { remoteActiveDir, remoteHistoryDir } from '../services/remoteBackupPaths.js';
-import { getLocalBaseUrl, getLocalHealthStatus } from '../local/localClient.js';
+import {
+  getLocalBaseUrl,
+  getLocalHealthStatus,
+  getLocalTdHealthDiagnostics,
+  updateLocalTdHealthFilePath,
+} from '../local/localClient.js';
 import { requireRemoteAdmin } from '../auth/requireRemoteAdmin.js';
 import {
   readEffectiveLocalConnectionSettings,
@@ -99,6 +104,29 @@ export async function registerRemoteSystemRoutes(app: FastifyInstance): Promise<
       heartbeatToken: typeof body.heartbeatToken === 'string' || body.heartbeatToken === null ? body.heartbeatToken : undefined,
     });
     return reply.send({ settings, heartbeat: await readStoreHeartbeat() });
+  });
+
+  app.get('/api/remote/admin/local-td-health/diagnostics', { preHandler: requireRemoteAdmin }, async (_request, reply) => {
+    try {
+      return reply.send({ diagnostics: await getLocalTdHealthDiagnostics() });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return reply.status(502).send({ error: `Local TD health diagnostics unavailable: ${msg}` });
+    }
+  });
+
+  app.put('/api/remote/admin/local-td-health/settings', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const body = (request.body ?? {}) as { tdHealthFilePath?: unknown };
+    if (typeof body.tdHealthFilePath !== 'string' && body.tdHealthFilePath !== null) {
+      return reply.status(400).send({ error: 'tdHealthFilePath must be a string or null' });
+    }
+    try {
+      await updateLocalTdHealthFilePath(body.tdHealthFilePath);
+      return reply.send({ diagnostics: await getLocalTdHealthDiagnostics() });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return reply.status(502).send({ error: `Local TD health settings unavailable: ${msg}` });
+    }
   });
 
   app.get('/api/remote/system/status', { preHandler: requireRemoteAdmin }, async (request, reply) => {

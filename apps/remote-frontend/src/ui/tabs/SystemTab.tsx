@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Alert, Box, Button, Checkbox, Divider, FormControlLabel, Paper, TextField, Typography } from '@mui/material';
-import { api, type LocalConnectionSettings, type StoreHeartbeat, type TelegramSettings } from '../../api/client';
+import {
+  api,
+  type LocalConnectionSettings,
+  type StoreHeartbeat,
+  type TdHealthDiagnostics,
+  type TelegramSettings,
+} from '../../api/client';
 
 type SystemStatus = {
   remote: {
@@ -49,11 +55,14 @@ export function SystemTab() {
   const [telegramSaved, setTelegramSaved] = useState<string | null>(null);
   const [localConnectionError, setLocalConnectionError] = useState<string | null>(null);
   const [localConnectionSaved, setLocalConnectionSaved] = useState<string | null>(null);
+  const [tdHealthError, setTdHealthError] = useState<string | null>(null);
+  const [tdHealthSaved, setTdHealthSaved] = useState<string | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [telegramSettings, setTelegramSettings] = useState<TelegramSettings | null>(null);
   const [localConnectionSettings, setLocalConnectionSettings] = useState<LocalConnectionSettings | null>(null);
   const [storeHeartbeat, setStoreHeartbeat] = useState<StoreHeartbeat | null>(null);
+  const [tdHealthDiagnostics, setTdHealthDiagnostics] = useState<TdHealthDiagnostics | null>(null);
   const [localConnectionForm, setLocalConnectionForm] = useState({
     localBackendBaseUrl: '',
     localBackendAuthToken: '',
@@ -69,6 +78,8 @@ export function SystemTab() {
   });
   const [telegramBusy, setTelegramBusy] = useState(false);
   const [localConnectionBusy, setLocalConnectionBusy] = useState(false);
+  const [tdHealthBusy, setTdHealthBusy] = useState(false);
+  const [tdHealthFilePath, setTdHealthFilePath] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +102,26 @@ export function SystemTab() {
     return () => {
       cancelled = true;
       window.clearInterval(t);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        setTdHealthError(null);
+        const res = await api.localTdHealthDiagnostics();
+        if (cancelled) return;
+        setTdHealthDiagnostics(res.diagnostics);
+        setTdHealthFilePath(res.diagnostics.source === 'admin_setting' ? (res.diagnostics.configuredValue ?? '') : '');
+      } catch (e) {
+        if (cancelled) return;
+        setTdHealthError(e instanceof Error ? e.message : 'Failed');
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -239,6 +270,37 @@ export function SystemTab() {
     }
   };
 
+  const refreshTdHealthDiagnostics = async () => {
+    setTdHealthBusy(true);
+    setTdHealthError(null);
+    setTdHealthSaved(null);
+    try {
+      const res = await api.localTdHealthDiagnostics();
+      setTdHealthDiagnostics(res.diagnostics);
+      setTdHealthSaved('TD health diagnostics refreshed');
+    } catch (e) {
+      setTdHealthError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setTdHealthBusy(false);
+    }
+  };
+
+  const saveTdHealthPath = async (value: string | null = tdHealthFilePath) => {
+    setTdHealthBusy(true);
+    setTdHealthError(null);
+    setTdHealthSaved(null);
+    try {
+      const res = await api.updateLocalTdHealthSettings({ tdHealthFilePath: value });
+      setTdHealthDiagnostics(res.diagnostics);
+      setTdHealthFilePath(res.diagnostics.source === 'admin_setting' ? (res.diagnostics.configuredValue ?? '') : '');
+      setTdHealthSaved(value === null ? 'TD health path cleared' : 'TD health path saved');
+    } catch (e) {
+      setTdHealthError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setTdHealthBusy(false);
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {error ? <Alert severity="error">{error}</Alert> : null}
@@ -246,6 +308,8 @@ export function SystemTab() {
       {telegramSaved ? <Alert severity="success">{telegramSaved}</Alert> : null}
       {localConnectionError ? <Alert severity="error">{localConnectionError}</Alert> : null}
       {localConnectionSaved ? <Alert severity="success">{localConnectionSaved}</Alert> : null}
+      {tdHealthError ? <Alert severity="error">{tdHealthError}</Alert> : null}
+      {tdHealthSaved ? <Alert severity="success">{tdHealthSaved}</Alert> : null}
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
@@ -335,6 +399,50 @@ export function SystemTab() {
         </Typography>
         <Typography sx={{ color: '#777', fontSize: 12, mt: 1 }}>
           Developer can call the heartbeat URL with GET or POST. If a token is configured, it can also be sent in X-Store-Heartbeat-Token.
+        </Typography>
+      </Paper>
+
+      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
+        <Typography sx={{ fontWeight: 900, mb: 1 }}>TouchDesigner health file</Typography>
+        <Typography sx={{ color: '#777', fontSize: 12, mb: 2 }}>
+          Configure where the store backend should read TDHealth.json. This feeds the store status block in Monitoring.
+        </Typography>
+        <TextField
+          label="TDHealth.json path on store PC"
+          value={tdHealthFilePath}
+          onChange={(e) => setTdHealthFilePath(e.target.value)}
+          placeholder="C:\\path\\to\\TDHealth.json"
+          size="small"
+          fullWidth
+        />
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1.5 }}>
+          <Button variant="contained" disabled={tdHealthBusy} onClick={() => void saveTdHealthPath()} sx={{ fontWeight: 900 }}>
+            Save TD health path
+          </Button>
+          <Button variant="outlined" disabled={tdHealthBusy} onClick={() => void refreshTdHealthDiagnostics()}>
+            Check now
+          </Button>
+          <Button variant="outlined" disabled={tdHealthBusy || !tdHealthDiagnostics?.configuredValue} onClick={() => void saveTdHealthPath(null)}>
+            Clear custom path
+          </Button>
+        </Box>
+        <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
+        <Typography sx={{ color: '#bbb', fontSize: 12 }}>resolved path: {tdHealthDiagnostics?.path ?? 'вЂ”'}</Typography>
+        <Typography sx={{ color: '#bbb', fontSize: 12 }}>source: {tdHealthDiagnostics?.source ?? 'вЂ”'}</Typography>
+        <Typography sx={{ color: '#bbb', fontSize: 12 }}>backend cwd: {tdHealthDiagnostics?.cwd ?? 'вЂ”'}</Typography>
+        <Typography sx={{ color: tdHealthDiagnostics?.exists ? '#86efac' : '#fca5a5', fontSize: 12 }}>
+          file exists: {tdHealthDiagnostics ? (tdHealthDiagnostics.exists ? 'yes' : 'no') : 'вЂ”'}
+        </Typography>
+        <Typography sx={{ color: tdHealthDiagnostics?.parseOk ? '#86efac' : '#fca5a5', fontSize: 12 }}>
+          JSON parsed: {tdHealthDiagnostics ? (tdHealthDiagnostics.parseOk ? 'yes' : 'no') : 'вЂ”'}
+        </Typography>
+        <Typography sx={{ color: '#bbb', fontSize: 12 }}>mtime: {formatIso(tdHealthDiagnostics?.mtime)}</Typography>
+        <Typography sx={{ color: '#bbb', fontSize: 12 }}>size: {tdHealthDiagnostics?.sizeBytes ?? 'вЂ”'} bytes</Typography>
+        <Typography sx={{ color: '#bbb', fontSize: 12 }}>
+          keys: {tdHealthDiagnostics?.jsonKeys.length ? tdHealthDiagnostics.jsonKeys.join(', ') : 'вЂ”'}
+        </Typography>
+        <Typography sx={{ color: tdHealthDiagnostics?.error ? '#fca5a5' : '#777', fontSize: 12 }}>
+          error: {tdHealthDiagnostics?.error ?? 'вЂ”'}
         </Typography>
       </Paper>
 

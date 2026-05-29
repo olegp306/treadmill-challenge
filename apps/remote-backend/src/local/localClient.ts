@@ -52,6 +52,24 @@ export async function getLocalAdminRecentRuns(): Promise<unknown> {
   return parseJson(res);
 }
 
+export async function getLocalTdHealthDiagnostics(): Promise<unknown> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const res = await fetch(`${base}/api/admin/td/health-diagnostics`, { headers: { ...localAdminHeaders() } });
+  return parseJson(res);
+}
+
+export async function updateLocalTdHealthFilePath(tdHealthFilePath: string | null): Promise<unknown> {
+  const base = localBaseUrl();
+  if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');
+  const res = await fetch(`${base}/api/admin/settings`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...localAdminHeaders() },
+    body: JSON.stringify({ tdHealthFilePath }),
+  });
+  return parseJson(res);
+}
+
 export async function proxyLocalAdminJsonExport(logsHours?: number): Promise<Response> {
   const base = localBaseUrl();
   if (!base) throw new Error('LOCAL_BACKEND_BASE_URL is not configured');

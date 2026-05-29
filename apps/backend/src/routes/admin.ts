@@ -45,6 +45,7 @@ import {
 } from '../services/leaderboardExcelExport.js';
 import { getRankedRuns } from '../services/rankingService.js';
 import { getLocalBackupBaseDir } from '../services/backupStoragePath.js';
+import { getTdHealthDiagnostics, getTdHealthFilePathSetting } from '../services/healthAggregator.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
   if (token) {
@@ -945,13 +946,21 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
 
     scoped.get('/api/admin/td/status', async () => {
       const db = getDb();
+      const healthDiagnostics = await getTdHealthDiagnostics();
       return {
         adapter: adminSettings.getSetting(db, 'tdAdapter') ?? 'mock',
         host: adminSettings.getSetting(db, 'tdHost') ?? '127.0.0.1',
         port: adminSettings.getSetting(db, 'tdPort') ?? '7000',
         lastSyncOk: adminSettings.getSetting(db, 'lastTdSyncOk') ?? '',
         lastSyncError: adminSettings.getSetting(db, 'lastTdSyncError') ?? '',
+        healthFilePath: healthDiagnostics.path,
+        healthFilePathSource: healthDiagnostics.source,
+        healthFileExists: healthDiagnostics.exists,
       };
+    });
+
+    scoped.get('/api/admin/td/health-diagnostics', async () => {
+      return getTdHealthDiagnostics();
     });
 
     scoped.get('/api/admin/settings', async () => {
@@ -968,6 +977,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         eventTitle: adminSettings.getSetting(db, 'eventTitle') ?? 'Amazing Red',
         heartbeatIntervalMin: adminSettings.getHeartbeatIntervalMin(db),
         inactivityTimeoutSec: adminSettings.getInactivityTimeoutSec(db),
+        tdHealthFilePath: getTdHealthFilePathSetting(),
       };
     });
 
@@ -985,6 +995,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         heartbeatIntervalMin?: number;
         inactivityTimeoutSec?: number;
         showIntegrationInfoMessages?: boolean;
+        tdHealthFilePath?: string | null;
       };
       if (body.adminPin !== undefined) adminSettings.setSetting(db, 'adminPin', body.adminPin.trim());
       if (body.tdHost !== undefined) adminSettings.setSetting(db, 'tdHost', body.tdHost.trim());
@@ -1012,6 +1023,9 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       }
       if (body.showIntegrationInfoMessages !== undefined) {
         adminSettings.setSetting(db, 'integrationInfoMessages', body.showIntegrationInfoMessages ? 'true' : 'false');
+      }
+      if (body.tdHealthFilePath !== undefined) {
+        adminSettings.setSetting(db, 'tdHealthFilePath', typeof body.tdHealthFilePath === 'string' ? body.tdHealthFilePath.trim() : '');
       }
       return reply.send({ ok: true });
     });
