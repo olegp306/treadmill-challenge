@@ -511,6 +511,12 @@ export const reg: Record<string, CSSProperties> = {
     fontFamily: 'inherit',
     maxWidth: w(1200),
   },
+  ageFigmaBlockedSubtext: {
+    fontSize: w(40),
+    lineHeight: 1.35,
+    textTransform: 'none',
+    color: 'rgba(255,255,255,0.92)',
+  },
   ageFigmaButtonRow: {
     display: 'flex',
     flexDirection: 'row',
