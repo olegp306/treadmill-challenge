@@ -1,6 +1,7 @@
 import type { RunTypeId } from '@treadmill-challenge/shared';
 
 const KNOWN_INVALID_TIME_VALUES = [166.39, 9999];
+const KNOWN_INVALID_TIME_STRINGS = ['166:39'];
 /** DB/JSON float noise around the legacy sentinel time (seconds). */
 const SENTINEL_TIME_EPS = 1e-3;
 const INVALID_TIME_PLACEHOLDER = '--:--';
@@ -11,6 +12,7 @@ function isMmSsString(value: string): boolean {
 
 /** True for known legacy invalid time placeholders and close floats / numeric strings. */
 export function isInvalidSentinelResultTime(value: unknown): boolean {
+  if (typeof value === 'string' && KNOWN_INVALID_TIME_STRINGS.includes(value.trim())) return true;
   const n = typeof value === 'string' ? Number.parseFloat(value.trim()) : Number(value);
   if (!Number.isFinite(n)) return false;
   return KNOWN_INVALID_TIME_VALUES.some((sentinel) => Math.abs(n - sentinel) <= SENTINEL_TIME_EPS);
@@ -32,6 +34,7 @@ export function formatTimeResultMmSs(sec: number | string | null | undefined): s
   if (typeof sec === 'string') {
     const raw = sec.trim();
     if (!raw) return '--';
+    if (isInvalidSentinelResultTime(raw)) return INVALID_TIME_PLACEHOLDER;
     if (isMmSsString(raw)) return raw;
     const n = Number(raw);
     if (!Number.isFinite(n)) return '--';
