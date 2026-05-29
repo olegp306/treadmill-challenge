@@ -21,4 +21,13 @@ describe('validateNamePart', () => {
     expect(validateNamePart('иван', 'first')).toEqual({ ok: true, normalized: 'Иван' });
     expect(validateNamePart('петров-сидоров', 'last')).toEqual({ ok: true, normalized: 'Петров-Сидоров' });
   });
+
+  it('uses the profanity filter to catch Unicode-obfuscated English profanity without substring false positives', () => {
+    expect(validateNamePart('fυck', 'first')).toEqual({
+      ok: false,
+      message: 'Недопустимое слово',
+    });
+    expect(validateNamePart('cassidy', 'first')).toEqual({ ok: true, normalized: 'Cassidy' });
+    expect(validateNamePart('class', 'last')).toEqual({ ok: true, normalized: 'Class' });
+  });
 });

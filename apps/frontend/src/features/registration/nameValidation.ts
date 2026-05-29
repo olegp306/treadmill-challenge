@@ -1,3 +1,5 @@
+import { Filter } from 'glin-profanity';
+
 /** Letters (any script), marks, spaces, hyphen — no digits or punctuation. */
 const ALLOWED_NAME_REGEX = /^[\p{L}\p{M}\s\-]+$/u;
 
@@ -322,6 +324,26 @@ const PROFANITY_WORDS = new Set([
   ...TEMPORARY_RU_PROFANITY_WORDS,
 ]);
 
+const ENGLISH_PROFANITY_FILTER = new Filter({
+  languages: ['english'],
+  wordBoundaries: true,
+  detectLeetspeak: true,
+  leetspeakLevel: 'moderate',
+  normalizeUnicode: true,
+  cacheResults: true,
+  maxCacheSize: 500,
+});
+
+const RUSSIAN_PROFANITY_FILTER = new Filter({
+  languages: ['russian'],
+  customWords: Array.from(PROFANITY_WORDS),
+  wordBoundaries: false,
+  detectLeetspeak: false,
+  normalizeUnicode: true,
+  cacheResults: true,
+  maxCacheSize: 500,
+});
+
 export function normalizeNameWhitespace(input: string): string {
   return input.trim().replace(/\s+/g, ' ');
 }
@@ -352,8 +374,12 @@ function nameTokensLower(s: string): string[] {
 }
 
 function containsProfanity(normalized: string): boolean {
+  if (ENGLISH_PROFANITY_FILTER.checkProfanity(normalized).containsProfanity) return true;
+
   for (const token of nameTokensLower(normalized)) {
     if (PROFANITY_WORDS.has(token)) return true;
+    const glinResult = RUSSIAN_PROFANITY_FILTER.checkProfanity(token);
+    if (glinResult.profaneWords.some((word) => word.toLowerCase() === token)) return true;
   }
   return false;
 }
