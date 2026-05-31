@@ -46,6 +46,10 @@ import {
 import { getRankedRuns } from '../services/rankingService.js';
 import { getLocalBackupBaseDir } from '../services/backupStoragePath.js';
 import { getTdHealthDiagnostics, getTdHealthFilePathSetting } from '../services/healthAggregator.js';
+import {
+  recordPanelLoginAuditEvent,
+  recordParticipantUpdateAuditEvent,
+} from '../services/localAuditEvents.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
   if (token) {
@@ -90,6 +94,15 @@ function isManagerPin(pin: string): boolean {
 
 function isOperatorPin(db: ReturnType<typeof getDb>, pin: string): boolean {
   return isGodAdminPin(db, pin) || isManagerPin(pin);
+}
+
+function getOperatorRole(db: ReturnType<typeof getDb>, pin: string): 'admin' | 'manager' {
+  return isManagerPin(pin) && !isGodAdminPin(db, pin) ? 'manager' : 'admin';
+}
+
+function getUserAgent(request: FastifyRequest): string {
+  const ua = request.headers['user-agent'];
+  return typeof ua === 'string' ? ua : '';
 }
 
 async function assertAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -146,14 +159,25 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     if (typeof pin !== 'string' || !isGodAdminPin(db, pin)) {
       return reply.status(401).send({ error: 'Неверный PIN' });
     }
+    recordPanelLoginAuditEvent(db, {
+      role: 'admin',
+      ip: request.ip,
+      userAgent: getUserAgent(request),
+    });
     return reply.send({ ok: true });
   });
 
   app.post('/api/manager/login', async (request, reply) => {
     const pin = (request.body as { pin?: string } | undefined)?.pin;
+    const db = getDb();
     if (typeof pin !== 'string' || !isManagerPin(pin)) {
       return reply.status(401).send({ error: 'Неверный PIN' });
     }
+    recordPanelLoginAuditEvent(db, {
+      role: 'manager',
+      ip: request.ip,
+      userAgent: getUserAgent(request),
+    });
     return reply.send({ ok: true });
   });
 
@@ -857,13 +881,36 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         sex?: string;
       };
       try {
+        const before = participants.getParticipantById(db, id);
         participants.updateParticipantFields(db, id, {
           ...(body.firstName !== undefined && { firstName: body.firstName }),
           ...(body.lastName !== undefined && { lastName: body.lastName }),
           ...(body.phone !== undefined && { phone: body.phone }),
           ...(body.sex !== undefined && { sex: normalizeGender(body.sex) }),
         });
-        return reply.send({ participant: participants.getParticipantById(db, id) });
+        const after = participants.getParticipantById(db, id);
+        const pin = getAdminPinFromRequest(request);
+        if (before && after && pin) {
+          recordParticipantUpdateAuditEvent(db, {
+            actorRole: getOperatorRole(db, pin),
+            actorIp: request.ip,
+            userAgent: getUserAgent(request),
+            participantId: id,
+            before: {
+              firstName: before.firstName,
+              lastName: before.lastName,
+              phone: before.phone,
+              sex: before.sex,
+            },
+            after: {
+              firstName: after.firstName,
+              lastName: after.lastName,
+              phone: after.phone,
+              sex: after.sex,
+            },
+          });
+        }
+        return reply.send({ participant: after });
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Failed';
         return reply.status(400).send({ error: msg });
