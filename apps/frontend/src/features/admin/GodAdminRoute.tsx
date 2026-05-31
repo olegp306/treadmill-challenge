@@ -3,7 +3,7 @@ import { AdminGodLoginScreen } from './AdminGodLoginScreen';
 import { hasGodAdminSession } from './godAdminSession';
 
 /**
- * Protects `/admin/*`: PIN после `POST /api/admin/login` (например 555555).
+ * Protects `/admin/*`: PIN после `POST /api/admin/login`.
  * Вход: URL `/admin` или три тапа по «AMAZING» на главной → `navigate('/admin')`.
  */
 export function GodAdminRoute({ children }: { children: React.ReactNode }) {

@@ -50,6 +50,7 @@ import {
   recordPanelLoginAuditEvent,
   recordParticipantUpdateAuditEvent,
 } from '../services/localAuditEvents.js';
+import { buildGodAdminPins, getManagerPins } from '../services/adminPinPolicy.js';
 function getAdminPinFromRequest(request: FastifyRequest): string | null {
   const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
   if (token) {
@@ -70,18 +71,11 @@ function getAdminPinFromRequest(request: FastifyRequest): string | null {
 }
 
 function getGodAdminPins(db: ReturnType<typeof getDb>): Set<string> {
-  const pins = new Set<string>(['191181']);
-  const envPin = process.env.ADMIN_PIN?.trim();
-  if (envPin) pins.add(envPin);
-  const token = process.env.LOCAL_BACKEND_AUTH_TOKEN?.trim();
-  if (token) pins.add(token);
-  const configured = adminSettings.getAdminPin(db)?.trim();
-  if (configured) pins.add(configured);
-  return pins;
-}
-
-function getManagerPins(): Set<string> {
-  return new Set<string>(['332277']);
+  return buildGodAdminPins({
+    envPin: process.env.ADMIN_PIN,
+    localBackendAuthToken: process.env.LOCAL_BACKEND_AUTH_TOKEN,
+    configuredPin: adminSettings.getAdminPin(db),
+  });
 }
 
 function isGodAdminPin(db: ReturnType<typeof getDb>, pin: string): boolean {

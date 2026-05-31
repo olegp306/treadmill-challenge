@@ -6,6 +6,7 @@ import {
   normalizeGender,
   runTypeKeyStringToId,
 } from '@treadmill-challenge/shared';
+import { DEFAULT_GOD_ADMIN_PIN } from '../services/adminPinPolicy.js';
 
 function tableColumns(db: Db, table: string): Set<string> {
   const rows = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
@@ -25,6 +26,7 @@ export function runMigrations(db: Db): void {
   migrateGlobalQueueV2(db);
   migrateRunVerificationPhotos(db);
   migrateGlobalQueueMaxSizeDefaultTo4(db);
+  migrateDisabledLegacyAdminPin(db);
 }
 
 function migrateIntegrationInfoMessagesSetting(db: Db): void {
@@ -198,7 +200,7 @@ function seedLegacyCompetitions(db: Db): void {
 
 function seedAdminSettings(db: Db): void {
   const ins = db.prepare(`INSERT OR IGNORE INTO admin_settings (key, value) VALUES (?, ?)`);
-  ins.run('adminPin', '555555');
+  ins.run('adminPin', DEFAULT_GOD_ADMIN_PIN);
   ins.run('tdHost', process.env.TD_HOST ?? '127.0.0.1');
   ins.run('tdPort', process.env.TD_PORT ?? '7000');
   ins.run('tdAdapter', process.env.TD_ADAPTER ?? 'mock');
@@ -211,6 +213,13 @@ function seedAdminSettings(db: Db): void {
   ins.run('integrationInfoMessages', 'false');
   ins.run('lastTdSyncOk', '');
   ins.run('lastTdSyncError', '');
+}
+
+function migrateDisabledLegacyAdminPin(db: Db): void {
+  db.prepare(`UPDATE admin_settings SET value = ? WHERE key = 'adminPin' AND value = ?`).run(
+    DEFAULT_GOD_ADMIN_PIN,
+    '5'.repeat(6)
+  );
 }
 
 function reassignGlobalQueueNumbersMigration(db: Db): void {

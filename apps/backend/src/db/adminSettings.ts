@@ -1,5 +1,6 @@
 import { DEFAULT_MAX_GLOBAL_QUEUE_SIZE } from '@treadmill-challenge/shared';
 import type { Db } from './sqlite.js';
+import { DEFAULT_GOD_ADMIN_PIN } from '../services/adminPinPolicy.js';
 
 export function getSetting(db: Db, key: string): string | null {
   const row = db.prepare(`SELECT value FROM admin_settings WHERE key = ?`).get(key) as
@@ -18,7 +19,7 @@ export function setSetting(db: Db, key: string, value: string): void {
 }
 
 export function getAdminPin(db: Db): string {
-  return getSetting(db, 'adminPin') ?? '332277';
+  return getSetting(db, 'adminPin') ?? DEFAULT_GOD_ADMIN_PIN;
 }
 
 /** When true, run start skips real TouchDesigner send; client shows demo finish flow. */

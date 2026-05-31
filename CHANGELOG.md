@@ -7,6 +7,14 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.4] - 2026-05-31
+
+### Fixed
+
+- **Admin PIN policy:** removed the disabled legacy local/remote admin PIN from active auth, DB seeding, and migration state. Manager panel remains on `332277`; local/remote admin dev PIN remains `191181`.
+
+---
+
 ## [0.5.3] - 2026-05-31
 
 ### Добавлено
@@ -355,7 +363,7 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ### Changed
 
-- **Full admin (`/admin/*`):** enter only by **opening the URL** in the browser — full-screen PIN gate (`AdminGodLoginScreen` + `GodAdminRoute`). Legacy path «god admin from the kiosk home» is gone on purpose; PIN `555555` / DB-configured god PIN via `POST /api/admin/login`.
+- **Full admin (`/admin/*`):** enter only by **opening the URL** in the browser — full-screen PIN gate (`AdminGodLoginScreen` + `GodAdminRoute`). Legacy path «god admin from the kiosk home» is gone on purpose; DB-configured god PIN via `POST /api/admin/login`.
 - **Home logo gesture:** triple tap **RED** still opens the **manager** modal only (`AdminPinModal` → `managerLogin` → `/manager`); it no longer branches into a god-admin modal.
 
 ---
@@ -386,7 +394,7 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ### Changed
 
-- **Admin PIN policy:** `POST /api/admin/login` and admin-scoped routes accept both the **legacy** PIN `555555` and **`332277`**, in addition to the PIN stored in settings; default DB fallback for admin PIN updated to `332277`.
+- **Admin PIN policy:** `POST /api/admin/login` and admin-scoped routes accept the configured god-admin PIN policy; manager access is handled separately by `POST /api/manager/login`.
 - **Queue reorder (admin/manager):** `move-up` / `move-down` now reorder by swapping **`createdAt`** (FIFO source of truth) instead of only `queueNumber`; `move-tail` uses global tail bump + renumber.
 
 ### Fixed

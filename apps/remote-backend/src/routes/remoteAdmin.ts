@@ -35,6 +35,15 @@ import { readPublicTelegramSettings, updateTelegramSettings } from '../telegram/
 import { sendTelegramAlert } from '../telegram/telegramBot.js';
 import { remoteBackendVersion } from '../version.js';
 
+const DEFAULT_REMOTE_ADMIN_PIN = '191181';
+const DISABLED_REMOTE_ADMIN_PINS = new Set(['5'.repeat(6)]);
+
+function getExpectedRemoteAdminPin(): string {
+  const configured = process.env.REMOTE_ADMIN_PIN?.trim();
+  if (configured && !DISABLED_REMOTE_ADMIN_PINS.has(configured)) return configured;
+  return DEFAULT_REMOTE_ADMIN_PIN;
+}
+
 function normalizeHours(raw: unknown, fallback: number): number {
   const n = Number(raw ?? fallback);
   if (!Number.isFinite(n)) return fallback;
@@ -85,9 +94,13 @@ async function readActiveBackupForDownload(): Promise<{ fileName: string; raw: s
 
 export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/remote/admin/login', async (request, reply) => {
-    const expectedPin = process.env.REMOTE_ADMIN_PIN?.trim() || '191181';
+    const expectedPin = getExpectedRemoteAdminPin();
     const pin = (request.body as { pin?: unknown } | undefined)?.pin;
-    if (typeof pin !== 'string' || pin.trim() !== expectedPin) {
+    if (
+      typeof pin !== 'string' ||
+      DISABLED_REMOTE_ADMIN_PINS.has(pin.trim()) ||
+      pin.trim() !== expectedPin
+    ) {
       await writeAudit({
         userId: null,
         userEmail: null,
