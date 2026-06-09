@@ -19,7 +19,7 @@ function sourceLabelRu(s: 'local_refresh' | 'manual_import' | 'migrated_legacy' 
 
 export function LeaderboardsTab() {
   const [status, setStatus] = useState<Awaited<ReturnType<typeof api.backupStatus>>['backup'] | null>(null);
-  const [busy, setBusy] = useState<'download' | 'import' | null>(null);
+  const [busy, setBusy] = useState<'download' | 'xlsx' | 'import' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
@@ -61,6 +61,20 @@ export function LeaderboardsTab() {
       } finally {
         URL.revokeObjectURL(url);
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const downloadLeaderboardsExcel = async () => {
+    setError(null);
+    setOk(null);
+    setBusy('xlsx');
+    try {
+      await api.downloadLeaderboardsXlsx();
+      setOk('Excel лидербордов скачан через тот же экспорт, что и в менеджерской панели.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed');
     } finally {
@@ -125,6 +139,14 @@ export function LeaderboardsTab() {
             {busy === 'download' ? '...' : 'Скачать активный JSON'}
           </Button>
           <Button
+            variant="contained"
+            disabled={busy != null}
+            onClick={() => void downloadLeaderboardsExcel()}
+            sx={{ fontWeight: 900, bgcolor: '#2e7d32', '&:hover': { bgcolor: '#1b5e20' } }}
+          >
+            {busy === 'xlsx' ? '...' : 'Скачать Excel лидербордов'}
+          </Button>
+          <Button
             component="label"
             variant="outlined"
             disabled={busy != null}
@@ -143,6 +165,9 @@ export function LeaderboardsTab() {
             />
           </Button>
         </Box>
+        <Typography sx={{ color: '#777', fontSize: 12, mt: 1.5 }}>
+          Excel скачивается с компьютера в магазине через существующий экспорт менеджерской панели.
+        </Typography>
       </Paper>
 
       <RunsTab />
