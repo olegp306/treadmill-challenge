@@ -85,6 +85,8 @@ export type RemoteBackupStatus = {
   activeUpdatedAt: string | null;
   activeSource: 'local_refresh' | 'manual_import' | 'migrated_legacy' | null;
   activeEnvelopeCreatedAt: string | null;
+  autoActivateLeaderboard: boolean;
+  autoActivateLeaderboardSource: 'runtime' | 'env' | 'default';
   remoteBackendVersion: string | null;
 };
 
@@ -372,6 +374,19 @@ export const api = {
     });
   },
 
+  updateBackupSettings(payload: { autoActivateLeaderboard: boolean }) {
+    return requestJson<{
+      settings: {
+        autoActivateLeaderboard: boolean;
+        source: { autoActivateLeaderboard: 'runtime' | 'env' | 'default' };
+      };
+    }>('/api/remote/admin/backup/settings', {
+      method: 'PUT',
+      headers: { ...authHeaders() },
+      body: JSON.stringify(payload),
+    });
+  },
+
   telegramSettings() {
     return requestJson<{ settings: TelegramSettings }>('/api/remote/admin/telegram/settings', {
       headers: { ...authHeaders() },
@@ -438,7 +453,7 @@ export const api = {
   },
 
   pullBackupNow() {
-    return requestJson<{ ok: true; pulledAt: string; activeRefreshed: false }>('/api/remote/admin/backup/pull', {
+    return requestJson<{ ok: true; pulledAt: string; activeRefreshed: boolean }>('/api/remote/admin/backup/pull', {
       method: 'POST',
       headers: { ...authHeaders() },
       body: JSON.stringify({}),

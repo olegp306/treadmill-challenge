@@ -25,7 +25,6 @@ function formatBackupAbsolute(iso: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-/** Russian plural: n + " " + form */
 function ruPluralForm(n: number, one: string, few: string, many: string): string {
   const abs = Math.abs(n) % 100;
   const n1 = abs % 10;
@@ -35,7 +34,6 @@ function ruPluralForm(n: number, one: string, few: string, many: string): string
   return `${n} ${many}`;
 }
 
-/** Text inside parentheses, e.g. "2 минуты назад", "1 час назад". */
 function relativeTimeRu(iso: string | null | undefined): string {
   if (!iso) return '';
   const t = new Date(iso).getTime();
@@ -81,7 +79,7 @@ export function RemoteAdminShell() {
       setBackupStatus(st.backup);
       window.dispatchEvent(new CustomEvent('remote-backup-updated'));
     } catch {
-      // Status tab and Monitoring tab will show details; keep header stable.
+      // Monitoring tab shows mirror errors; keep the header stable.
     } finally {
       setPullBusy(false);
     }

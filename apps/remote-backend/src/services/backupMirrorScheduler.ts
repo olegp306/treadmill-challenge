@@ -4,9 +4,10 @@ import path from 'node:path';
 import { proxyLocalAdminJsonExport } from '../local/localClient.js';
 import { runtimeRootDir } from '../runtimePaths.js';
 import { remoteBackendVersion } from '../version.js';
-import { migrateLooseHistoryFilesToSubdir } from './activeBackupStore.js';
+import { migrateLooseHistoryFilesToSubdir, promoteHistoryFileToActive } from './activeBackupStore.js';
 import { backupDir } from './remoteBackupDir.js';
 import { remoteHistoryDir } from './remoteBackupPaths.js';
+import { readEffectiveRemoteBackupSettingsSync } from './remoteBackupSettings.js';
 
 export { backupDir } from './remoteBackupDir.js';
 
@@ -170,7 +171,7 @@ async function applyRetention(dir: string, keepCount: number): Promise<void> {
 }
 
 export type MirrorOnceResult =
-  | { ok: true; historyPath: string; lastBackupAt: string }
+  | { ok: true; historyPath: string; lastBackupAt: string; activeRefreshed: boolean }
   | { ok: false; error: string };
 
 /**
@@ -216,11 +217,23 @@ export async function runRemoteBackupMirrorOnce(log: Log): Promise<MirrorOnceRes
     await writeFile(p, outBody, 'utf8');
     const lastBackupAt = new Date().toISOString();
     await applyRetention(hist, keepCount);
+    const settings = readEffectiveRemoteBackupSettingsSync();
+    let activeRefreshed = false;
+    if (settings.autoActivateLeaderboard) {
+      await promoteHistoryFileToActive(p, 'local_refresh');
+      activeRefreshed = true;
+    }
     state.lastSuccessAt = lastBackupAt;
     state.lastError = null;
     state.latestFilePath = p;
-    log.info({ msg: 'remote_backup_mirrored', path: p, sha16: sha, elapsedMs: Date.now() - startedAt });
-    return { ok: true, historyPath: p, lastBackupAt };
+    log.info({
+      msg: 'remote_backup_mirrored',
+      path: p,
+      sha16: sha,
+      activeRefreshed,
+      elapsedMs: Date.now() - startedAt,
+    });
+    return { ok: true, historyPath: p, lastBackupAt, activeRefreshed };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     state.lastError = msg;

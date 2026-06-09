@@ -34,6 +34,7 @@ import {
 import { readPublicTelegramSettings, updateTelegramSettings } from '../telegram/telegramSettings.js';
 import { sendTelegramAlert } from '../telegram/telegramBot.js';
 import { remoteBackendVersion } from '../version.js';
+import { readPublicRemoteBackupSettings, updateRemoteBackupSettings } from '../services/remoteBackupSettings.js';
 
 const DEFAULT_REMOTE_ADMIN_PIN = '191181';
 const DISABLED_REMOTE_ADMIN_PINS = new Set(['5'.repeat(6)]);
@@ -226,6 +227,7 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
     const latestHistory = await readLatestHistoryBackupForDownload();
     const datedIso = await lastBackupAtFromDatedFiles();
     const lastBackupAt = latestHistory?.createdAt ?? mirror.lastSuccessAt ?? datedIso ?? null;
+    const settings = await readPublicRemoteBackupSettings();
     return reply.send({
       backup: {
         hasBackup: Boolean(latestHistory),
@@ -239,9 +241,30 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
         activeUpdatedAt: activeMeta?.activeUpdatedAt ?? null,
         activeSource: activeMeta?.source ?? null,
         activeEnvelopeCreatedAt: activeMeta?.envelopeCreatedAt ?? null,
+        autoActivateLeaderboard: settings.autoActivateLeaderboard,
+        autoActivateLeaderboardSource: settings.source.autoActivateLeaderboard,
         remoteBackendVersion: remoteBackendVersion(),
       },
     });
+  });
+
+  app.put('/api/remote/admin/backup/settings', { preHandler: requireRemoteAdmin }, async (request, reply) => {
+    const body = (request.body ?? {}) as { autoActivateLeaderboard?: unknown };
+    const settings = await updateRemoteBackupSettings({
+      autoActivateLeaderboard:
+        typeof body.autoActivateLeaderboard === 'boolean' ? body.autoActivateLeaderboard : undefined,
+    });
+    await writeAudit({
+      userId: null,
+      userEmail: null,
+      action: 'REMOTE_BACKUP_SETTINGS_UPDATED',
+      entityType: 'remote_backup_settings',
+      entityId: null,
+      ip: request.ip ?? null,
+      userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
+      metadata: { autoActivateLeaderboard: settings.autoActivateLeaderboard },
+    }).catch(() => undefined);
+    return reply.send({ settings });
   });
 
   app.post('/api/remote/admin/backup/pull', { preHandler: requireRemoteAdmin }, async (request, reply) => {
@@ -257,9 +280,9 @@ export async function registerRemoteAdminRoutes(app: FastifyInstance): Promise<v
       entityId: null,
       ip: request.ip ?? null,
       userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : null,
-      metadata: { pulledAt: r.lastBackupAt, historyPath: r.historyPath, activeRefreshed: false },
+      metadata: { pulledAt: r.lastBackupAt, historyPath: r.historyPath, activeRefreshed: r.activeRefreshed },
     }).catch(() => undefined);
-    return reply.send({ ok: true as const, pulledAt: r.lastBackupAt, activeRefreshed: false as const });
+    return reply.send({ ok: true as const, pulledAt: r.lastBackupAt, activeRefreshed: r.activeRefreshed });
   });
 
   // ===== Proxy + mirror APIs (remote admin only) =====

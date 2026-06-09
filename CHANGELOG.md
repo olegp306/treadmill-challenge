@@ -7,6 +7,25 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.5] - 2026-06-09
+
+### Added
+
+- **Remote backup → leaderboard auto-update:** fresh remote backups can now automatically become the active JSON for the public Remote Leaderboard.
+- **Remote Admin setting:** added a visible switch in `Бэкапирование системы` to enable or disable automatic Remote Leaderboard refresh from fresh backups.
+- **Remote backup settings API:** added persisted runtime settings for remote backup behavior, including audit logging for setting changes.
+
+### Changed
+
+- **Remote Admin navigation:** restored readable Russian labels in the Remote Admin header tabs and backup status header.
+- **Remote Leaderboard iframe readiness:** checked the public leaderboard URL headers for iframe embedding; the server does not send `X-Frame-Options` or `frame-ancestors` restrictions.
+
+### Fixed
+
+- **Remote backup mirror:** successful mirrored backups now refresh active leaderboard data when auto-update is enabled, with backend regression coverage.
+
+---
+
 ## [0.5.4] - 2026-05-31
 
 ### Fixed

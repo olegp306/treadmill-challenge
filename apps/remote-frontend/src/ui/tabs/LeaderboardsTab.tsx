@@ -11,7 +11,7 @@ function formatIso(iso: string | null | undefined): string {
 }
 
 function sourceLabelRu(s: 'local_refresh' | 'manual_import' | 'migrated_legacy' | null | undefined): string {
-  if (s === 'local_refresh') return 'из backup history';
+  if (s === 'local_refresh') return 'из свежего backup';
   if (s === 'manual_import') return 'ручной импорт JSON лидерборда';
   if (s === 'migrated_legacy') return 'миграция прежнего latest.json';
   return '—';
@@ -100,9 +100,7 @@ export function LeaderboardsTab() {
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
         <Typography sx={{ fontWeight: 900, mb: 1 }}>Лидерборды</Typography>
         <Typography sx={{ fontWeight: 800, mb: 1 }}>Активный JSON лидерборда</Typography>
-        <Typography sx={{ color: '#bbb', fontSize: 14 }}>
-          Источник: {sourceLabelRu(status?.activeSource)}
-        </Typography>
+        <Typography sx={{ color: '#bbb', fontSize: 14 }}>Источник: {sourceLabelRu(status?.activeSource)}</Typography>
         <Typography sx={{ color: '#bbb', fontSize: 14 }}>
           Данные JSON получены: {formatIso(status?.activeEnvelopeCreatedAt)}
         </Typography>
@@ -110,13 +108,20 @@ export function LeaderboardsTab() {
           Активирован на remote: {formatIso(status?.activeUpdatedAt)}
         </Typography>
         <Typography sx={{ color: '#777', fontSize: 12, mt: 0.5 }}>
-          Именно этот JSON кормит публичный leaderboard и список забегов ниже. Автоматические backup-обновления его не меняют.
+          Именно этот JSON кормит публичный remote leaderboard и список забегов ниже.
         </Typography>
         <Alert severity="info" sx={{ mt: 1.5, bgcolor: '#10233f', color: '#dbeafe' }}>
-          Лидерборды используют свой активный JSON. Он не связан с последним полученным backup и обновляется только вручную в этой вкладке.
+          {status?.autoActivateLeaderboard ?? true
+            ? 'Автообновление включено: каждый свежий backup автоматически становится активным JSON лидерборда.'
+            : 'Автообновление выключено: свежие backup сохраняются в history, а активный JSON меняется только ручным импортом.'}
         </Alert>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2 }}>
-          <Button variant="contained" disabled={busy != null || !status?.activeUpdatedAt} onClick={() => void downloadActiveJson()} sx={{ fontWeight: 900 }}>
+          <Button
+            variant="contained"
+            disabled={busy != null || !status?.activeUpdatedAt}
+            onClick={() => void downloadActiveJson()}
+            sx={{ fontWeight: 900 }}
+          >
             {busy === 'download' ? '...' : 'Скачать активный JSON'}
           </Button>
           <Button
