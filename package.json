@@ -1,6 +1,6 @@
 {
   "name": "treadmill-challenge",
-  "version": "0.5.12",
+  "version": "0.5.13",
   "private": true,
   "description": "Interactive treadmill challenge installation - monorepo",
   "workspaces": [
@@ -23,6 +23,7 @@
     "build:frontend": "npm run build -w apps/frontend",
     "build:remote-backend": "npm run build -w apps/remote-backend",
     "build:remote-frontend": "npm run build -w apps/remote-frontend",
+    "check:frontend-src-js": "node scripts/check-no-stray-frontend-js.mjs",
     "start:backend": "npm run start -w apps/backend",
     "start:remote-backend": "npm run start -w apps/remote-backend",
     "preview:frontend": "npm run preview -w apps/frontend",

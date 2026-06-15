@@ -484,7 +484,7 @@ export function LeaderboardExperience({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                opacity: canGoSearchUp ? 1 : 0.35,
+                                color: canGoSearchUp ? '#ffffff' : 'rgba(255,255,255,0.34)',
                               }}
                             >
                               <LbSearchChevronUp />
@@ -503,7 +503,7 @@ export function LeaderboardExperience({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                opacity: canGoSearchDown ? 1 : 0.35,
+                                color: canGoSearchDown ? ui.color.red : 'rgba(255,255,255,0.34)',
                               }}
                             >
                               <LbSearchChevronDown />
@@ -939,22 +939,23 @@ const styles: Record<string, CSSProperties> = {
     fontSynthesis: 'none',
   },
   searchInputWithSwitchButtons: {
-    paddingRight: w(112),
+    paddingRight: w(188),
   },
   searchSwitchButtonsInInput: {
     position: 'absolute',
-    right: w(12),
+    right: w(24),
     top: '50%',
     transform: 'translateY(-50%)',
     display: 'flex',
     flexDirection: 'row',
-    gap: 0,
+    alignItems: 'center',
+    gap: w(28),
     zIndex: 2,
   },
   searchSwitchBtnInInput: {
-    width: w(44),
-    height: h(36),
-    borderRadius: w(7),
+    width: w(76),
+    height: h(60),
+    borderRadius: w(10),
     border: 'none',
     background: 'transparent',
     color: '#fff',
@@ -965,8 +966,8 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'center',
   },
   searchSwitchIconImage: {
-    width: w(30),
-    height: h(16),
+    width: w(64),
+    height: h(40),
     display: 'block',
     objectFit: 'contain',
     pointerEvents: 'none',
@@ -1040,11 +1041,11 @@ const styles: Record<string, CSSProperties> = {
     position: 'absolute' as const,
     top: '50%',
     transform: 'translateY(calc(-50% - 10px))',
-    width: w(112),
-    height: w(112),
-    borderRadius: w(47),
+    width: w(86),
+    height: w(86),
+    borderRadius: '50%',
     border: 'none',
-    background: '#e6233a',
+    background: ui.color.red,
     color: '#fff',
     lineHeight: 1,
     cursor: 'pointer',
@@ -1053,18 +1054,18 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'center',
     zIndex: 6,
     boxSizing: 'border-box',
-    padding: `${h(18)} ${w(18)}`,
+    padding: 0,
     transition: 'transform 160ms ease, filter 160ms ease',
   },
   arrowBtnLeft: {
-    transform: 'translate(-10%, calc(-50% - 10px))',
+    transform: 'translate(-2%, calc(-50% - 10px))',
   },
   arrowBtnRight: {
-    transform: 'translate(10%, calc(-50% - 10px))',
+    transform: 'translate(2%, calc(-50% - 10px))',
   },
   arrowIconImageInner: {
-    width: '50%',
-    height: '50%',
+    width: '42%',
+    height: '42%',
     display: 'block',
     objectFit: 'contain',
     pointerEvents: 'none',
@@ -1288,9 +1289,9 @@ function LbCarouselArrow({ rotationDeg }: { rotationDeg: number }) {
     <span style={{ ...styles.arrowIconImageInner, display: 'flex', transform: `rotate(${rotationDeg}deg)` }}>
       <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
         <path
-          d="M9 6l6 6-6 6"
+          d="M8.5 5.5L15.5 12L8.5 18.5"
           stroke="#ffffff"
-          strokeWidth="2.2"
+          strokeWidth="2.4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -1303,9 +1304,9 @@ function LbSearchChevronUp() {
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <path
-        d="M6 14l6-6 6 6"
+        d="M5.5 15.5L12 8.5L18.5 15.5"
         stroke="currentColor"
-        strokeWidth="2.2"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -1317,9 +1318,9 @@ function LbSearchChevronDown() {
   return (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <path
-        d="M6 10l6 6 6-6"
+        d="M5.5 8.5L12 15.5L18.5 8.5"
         stroke="currentColor"
-        strokeWidth="2.2"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

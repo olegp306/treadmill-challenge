@@ -7,6 +7,28 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.13] - 2026-06-16
+
+### Local / iPad system
+
+- **Leaderboard arrows:** search navigation arrows in the waiting leaderboard are larger, spaced wider, and have a bigger touch target while staying inside the search field.
+- **Leaderboard carousel arrows:** score/category carousel arrows now use the updated round red visual style shared with the remote leaderboard.
+- **Build safety:** frontend builds now fail early if stray `.js/.jsx` files appear under `apps/frontend/src`, preventing dirty deploy workspaces from shadowing the intended TypeScript sources such as `runResultFormat.ts`.
+
+### Remote system
+
+- **Remote Leaderboard arrows:** public Remote Leaderboard uses the same larger search navigation arrows and updated carousel arrow styling.
+- **Remote build safety:** remote frontend build runs the same stray JavaScript source check before bundling shared local frontend code.
+- **Remote versions:** `remote-frontend` raised to `0.1.10`.
+
+### Verification
+
+- `npm run check:frontend-src-js`
+- `npm run build:frontend`
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.12] - 2026-06-15
 
 ### Remote system
