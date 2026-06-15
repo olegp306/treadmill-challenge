@@ -7,6 +7,25 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.9] - 2026-06-15
+
+### Local / iPad system
+
+- **Leaderboard search:** поиск в лидерборде ожидания теперь ищет по частичному совпадению уже от двух символов, а не только по полному ФИО.
+
+### Remote system
+
+- **Remote Leaderboard search:** публичный Remote Leaderboard использует тот же частичный поиск от двух символов по имени/фамилии, включая поиск по Enter и кнопке «Найти».
+- **Remote versions:** `remote-frontend` поднят до `0.1.8`.
+
+### Verification
+
+- `npx vitest run apps/frontend/src/features/leaderboard/leaderboardSearchInteraction.test.ts`
+- `npm run build:frontend`
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.8] - 2026-06-15
 
 ### Local / iPad system

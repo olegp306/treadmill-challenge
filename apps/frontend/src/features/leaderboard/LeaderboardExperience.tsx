@@ -16,6 +16,7 @@ import { useInactivityReset } from '../../hooks/useInactivityReset';
 import {
   LEADERBOARD_SEARCH_FEEDBACK_MS,
   LEADERBOARD_SEARCH_MIN_QUERY_LENGTH,
+  leaderboardNameMatchesQuery,
   shouldRunLeaderboardSearchOnKey,
 } from './leaderboardSearchInteraction';
 
@@ -85,26 +86,14 @@ export type LeaderboardExperienceProps = {
 
 type NameSearchMatch = { runTypeId: RunTypeId; sex: Gender; participantId: string; runId: string };
 
-/** Точное совпадение полной строки имени (после trim). */
-function normalizeFullName(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .join(' ');
-}
-
-function collectExactNameMatches(slides: SlideState[], needle: string): NameSearchMatch[] {
-  const t = normalizeFullName(needle);
-  if (t.length < 3) return [];
+/** Частичный поиск по фрагментам имени участника во всех слайдах лидерборда. */
+function collectNameMatches(slides: SlideState[], needle: string): NameSearchMatch[] {
+  if (needle.trim().length < LEADERBOARD_SEARCH_MIN_QUERY_LENGTH) return [];
   const out: NameSearchMatch[] = [];
   CAROUSEL_ORDER.forEach((scope, slideIdx) => {
     const entries = slides[slideIdx]?.entries ?? [];
     for (const e of entries) {
-      const participantNameNormalized = normalizeFullName(e.participantName);
-      const participantNameReversed = participantNameNormalized.split(' ').reverse().join(' ');
-      if (participantNameNormalized === t || participantNameReversed === t) {
+      if (leaderboardNameMatchesQuery(e.participantName, needle)) {
         out.push({
           runTypeId: scope.runTypeId,
           sex: scope.sex,
@@ -336,7 +325,7 @@ export function LeaderboardExperience({
   const runNameSearch = useCallback(() => {
     const q = searchInputDraft.trim();
     if (q.length < LEADERBOARD_SEARCH_MIN_QUERY_LENGTH) return;
-    const matches = collectExactNameMatches(slides, q);
+    const matches = collectNameMatches(slides, q);
     setNameSearchMatches(matches);
     if (matches.length === 0) {
       setNameSearchMatchIndex(0);
