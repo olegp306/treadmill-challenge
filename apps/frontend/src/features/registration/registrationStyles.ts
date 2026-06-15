@@ -617,7 +617,7 @@ export const reg: Record<string, CSSProperties> = {
   stepBodyNoScroll: {
     overflow: 'hidden',
     WebkitOverflowScrolling: 'auto' as const,
-    overscrollBehavior: 'contain' as const,
+    overscrollBehavior: 'none' as const,
   },
   /** Tall steps: single centered column (age unanswered, gender). */
   stepBodyTall: {
@@ -686,6 +686,18 @@ export const reg: Record<string, CSSProperties> = {
     transform: 'translateY(0)',
   },
   nameStepContentKeyboardOpen: {
+    transform: 'translateY(-9%)',
+    gap: h(16),
+  },
+  phoneStepContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: h(24),
+    width: '100%',
+    transition: 'transform 220ms ease, gap 220ms ease',
+    transform: 'translateY(0)',
+  },
+  phoneStepContentKeyboardOpen: {
     transform: 'translateY(-9%)',
     gap: h(16),
   },

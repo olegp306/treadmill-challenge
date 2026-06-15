@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RegistrationFormData } from '../types';
 import { focusInputForMobileKeyboard } from '../iosInputFocus';
 import { logEvent } from '../../../logging/logEvent';
@@ -7,6 +7,7 @@ import { PrimaryButton, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 import { InputField } from '../../../ui/components/InputField';
+import { useKeyboardOpenWhileFocused } from '../useKeyboardOpenWhileFocused';
 
 type Props = {
   form: RegistrationFormData;
@@ -28,7 +29,7 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
   const [firstEdited, setFirstEdited] = useState(false);
   const [lastEdited, setLastEdited] = useState(false);
   const [nameFieldFocused, setNameFieldFocused] = useState(false);
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const keyboardOpen = useKeyboardOpenWhileFocused(nameFieldFocused);
 
   const firstResult = useMemo(() => validateNamePart(form.firstName, 'first'), [form.firstName]);
   const lastResult = useMemo(() => validateNamePart(form.lastName, 'last'), [form.lastName]);
@@ -62,27 +63,6 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
     };
   }, []);
 
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const recompute = () => {
-      // iPad keyboard typically reduces visual viewport by >100px.
-      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      setKeyboardOpen(nameFieldFocused && inset > 170);
-    };
-
-    recompute();
-    vv.addEventListener('resize', recompute);
-    vv.addEventListener('scroll', recompute);
-    window.addEventListener('resize', recompute, { passive: true });
-    return () => {
-      vv.removeEventListener('resize', recompute);
-      vv.removeEventListener('scroll', recompute);
-      window.removeEventListener('resize', recompute);
-    };
-  }, [nameFieldFocused]);
-
   const onAnyFieldFocus = () => {
     setNameFieldFocused(true);
   };
@@ -95,7 +75,6 @@ export function NameStep({ form, onChange, onNext, onBack, stepError, fieldError
         active === lastRef.current;
       if (!stillOnName) {
         setNameFieldFocused(false);
-        setKeyboardOpen(false);
       }
     }, 0);
   };

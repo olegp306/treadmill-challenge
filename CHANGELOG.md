@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.11] - 2026-06-15
+
+### Local / iPad system
+
+- **Registration keyboard layout:** экраны ввода имени/фамилии и номера телефона теперь используют общий iPad-aware расчёт открытой клавиатуры и блокируют внутреннюю прокрутку коротких форм, чтобы на iPad 13 форма поджималась вверх без лишнего скроллинга.
+
+### Verification
+
+- `npm run build:frontend`
+
+---
+
 ## [0.5.10] - 2026-06-15
 
 ### Local / iPad system

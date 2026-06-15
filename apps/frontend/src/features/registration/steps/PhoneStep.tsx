@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes, MutableRefObject, Ref } from 'react';
-import { useId, useLayoutEffect, useMemo, useRef } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useInput } from 'input-format/react-hook';
 import type { RegistrationFormData } from '../types';
 import { scheduleWizardStepPhoneFocus } from '../iosInputFocus';
@@ -11,6 +11,7 @@ import { PrimaryButton, StepBody } from '../components';
 import { WizardStepShell } from '../WizardStepShell';
 import { reg } from '../registrationStyles';
 import { InputField } from '../../../ui/components/InputField';
+import { useKeyboardOpenWhileFocused } from '../useKeyboardOpenWhileFocused';
 
 type Props = {
   form: RegistrationFormData;
@@ -28,6 +29,8 @@ type Props = {
 export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError, fieldError }: Props) {
   const idPhone = useId();
   const phoneInputRef = useRef<HTMLInputElement | null>(null);
+  const [phoneFocused, setPhoneFocused] = useState(false);
+  const keyboardOpen = useKeyboardOpenWhileFocused(phoneFocused);
 
   const digitsValue = useMemo(() => digitsOnly(form.phone), [form.phone]);
   const filled = useMemo(() => validatePhoneForSubmit(form.phone).ok, [form.phone]);
@@ -60,7 +63,13 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
 
   return (
     <WizardStepShell variant="short" onBack={onBack} aria-label="Ввод номера телефона">
-      <StepBody variant="short">
+      <StepBody variant="short" lockScroll>
+        <div
+          style={{
+            ...reg.phoneStepContent,
+            ...(keyboardOpen ? reg.phoneStepContentKeyboardOpen : {}),
+          }}
+        >
         <h2 style={{ ...reg.ageFigmaQuestion, ...reg.stepTitle }}>
           Введите свой номер 
         </h2>
@@ -93,8 +102,17 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
             }}
             /** Дублируем для десктопов; на iOS основной показ клавиатуры — scheduleWizardStepPhoneFocus. */
             autoFocus
+            onFocus={(e) => {
+              (inputProps as InputHTMLAttributes<HTMLInputElement>).onFocus?.(e);
+              setPhoneFocused(true);
+            }}
             onBlur={(e) => {
               (inputProps as InputHTMLAttributes<HTMLInputElement>).onBlur?.(e);
+              window.setTimeout(() => {
+                if (document.activeElement !== phoneInputRef.current) {
+                  setPhoneFocused(false);
+                }
+              }, 0);
               const r = validatePhoneForSubmit(form.phone);
               if (!r.ok) return;
               logEvent(
@@ -116,6 +134,7 @@ export function PhoneStep({ form, onChange: patchForm, onNext, onBack, stepError
           >
             Далее
           </PrimaryButton>
+        </div>
         </div>
       </StepBody>
     </WizardStepShell>
