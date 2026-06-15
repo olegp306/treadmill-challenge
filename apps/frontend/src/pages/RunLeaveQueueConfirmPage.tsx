@@ -9,11 +9,12 @@ import { rq } from '../features/run-queue/runQueueScreensStyles';
 import { formatParticipantDisplayName } from '../features/run-queue/participantDisplayName';
 
 export type RunLeaveQueueLocationState = {
-  runSessionId: string;
+  mode?: 'preStart';
+  runSessionId?: string;
   participantId: string;
   participantSex: 'male' | 'female';
   runTypeId: RunTypeId;
-  position: number;
+  position?: number;
   /** Если задано, «Нет» возвращает сюда вместо `/run/queue` (напр. экран «дорожка занята» до входа в очередь). */
   cancelNavigate?: { to: string; state?: Record<string, unknown> };
 };
@@ -22,6 +23,7 @@ export default function RunLeaveQueueConfirmPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as RunLeaveQueueLocationState | null;
+  const isPreStart = state?.mode === 'preStart';
 
   const runSessionId = state?.runSessionId ?? '';
   const participantId = state?.participantId ?? '';
@@ -30,7 +32,7 @@ export default function RunLeaveQueueConfirmPage() {
   const [leaveError, setLeaveError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!runSessionId || !participantId) {
+    if ((!runSessionId && !isPreStart) || !participantId) {
       navigate('/', { replace: true });
       return;
     }
@@ -48,10 +50,10 @@ export default function RunLeaveQueueConfirmPage() {
     return () => {
       cancelled = true;
     };
-  }, [runSessionId, participantId, navigate]);
+  }, [runSessionId, isPreStart, participantId, navigate]);
 
   useEffect(() => {
-    if (!runSessionId || !participantId) return;
+    if ((!runSessionId && !isPreStart) || !participantId) return;
     logEvent(
       'leave_queue_confirm_enter',
       {},
@@ -61,10 +63,10 @@ export default function RunLeaveQueueConfirmPage() {
         readableMessage: 'Пользователь на экране подтверждения выхода из очереди',
       }
     );
-  }, [runSessionId, participantId]);
+  }, [runSessionId, isPreStart, participantId]);
 
   const handleConfirmLeave = async () => {
-    if (!runSessionId || !participantId) return;
+    if ((!runSessionId && !isPreStart) || !participantId) return;
     logEvent(
       'button_click_leave_queue',
       { runSessionId },
@@ -74,6 +76,10 @@ export default function RunLeaveQueueConfirmPage() {
         readableMessage: 'Пользователь подтвердил выход из очереди («Сойти с забега»)',
       }
     );
+    if (isPreStart) {
+      navigate('/', { replace: true });
+      return;
+    }
     setLeaveError(null);
     setLoading(true);
     try {
@@ -96,7 +102,7 @@ export default function RunLeaveQueueConfirmPage() {
     }
   };
 
-  if (!runSessionId || !participantId || !state) {
+  if ((!runSessionId && !isPreStart) || !participantId || !state) {
     return null;
   }
 
@@ -112,7 +118,7 @@ export default function RunLeaveQueueConfirmPage() {
         participantId,
         runSessionId,
         runTypeId: state.runTypeId,
-        position: state.position,
+        position: state.position ?? 1,
         participantSex: state.participantSex,
       },
     });

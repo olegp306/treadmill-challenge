@@ -7,6 +7,26 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.14] - 2026-06-16
+
+### Local / iPad system
+
+- **Ready-to-start decline flow:** on the "Готовы на старт?" screen the "Нет" button now opens the existing leave-run confirmation screen instead of immediately returning home; pressing "Нет" on the confirmation returns back to the ready screen.
+- **Queue full copy style:** the secondary text on the "Очередь переполнена" screen now uses the same Proxima Nova description style as the run description on the "Привет, Алексей!" run selection screen.
+
+### Remote system
+
+- No functional remote app changes in this release.
+
+### Verification
+
+- `npm run check:frontend-src-js`
+- `npm run build:frontend`
+- `npm run build:remote-frontend`
+- `npm run build:remote-backend`
+
+---
+
 ## [0.5.13] - 2026-06-16
 
 ### Local / iPad system

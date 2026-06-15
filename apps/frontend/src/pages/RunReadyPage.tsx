@@ -65,7 +65,7 @@ export default function RunReadyPage() {
     );
   }, [participantId, runTypeId, navigate]);
 
-  const goHome = () => {
+  const goLeaveConfirm = () => {
     if (!participantId || runTypeId === null) return;
     logEvent(
       'run_ready_declined',
@@ -75,7 +75,25 @@ export default function RunReadyPage() {
         readableMessage: 'Пользователь отказался начинать забег на экране готовности',
       }
     );
-    navigate('/', { replace: true });
+    const readyState: RunReadyLocationState = {
+      participantId,
+      runTypeId,
+      participantSex,
+      participantFirstName: state?.participantFirstName,
+      participantLastName: state?.participantLastName,
+    };
+    navigate('/run/leave-queue', {
+      state: {
+        mode: 'preStart',
+        participantId,
+        participantSex,
+        runTypeId,
+        cancelNavigate: {
+          to: '/run/ready',
+          state: readyState,
+        },
+      },
+    });
   };
 
   const startWhenReady = async () => {
@@ -167,7 +185,7 @@ export default function RunReadyPage() {
             </Sheet>
           </div>
           <FooterActionsRow style={{ ...rq.footerRow, marginTop: h(24) }} maxWidth={w(2120)}>
-            <button type="button" style={rq.readyNoButton} onClick={goHome} disabled={loading}>
+            <button type="button" style={rq.readyNoButton} onClick={goLeaveConfirm} disabled={loading}>
               Нет
             </button>
             <button type="button" style={rq.readyGoButton} onClick={startWhenReady} disabled={loading}>
