@@ -22,6 +22,11 @@ type HealthStatusPayload = {
     lastTdSyncOk?: string | null;
     lastTdSyncError?: string | null;
     healthFile?: Record<string, unknown> | null;
+    healthFilePath?: string | null;
+    healthFilePathSource?: string | null;
+    healthFileUpdatedAt?: string | null;
+    healthFileSizeBytes?: number | null;
+    healthFileError?: string | null;
     errors?: string[] | null;
   };
   system?: {
@@ -406,7 +411,7 @@ export function MonitoringTab() {
   }, [loadActiveMonitoring, loadBackupStatus]);
 
   const tdOnline = (() => {
-    const last = health?.td?.lastTdEventAt;
+    const last = health?.td?.healthFileUpdatedAt ?? health?.td?.lastTdEventAt;
     if (!last) return null;
     const dt = new Date(last).getTime();
     if (!Number.isFinite(dt)) return null;
@@ -483,12 +488,29 @@ export function MonitoringTab() {
           <StatusChip ok={tdOnline} okLabel="online" badLabel="offline" />
         </Box>
         <Typography sx={{ color: '#bbb' }}>lastSeen: {formatIso(health?.td?.lastTdEventAt)}</Typography>
+        <Typography sx={{ color: '#bbb' }}>TDHealth.json path: {health?.td?.healthFilePath ?? '—'}</Typography>
+        <Typography sx={{ color: '#bbb' }}>TDHealth.json source: {health?.td?.healthFilePathSource ?? '—'}</Typography>
+        <Typography sx={{ color: '#bbb' }}>TDHealth.json updated: {formatIso(health?.td?.healthFileUpdatedAt)}</Typography>
+        <Typography sx={{ color: '#bbb' }}>TDHealth.json size: {health?.td?.healthFileSizeBytes ?? '—'}</Typography>
+        {health?.td?.healthFileError ? (
+          <Typography sx={{ color: '#f2b8b5' }}>TDHealth.json error: {health.td.healthFileError}</Typography>
+        ) : null}
         <Typography sx={{ color: '#bbb' }}>lastTdSyncOk: {formatIso(health?.td?.lastTdSyncOk)}</Typography>
         <Typography sx={{ color: '#bbb' }}>lastTdSyncError: {formatIso(health?.td?.lastTdSyncError)}</Typography>
         <Typography sx={{ color: '#bbb' }}>healthFile: {health?.td?.healthFile ? 'present' : 'missing'}</Typography>
         {tdHealthErrors.length ? (
           <Typography sx={{ color: '#f2b8b5', mt: 1 }}>healthFile errors: {tdHealthErrors.join(', ')}</Typography>
         ) : null}
+      </Paper>
+
+      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
+        <Typography sx={{ fontWeight: 900, mb: 1 }}>Последний JSON состояния магазина (TDHealth.json)</Typography>
+        <Typography sx={{ color: '#777', fontSize: 12, mb: 1 }}>
+          Это JSON, который локальный backend магазина читает из runtime/health и отдает в remote monitoring.
+        </Typography>
+        <Typography sx={{ color: '#bbb', fontSize: 13, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {health?.td?.healthFile ? safeJsonPreview(health.td.healthFile, 12000) : 'Нет данных TDHealth.json'}
+        </Typography>
       </Paper>
 
       <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>

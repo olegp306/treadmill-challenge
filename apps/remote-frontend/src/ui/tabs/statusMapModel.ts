@@ -20,6 +20,11 @@ export type HealthStatusPayload = {
     lastTdSyncOk?: string | null;
     lastTdSyncError?: string | null;
     healthFile?: Record<string, unknown> | null;
+    healthFilePath?: string | null;
+    healthFilePathSource?: string | null;
+    healthFileUpdatedAt?: string | null;
+    healthFileSizeBytes?: number | null;
+    healthFileError?: string | null;
     errors?: string[] | null;
   };
   system?: {
@@ -142,17 +147,156 @@ function extractHealthFileNumber(healthFile: Record<string, unknown> | null | un
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+function extractHealthFileNumberAny(
+  healthFile: Record<string, unknown> | null | undefined,
+  keys: string[]
+): number | null {
+  for (const key of keys) {
+    const value = extractHealthFileNumber(healthFile, key);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+function extractHealthFileBooleanAny(
+  healthFile: Record<string, unknown> | null | undefined,
+  keys: string[]
+): boolean | null {
+  for (const key of keys) {
+    const value = healthFile?.[key];
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') {
+      if (value === 1) return true;
+      if (value === 0) return false;
+    }
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (['true', 'ok', 'online', 'connected', 'running', 'yes', '1'].includes(normalized)) return true;
+      if (['false', 'error', 'offline', 'disconnected', 'stopped', 'no', '0'].includes(normalized)) return false;
+    }
+  }
+  return null;
+}
+
+function statusFromOptionalBoolean(value: boolean | null): StatusSeverity {
+  if (value == null) return 'unknown';
+  return value ? 'ok' : 'critical';
+}
+
+function statusFromFps(value: number | null): StatusSeverity {
+  if (value == null) return 'unknown';
+  if (value < 30) return 'critical';
+  if (value < 60) return 'warning';
+  return 'ok';
+}
+
+function statusFromTemperature(value: number | null): StatusSeverity {
+  if (value == null) return 'unknown';
+  if (value >= 110) return 'critical';
+  if (value >= 90) return 'warning';
+  return 'ok';
+}
+
+function worstKnownStatus(statuses: StatusSeverity[]): StatusSeverity {
+  const known = statuses.filter((s) => s !== 'unknown');
+  return known.length ? worstStatus(known) : 'unknown';
+}
+
+function formatOptionalBoolean(value: boolean | null, okLabel = 'online', badLabel = 'offline'): string {
+  if (value == null) return 'нет данных';
+  return value ? okLabel : badLabel;
+}
+
+function formatPct(value: number | null | undefined): string {
+  return value == null ? 'нет данных' : `${value}%`;
+}
+
+function formatGb(value: number | null | undefined): string {
+  return value == null ? 'нет данных' : `${value} GB`;
+}
+
+function formatTemp(value: number | null): string {
+  return value == null ? '—' : `${value}°C`;
+}
+
+function formatTemperatureSummary(healthFile: Record<string, unknown> | null | undefined): string {
+  const cpu = extractHealthFileNumberAny(healthFile, ['cpuTemp', 'cpuTemperature', 'cpuTemperatureC', 'cpu_temp']);
+  const gpu = extractHealthFileNumberAny(healthFile, ['gpuTemp', 'gpuTemperature', 'gpuTemperatureC', 'gpu_temp']);
+  const ram = extractHealthFileNumberAny(healthFile, ['ramTemp', 'memoryTemp', 'ramTemperature', 'ram_temp']);
+  const ssd = extractHealthFileNumberAny(healthFile, ['ssdTemp', 'diskTemp', 'ssdTemperature', 'ssd_temp']);
+  if ([cpu, gpu, ram, ssd].every((v) => v == null)) return 'нет данных';
+  return `CPU ${formatTemp(cpu)} / GPU ${formatTemp(gpu)} / RAM ${formatTemp(ram)} / SSD ${formatTemp(ssd)}`;
+}
+
+function statusFromTemperatures(healthFile: Record<string, unknown> | null | undefined): StatusSeverity {
+  const temps = [
+    extractHealthFileNumberAny(healthFile, ['cpuTemp', 'cpuTemperature', 'cpuTemperatureC', 'cpu_temp']),
+    extractHealthFileNumberAny(healthFile, ['gpuTemp', 'gpuTemperature', 'gpuTemperatureC', 'gpu_temp']),
+    extractHealthFileNumberAny(healthFile, ['ramTemp', 'memoryTemp', 'ramTemperature', 'ram_temp']),
+    extractHealthFileNumberAny(healthFile, ['ssdTemp', 'diskTemp', 'ssdTemperature', 'ssd_temp']),
+  ];
+  return worstKnownStatus(temps.map(statusFromTemperature));
+}
+
 export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapModel {
   const nowMs = input.nowMs ?? Date.now();
   const health = input.health;
   const backup = input.backupStatus;
   const system = input.systemStatus;
-  const tdRecent = isRecent(health?.td?.lastTdEventAt, nowMs, 120_000);
-  const tdStatus = tdRecent == null ? 'unknown' : tdRecent ? 'ok' : 'critical';
   const internetStatus = statusFromBoolean(health?.system?.internetOk);
   const backendStatus = statusFromBoolean(health?.backendOnline);
   const remoteStoreStatus = statusFromBoolean(system?.local.online);
   const ipadStatus = statusFromBoolean(health?.ipad?.online);
+  const healthFile = health?.td?.healthFile;
+  const tdRecent = isRecent(health?.td?.lastTdEventAt, nowMs, 120_000);
+  const tdHealthFileRecent = isRecent(health?.td?.healthFileUpdatedAt, nowMs, 120_000);
+  const tdSignalStatus = health?.td?.healthFileError
+    ? 'critical'
+    : tdHealthFileRecent != null
+      ? tdHealthFileRecent
+        ? 'ok'
+        : 'critical'
+      : tdRecent == null
+        ? 'unknown'
+        : tdRecent
+          ? 'ok'
+          : 'critical';
+  const tdFps = extractHealthFileNumberAny(healthFile, ['fps', 'tdFps', 'touchDesignerFps']);
+  const fpsStatus = statusFromFps(tdFps);
+  const treadmillOnline = extractHealthFileBooleanAny(healthFile, [
+    'treadmillOnline',
+    'treadmillConnected',
+    'treadmillAvailable',
+    'trackOnline',
+  ]);
+  const screenOnline = extractHealthFileBooleanAny(healthFile, [
+    'screenOnline',
+    'displayOnline',
+    'outputAvailable',
+    'bigScreenOnline',
+    'screenConnected',
+  ]);
+  const tdAppRunning = extractHealthFileBooleanAny(healthFile, ['appRunning', 'tdRunning', 'touchDesignerRunning']);
+  const tdProjectLoaded = extractHealthFileBooleanAny(healthFile, ['projectLoaded', 'projectOpen', 'toeLoaded']);
+  const tdBackendReachable = extractHealthFileBooleanAny(healthFile, [
+    'backendReachable',
+    'localBackendReachable',
+    'localServerOnline',
+  ]);
+  const landingReachable = extractHealthFileBooleanAny(healthFile, ['landingReachable', 'remoteReachable', 'leaderboardReachable']);
+  const powerOk = extractHealthFileBooleanAny(healthFile, ['powerOk', 'hasPower', 'powerOnline', 'upsOnline']);
+  const temperatureStatus = statusFromTemperatures(healthFile);
+  const tdStatus = worstKnownStatus([
+    tdSignalStatus,
+    fpsStatus,
+    statusFromOptionalBoolean(treadmillOnline),
+    statusFromOptionalBoolean(screenOnline),
+    statusFromOptionalBoolean(tdAppRunning),
+    statusFromOptionalBoolean(tdProjectLoaded),
+    statusFromOptionalBoolean(tdBackendReachable),
+    statusFromOptionalBoolean(powerOk),
+    temperatureStatus,
+  ]);
   const backupStatus: StatusSeverity = backup?.lastError
     ? 'critical'
     : backup?.hasBackup || backup?.activeUpdatedAt
@@ -164,17 +308,36 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
   const connectionStatus = worstStatus([remoteStoreStatus, internetStatus]);
   const hostingStatus = worstStatus([leaderboardStatus, backupStatus, alertsStatus]);
   const overallStatus = worstStatus([storeStatus, connectionStatus, hostingStatus]);
-  const tdFps = extractHealthFileNumber(health?.td?.healthFile, 'fps');
+  const pcCpu = health?.system?.cpuPct ?? extractHealthFileNumberAny(healthFile, ['cpu', 'cpuPct', 'cpuLoad']);
+  const pcRam = health?.system?.ramPct ?? extractHealthFileNumberAny(healthFile, ['ram', 'ramPct', 'memoryPct']);
+  const pcDisk = health?.system?.diskFreeGb ?? extractHealthFileNumberAny(healthFile, ['diskFreeGb', 'ssdFreeGb']);
+  const tdJsonValue = health?.td?.healthFileError
+    ? health.td.healthFileError
+    : health?.td?.healthFileUpdatedAt
+      ? formatAgo(health.td.healthFileUpdatedAt, nowMs)
+      : 'нет данных';
 
   const store: StatusMapNode = {
     title: 'Магазин',
     status: storeStatus,
     badge: storeStatus === 'ok' ? 'online' : storeStatus === 'critical' ? 'problem' : 'check',
     metrics: [
-      { label: 'Дорожка / экран', value: tdStatus === 'ok' ? (tdFps ? `${tdFps} fps` : 'работает') : tdStatus === 'critical' ? 'нет сигнала' : 'нет данных' },
+      { label: 'Дорожка', value: formatOptionalBoolean(treadmillOnline, 'готова', 'нет связи') },
+      {
+        label: 'Экран / TouchDesigner',
+        value: `${formatOptionalBoolean(screenOnline, 'есть сигнал', 'нет сигнала')}${tdFps != null ? `, ${tdFps} fps` : ''}`,
+      },
+      { label: 'TDHealth.json', value: tdJsonValue },
+      { label: 'TouchDesigner app', value: formatOptionalBoolean(tdAppRunning, 'запущен', 'не запущен') },
+      { label: 'TD project', value: formatOptionalBoolean(tdProjectLoaded, 'загружен', 'не загружен') },
       { label: 'Локальный сервер', value: backendStatus === 'ok' ? 'online' : backendStatus === 'critical' ? 'offline' : 'нет данных' },
+      { label: 'TD -> backend', value: formatOptionalBoolean(tdBackendReachable, 'connected', 'нет связи') },
       { label: 'Remote -> магазин', value: remoteStoreStatus === 'ok' ? 'connected' : remoteStoreStatus === 'critical' ? 'offline' : 'нет данных' },
       { label: 'Интернет магазина', value: internetStatus === 'ok' ? 'доступен' : internetStatus === 'critical' ? 'нет связи' : 'нет данных' },
+      { label: 'Backend -> landing', value: formatOptionalBoolean(landingReachable, 'connected', 'нет связи') },
+      { label: 'Питание', value: formatOptionalBoolean(powerOk, 'есть', 'нет питания') },
+      { label: 'CPU / RAM / disk', value: `${formatPct(pcCpu)} / ${formatPct(pcRam)} / ${formatGb(pcDisk)}` },
+      { label: 'Температуры', value: formatTemperatureSummary(healthFile) },
       { label: 'Последний забег', value: formatTime(health?.runs?.lastSuccessfulRunAt) },
       { label: 'Последнее касание', value: formatAgo(health?.ipad?.lastHeartbeatAt ?? health?.timestamp, nowMs) },
     ],

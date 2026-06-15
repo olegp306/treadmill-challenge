@@ -2,6 +2,7 @@ import { useLayoutEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { WizardBlockedNotice } from '../features/registration/components/WizardBlockedNotice';
 import { RegistrationLayout } from '../features/registration/RegistrationLayout';
+import { reg } from '../features/registration/registrationStyles';
 
 type QueueFullLocationState = {
   fromMainParticipateQueueFull?: boolean;
@@ -31,6 +32,7 @@ export default function QueueFullPage() {
           'Очередь переполнена,',
           'дождитесь, когда текущий участник финиширует и повторите попытку',
         ]}
+        secondaryLineStyle={reg.queueFullBlockedSubtext}
         onBack={() => {
           void navigate('/', { replace: true });
         }}

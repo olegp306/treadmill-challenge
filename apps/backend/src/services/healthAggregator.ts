@@ -37,6 +37,14 @@ function resolvePathValue(value: string, cwd: string): string {
   return path.isAbsolute(value) ? value : path.resolve(cwd, value);
 }
 
+function defaultRuntimeRoot(cwd: string): string {
+  const normalized = path.normalize(cwd);
+  if (path.basename(normalized) === 'backend' && path.basename(path.dirname(normalized)) === 'apps') {
+    return path.resolve(normalized, '..', '..');
+  }
+  return normalized;
+}
+
 export function resolveTdHealthFilePathFromSources(input: {
   adminSetting?: string | null;
   envValue?: string | null;
@@ -64,7 +72,7 @@ export function resolveTdHealthFilePathFromSources(input: {
   }
 
   return {
-    path: path.resolve(cwd, DEFAULT_TD_HEALTH_FILE_PATH),
+    path: path.resolve(defaultRuntimeRoot(cwd), DEFAULT_TD_HEALTH_FILE_PATH),
     source: 'default',
     configuredValue: null,
     cwd,
@@ -236,6 +244,11 @@ export type HealthStatusPayload = {
     lastTdSyncOk: string | null;
     lastTdSyncError: string | null;
     healthFile: Record<string, unknown> | null;
+    healthFilePath: string | null;
+    healthFilePathSource: TdHealthFilePathSource;
+    healthFileUpdatedAt: string | null;
+    healthFileSizeBytes: number | null;
+    healthFileError: string | null;
   };
   system: {
     cpuPct: number | null;
@@ -331,7 +344,11 @@ export async function collectHealthStatusPayload(now = new Date()): Promise<Heal
   const ramPct = readRamPct();
   const uptimeSec = Number.isFinite(process.uptime()) ? Math.floor(process.uptime()) : null;
 
-  const tdHealthFile = await readTdHealthFile(resolveTdHealthFilePath().path);
+  const tdHealthResolution = resolveTdHealthFilePath();
+  const [tdHealthFile, tdHealthDiagnostics] = await Promise.all([
+    readTdHealthFile(tdHealthResolution.path),
+    readTdHealthDiagnosticsForPath(tdHealthResolution),
+  ]);
 
   const warnings: string[] = [];
   const errors: string[] = [];
@@ -344,6 +361,11 @@ export async function collectHealthStatusPayload(now = new Date()): Promise<Heal
   }
   if (lastTdSyncError) {
     errors.push('td_last_sync_error_present');
+  }
+  if (!tdHealthDiagnostics.exists) {
+    warnings.push('td_health_file_missing');
+  } else if (!tdHealthDiagnostics.parseOk) {
+    warnings.push('td_health_file_parse_error');
   }
   if (cpuPct != null && cpuPct > 85) warnings.push('high_cpu');
   if (ramPct != null && ramPct > 85) warnings.push('high_ram');
@@ -372,6 +394,11 @@ export async function collectHealthStatusPayload(now = new Date()): Promise<Heal
       lastTdSyncOk,
       lastTdSyncError,
       healthFile: tdHealthFile,
+      healthFilePath: tdHealthDiagnostics.path,
+      healthFilePathSource: tdHealthDiagnostics.source,
+      healthFileUpdatedAt: tdHealthDiagnostics.mtime,
+      healthFileSizeBytes: tdHealthDiagnostics.sizeBytes,
+      healthFileError: tdHealthDiagnostics.error,
     },
     queue: {
       runningCount,

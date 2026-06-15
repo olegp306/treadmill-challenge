@@ -517,6 +517,12 @@ export const reg: Record<string, CSSProperties> = {
     textTransform: 'none',
     color: 'rgba(255,255,255,0.92)',
   },
+  queueFullBlockedSubtext: {
+    fontSize: w(28.125),
+    lineHeight: 1.35,
+    textTransform: 'none',
+    color: 'rgba(255,255,255,0.92)',
+  },
   ageFigmaButtonRow: {
     display: 'flex',
     flexDirection: 'row',

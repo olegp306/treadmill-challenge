@@ -7,6 +7,36 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.6] - 2026-06-15
+
+### Remote system
+
+- **Remote Admin monitoring:** верхняя карта состояния теперь подробнее отражает магазин: дорожка, экран/TouchDesigner, `TDHealth.json`, TouchDesigner app/project, локальный backend, TD -> backend, Remote -> магазин, интернет, Backend -> landing, питание, CPU/RAM/disk и температуры CPU/GPU/RAM/SSD.
+- **TDHealth.json visibility:** во вкладке Monitoring добавлен блок с последним JSON состояния магазина, который local backend читает из `runtime/health/TDHealth.json` и отдает в remote monitoring.
+- **Remote health diagnostics:** remote status теперь получает из local backend путь к `TDHealth.json`, source пути, `mtime`, размер файла и ошибку чтения/парсинга.
+- **Remote Leaderboard search:** поиск в публичном Remote Leaderboard запускается по Enter и по кнопке «Найти» уже с двух символов.
+- **Remote versions:** `remote-backend` поднят до `0.1.6`, `remote-frontend` поднят до `0.1.5`.
+
+### Local / iPad system
+
+- **TDHealth.json default path:** local backend при запуске из `apps/backend` теперь по умолчанию ищет файл в корневом `runtime/health/TDHealth.json`, как в продовой структуре проекта.
+- **Health payload:** `/api/health/status` теперь возвращает метаданные `TDHealth.json` и добавляет warnings, если файл отсутствует или не парсится.
+- **Leaderboard search:** leaderboard ожидания, как и remote leaderboard, ищет уже от двух символов.
+- **Run selection screen:** приветствие показывает только имя участника белым цветом; описание формата забега переведено на Proxima Nova и увеличено на 25%.
+- **Queue full screen:** вторичная строка «дождитесь, когда текущий участник финиширует и повторите попытку» стала в два раза меньше.
+
+### Verification
+
+- `npm run build:backend`
+- `npm run build:remote-backend`
+- `npm run build:remote-frontend`
+- `npm run build:frontend`
+- `npx tsx --test src/tdHealthDiagnostics.test.ts`
+- `vitest statusMapModel.test.ts`
+- `vitest leaderboardSearchInteraction.test.ts`
+
+---
+
 ## [0.5.5] - 2026-06-09
 
 ### Added

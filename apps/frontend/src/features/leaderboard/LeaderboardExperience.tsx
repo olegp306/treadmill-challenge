@@ -15,6 +15,7 @@ import { formatRunResult, formatTimeResultMmSs } from '../../utils/runResultForm
 import { useInactivityReset } from '../../hooks/useInactivityReset';
 import {
   LEADERBOARD_SEARCH_FEEDBACK_MS,
+  LEADERBOARD_SEARCH_MIN_QUERY_LENGTH,
   shouldRunLeaderboardSearchOnKey,
 } from './leaderboardSearchInteraction';
 
@@ -282,7 +283,7 @@ export function LeaderboardExperience({
   }, []);
 
   useEffect(() => {
-    if (searchInputDraft.trim().length >= 3) return;
+    if (searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH) return;
     setNameSearchMatches([]);
     setNameSearchMatchIndex(0);
     setSearchHighlightParticipantId(undefined);
@@ -334,7 +335,7 @@ export function LeaderboardExperience({
 
   const runNameSearch = useCallback(() => {
     const q = searchInputDraft.trim();
-    if (q.length < 3) return;
+    if (q.length < LEADERBOARD_SEARCH_MIN_QUERY_LENGTH) return;
     const matches = collectExactNameMatches(slides, q);
     setNameSearchMatches(matches);
     if (matches.length === 0) {
@@ -350,7 +351,7 @@ export function LeaderboardExperience({
 
   const triggerNameSearch = useCallback(() => {
     const q = searchInputDraft.trim();
-    if (q.length < 3) return;
+    if (q.length < LEADERBOARD_SEARCH_MIN_QUERY_LENGTH) return;
     if (searchFeedbackTimerRef.current !== null) {
       window.clearTimeout(searchFeedbackTimerRef.current);
     }
@@ -412,7 +413,7 @@ export function LeaderboardExperience({
   const centerLoading = slides[centerIdx]?.loading ?? true;
   const centerError = slides[centerIdx]?.error ?? null;
   const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
-  const showSearchFindButton = searchInputDraft.trim().length >= 3;
+  const showSearchFindButton = searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH;
   const showSearchSwitchButtons = nameSearchMatches.length > 1;
   const canGoSearchUp = showSearchSwitchButtons && nameSearchMatchIndex > 0;
   const canGoSearchDown = showSearchSwitchButtons && nameSearchMatchIndex < nameSearchMatches.length - 1;

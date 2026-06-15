@@ -49,13 +49,6 @@ export default function RunSelectionPage() {
       truncateGreetingField(formatGreetingPart(state?.participantFirstName ?? '', 'участник')),
     [state?.participantFirstName]
   );
-  const greetingLastLine = useMemo(
-    () =>
-      state?.participantLastName != null && state.participantLastName.trim() !== ''
-        ? truncateGreetingField(formatGreetingPart(state.participantLastName, ''))
-        : null,
-    [state?.participantLastName]
-  );
 
   const [selected, setSelected] = useState<RunTypeId>(2);
   const [loading, setLoading] = useState(false);
@@ -336,23 +329,7 @@ export default function RunSelectionPage() {
         >
           <div style={rs.runSelectTopBlock}>
             <p style={rs.greeting}>
-              {greetingLastLine != null ? (
-                <>
-                  Привет,{' '}
-                  <span style={reg.logoRed}>
-                    {greetingFirstLine}
-                    <br />
-                    {greetingLastLine}!
-                  </span>
-                </>
-              ) : (
-                <span style={rs.greetingSingleLine}>
-                  Привет,{' '}
-                  <span style={reg.logoRed}>
-                    {greetingFirstLine}!
-                  </span>
-                </span>
-              )}
+              <span style={rs.greetingSingleLine}>Привет, {greetingFirstLine}!</span>
             </p>
             <p style={rs.subtitle}>Выбери свой формат забега</p>
             {error ? <p style={{ ...reg.error, ...rs.subtitle, color: '#f85149' }}>{error}</p> : null}

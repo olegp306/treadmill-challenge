@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { shouldRunLeaderboardSearchOnKey } from './leaderboardSearchInteraction';
 
 describe('shouldRunLeaderboardSearchOnKey', () => {
-  it('runs search on Enter when query is long enough', () => {
-    expect(shouldRunLeaderboardSearchOnKey('Enter', 'Иван')).toBe(true);
+  it('runs search on Enter when query has at least two characters', () => {
+    expect(shouldRunLeaderboardSearchOnKey('Enter', 'Iv')).toBe(true);
     expect(shouldRunLeaderboardSearchOnKey('Enter', '  Bob  ')).toBe(true);
   });
 
-  it('does not run search on short queries or other keys', () => {
-    expect(shouldRunLeaderboardSearchOnKey('Enter', 'Ив')).toBe(false);
-    expect(shouldRunLeaderboardSearchOnKey('Tab', 'Иван')).toBe(false);
+  it('does not run search on one-character queries or other keys', () => {
+    expect(shouldRunLeaderboardSearchOnKey('Enter', 'I')).toBe(false);
+    expect(shouldRunLeaderboardSearchOnKey('Tab', 'Ivan')).toBe(false);
   });
 });

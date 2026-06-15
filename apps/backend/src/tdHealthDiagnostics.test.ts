@@ -27,6 +27,21 @@ test('resolveTdHealthFilePathFromSources prefers admin setting over env and reso
   }
 });
 
+test('resolveTdHealthFilePathFromSources uses project runtime when backend runs from apps/backend', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), 'td-health-default-root-'));
+  try {
+    const cwd = path.join(tmp, 'apps', 'backend');
+    const resolved = resolveTdHealthFilePathFromSources({ cwd });
+
+    assert.equal(resolved.source, 'default');
+    assert.equal(resolved.configuredValue, null);
+    assert.equal(resolved.path, path.resolve(tmp, 'runtime', 'health', 'TDHealth.json'));
+    assert.equal(resolved.cwd, cwd);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+});
+
 test('readTdHealthDiagnosticsForPath reports parsed JSON health file details', async () => {
   const tmp = await mkdtemp(path.join(os.tmpdir(), 'td-health-diag-'));
   try {
