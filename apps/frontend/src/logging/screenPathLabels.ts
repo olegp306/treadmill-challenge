@@ -15,6 +15,7 @@ export function getScreenReadableMessage(pathname: string, search: string): stri
   }
   if (pathname === '/result') return 'Пользователь на экране результата';
   if (pathname === '/run-select') return 'Пользователь на экране выбора формата забега (hero)';
+  if (pathname === '/run/ready') return 'Пользователь на экране «Готовы на старт»';
   if (pathname === '/run/queue') return 'Пользователь на экране очереди';
   if (pathname === '/run/queue-busy') return 'Пользователь увидел экран «Очередь заполнена»';
   if (pathname === '/run/leave-queue') return 'Пользователь на экране подтверждения выхода из очереди';

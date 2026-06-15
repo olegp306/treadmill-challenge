@@ -23,6 +23,13 @@ type EditAuthRequest = {
   row: HistoryRow;
 };
 
+type PinConfirmRequest = {
+  title: string;
+  hint: string;
+  confirmLabel?: string;
+  onConfirm: (pin: string) => Promise<void>;
+};
+
 type QueueRecoveryState = {
   runningCount: number;
   queuedCount: number;
@@ -75,6 +82,10 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
   const [editAuthPin, setEditAuthPin] = useState('');
   const [editAuthError, setEditAuthError] = useState<string | null>(null);
   const [editAuthLoading, setEditAuthLoading] = useState(false);
+  const [pinConfirmRequest, setPinConfirmRequest] = useState<PinConfirmRequest | null>(null);
+  const [pinConfirmValue, setPinConfirmValue] = useState('');
+  const [pinConfirmError, setPinConfirmError] = useState<string | null>(null);
+  const [pinConfirmLoading, setPinConfirmLoading] = useState(false);
   const [restartPin, setRestartPin] = useState('');
   const [restartConfirm, setRestartConfirm] = useState(false);
   const [suspensionState, setSuspensionState] = useState<{ backupPath: string; createdAt: string } | null>(null);
@@ -342,6 +353,38 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
     }
   };
 
+  const openPinConfirmModal = (request: PinConfirmRequest) => {
+    setPinConfirmRequest(request);
+    setPinConfirmValue('');
+    setPinConfirmError(null);
+  };
+
+  const closePinConfirmModal = () => {
+    if (pinConfirmLoading) return;
+    setPinConfirmRequest(null);
+    setPinConfirmValue('');
+    setPinConfirmError(null);
+  };
+
+  const confirmPinAction = async () => {
+    if (!pinConfirmRequest) return;
+    if (pinConfirmValue.length !== 6 || !/^\d{6}$/.test(pinConfirmValue)) {
+      setPinConfirmError('Введите 6 цифр');
+      return;
+    }
+    setPinConfirmLoading(true);
+    setPinConfirmError(null);
+    try {
+      await pinConfirmRequest.onConfirm(pinConfirmValue.trim());
+      setPinConfirmRequest(null);
+      setPinConfirmValue('');
+    } catch (e) {
+      setPinConfirmError(e instanceof Error ? e.message : 'Не удалось подтвердить действие');
+    } finally {
+      setPinConfirmLoading(false);
+    }
+  };
+
   const createSuspensionBackup = async () => {
     if (mode !== 'admin') return;
     setSuspensionBusy(true);
@@ -446,20 +489,27 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
 
   const deleteFinishedRunEntry = async () => {
     if (mode !== 'admin' || !editParticipant) return;
-    const pin = window.prompt('Введите PIN администратора для удаления записи о забеге');
-    if (!pin || !pin.trim()) return;
     if (!window.confirm('Удалить запись о завершенном забеге целиком? Действие необратимо.')) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.adminManagerDeleteRunEntry(editParticipant.runSessionId, pin.trim());
-      setEditParticipant(null);
-      await loadQueueHistory();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось удалить запись о забеге');
-    } finally {
-      setBusy(false);
-    }
+    const runSessionId = editParticipant.runSessionId;
+    openPinConfirmModal({
+      title: 'Подтверждение администратора',
+      hint: 'Введите PIN администратора для удаления записи о забеге',
+      confirmLabel: 'Удалить',
+      onConfirm: async (pin) => {
+        setBusy(true);
+        setError(null);
+        try {
+          await api.adminManagerDeleteRunEntry(runSessionId, pin);
+          setEditParticipant(null);
+          await loadQueueHistory();
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Не удалось удалить запись о забеге');
+          throw e;
+        } finally {
+          setBusy(false);
+        }
+      },
+    });
   };
 
   const resetCurrentQueue = async () => {
@@ -473,42 +523,47 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
         'Сбросить всю текущую очередь (running + queued)? Завершенные результаты останутся без изменений.'
       )
     ) return;
-    const pinPromptLabel =
-      mode === 'admin'
-        ? 'Введите PIN администратора для сброса очереди'
-        : 'Введите пароль менеджера для сброса очереди';
-    const pin = window.prompt(pinPromptLabel);
-    if (!pin || !pin.trim()) return;
-    setBusy(true);
-    setError(null);
-    try {
-      if (mode === 'admin') {
-        await api.adminLogin(pin.trim());
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem('adminPin', pin.trim());
-          sessionStorage.setItem('adminRole', 'god_admin');
+    openPinConfirmModal({
+      title: mode === 'admin' ? 'Подтверждение администратора' : 'Подтверждение менеджера',
+      hint:
+        mode === 'admin'
+          ? 'Введите PIN администратора для сброса очереди'
+          : 'Введите пароль менеджера для сброса очереди',
+      confirmLabel: 'Сбросить',
+      onConfirm: async (pin) => {
+        setBusy(true);
+        setError(null);
+        try {
+          if (mode === 'admin') {
+            await api.adminLogin(pin);
+            if (typeof sessionStorage !== 'undefined') {
+              sessionStorage.setItem('adminPin', pin);
+              sessionStorage.setItem('adminRole', 'god_admin');
+            }
+          } else {
+            await api.managerLogin(pin);
+            if (typeof sessionStorage !== 'undefined') {
+              sessionStorage.setItem('adminPin', pin);
+              sessionStorage.setItem('adminRole', 'manager');
+            }
+          }
+          const queuedFirst = [...activeRows].sort((a, b) => {
+            if (a.status === b.status) return 0;
+            return a.status === 'queued' ? -1 : 1;
+          });
+          for (const row of queuedFirst) {
+            await api.adminQueueAction(row.competitionId, row.runSessionId, 'mark-cancelled');
+          }
+          await Promise.all([loadQueueHistory(), loadQueueRecovery()]);
+          setQueueRecoveryHint('Очередь сброшена');
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Не удалось сбросить очередь');
+          throw e;
+        } finally {
+          setBusy(false);
         }
-      } else {
-        await api.managerLogin(pin.trim());
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem('adminPin', pin.trim());
-          sessionStorage.setItem('adminRole', 'manager');
-        }
-      }
-      const queuedFirst = [...activeRows].sort((a, b) => {
-        if (a.status === b.status) return 0;
-        return a.status === 'queued' ? -1 : 1;
-      });
-      for (const row of queuedFirst) {
-        await api.adminQueueAction(row.competitionId, row.runSessionId, 'mark-cancelled');
-      }
-      await Promise.all([loadQueueHistory(), loadQueueRecovery()]);
-      setQueueRecoveryHint('Очередь сброшена');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось сбросить очередь');
-    } finally {
-      setBusy(false);
-    }
+      },
+    });
   };
 
   const restartSystem = async () => {
@@ -630,6 +685,52 @@ export default function ManagerPanelPage({ mode = 'manager' }: { mode?: 'manager
                   style={styles.authModalSubmitBtn}
                 >
                   {editAuthLoading ? '…' : 'Подтвердить'}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : null}
+        {pinConfirmRequest ? (
+          <div
+            style={styles.authModalBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pin-confirm-title"
+            onClick={closePinConfirmModal}
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void confirmPinAction();
+              }}
+              style={styles.authModalCard}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="pin-confirm-title" style={styles.authModalTitle}>
+                {pinConfirmRequest.title}
+              </h2>
+              <p style={styles.authModalHint}>{pinConfirmRequest.hint}</p>
+              <input
+                type="password"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="\d{6}"
+                maxLength={6}
+                value={pinConfirmValue}
+                onChange={(e) => setPinConfirmValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                style={styles.authModalInput}
+              />
+              {pinConfirmError ? <p style={styles.authModalError}>{pinConfirmError}</p> : null}
+              <div style={styles.authModalActions}>
+                <button type="button" onClick={closePinConfirmModal} style={styles.authModalCancelBtn}>
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  disabled={pinConfirmLoading || pinConfirmValue.length !== 6}
+                  style={styles.authModalSubmitBtn}
+                >
+                  {pinConfirmLoading ? '…' : pinConfirmRequest.confirmLabel ?? 'Подтвердить'}
                 </button>
               </div>
             </form>

@@ -7,6 +7,13 @@ describe('formatRunResult', () => {
     expect(formatRunResult(2, 166.39, 5000)).toBe('--:--');
   });
 
+  it('shows legacy timeout and display-string sentinels as --:-- for 1 km and 5 km leaderboards', () => {
+    expect(formatRunResult(1, 9999, 1000)).toBe('--:--');
+    expect(formatRunResult(2, 9999, 5000)).toBe('--:--');
+    expect(formatRunResult(1, '166:39', 1000)).toBe('--:--');
+    expect(formatRunResult(2, '166:39', 5000)).toBe('--:--');
+  });
+
   it('does not apply the 166.39 time placeholder to distance leaderboards', () => {
     expect(formatRunResult(0, 166.39, 166.39)).toBe('166 м');
   });

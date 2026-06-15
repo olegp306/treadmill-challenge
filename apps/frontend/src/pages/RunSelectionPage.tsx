@@ -12,7 +12,8 @@ import { RunTypeTabBar } from '../features/run-selection/RunTypeTabBar';
 import { rs } from '../features/run-selection/runSelectionStyles';
 import { api } from '../api/client';
 import { useIntegrationInfo } from '../integrationInfo/IntegrationInfoContext';
-import { clearLoggedParticipantId, clearLoggedRunSessionId, logEvent, setLoggedRunSessionId } from '../logging/logEvent';
+import { clearLoggedParticipantId, clearLoggedRunSessionId, logEvent } from '../logging/logEvent';
+import { navigateAfterRunStart } from '../features/run-start/runStartNavigation';
 import { useInactivityReset } from '../hooks/useInactivityReset';
 
 export type RunSelectLocationState = {
@@ -102,11 +103,38 @@ export default function RunSelectionPage() {
     setLoading(true);
     logEvent('button_click_start', { runTypeId: selected }, { participantId });
     let phaseTimer: number | undefined;
-    report('treadmill_check');
-    phaseTimer = window.setTimeout(() => {
-      report('sending_to_touchdesigner');
-    }, 220);
     try {
+      try {
+        const queue = await api.getRunQueue();
+        if (queue.activeSessionCount === 0) {
+          logEvent(
+            'run_ready_screen_required',
+            { runTypeId: selected },
+            {
+              participantId,
+              readableMessage: 'Очередь пуста: перед стартом показан экран готовности',
+            }
+          );
+          navigate('/run/ready', {
+            replace: true,
+            state: {
+              participantId,
+              runTypeId: selected,
+              participantSex,
+              participantFirstName: state?.participantFirstName,
+              participantLastName: state?.participantLastName,
+            },
+          });
+          return;
+        }
+      } catch {
+        // If the queue check is unavailable, keep the previous start behavior.
+      }
+
+      report('treadmill_check');
+      phaseTimer = window.setTimeout(() => {
+        report('sending_to_touchdesigner');
+      }, 220);
       const res = await api.startRun({ participantId, runTypeId: selected });
       if (phaseTimer !== undefined) {
         window.clearTimeout(phaseTimer);
@@ -153,134 +181,13 @@ export default function RunSelectionPage() {
         }
         return;
       }
-      setLoggedRunSessionId(res.runSessionId);
-      logEvent(
-        'run_started',
-        { runTypeId: res.runTypeId, demoMode: res.demoMode, queuePosition: res.position },
-        {
-          participantId: res.participantId,
-          runSessionId: res.runSessionId,
-          readableMessage: res.demoMode
-            ? 'Забег начат в демо-режиме (без TouchDesigner)'
-            : `Забег начат, пользователь в очереди (позиция ${res.position})`,
-        }
-      );
-      if (res.demoMode) {
-        clearPhase();
-      } else {
-        report('sent_to_touchdesigner');
-      }
-      if (!res.demoMode) {
-        logEvent(
-          'touchdesigner_ack',
-          { runTypeId: res.runTypeId, treadmillStatus: res.treadmillStatus },
-          {
-            participantId: res.participantId,
-            runSessionId: res.runSessionId,
-            readableMessage: `TouchDesigner ack: treadmill=${res.treadmillStatus}`,
-          }
-        );
-        logEvent(
-          'added_to_queue',
-          { runTypeId: res.runTypeId, queuePosition: res.position },
-          {
-            participantId: res.participantId,
-            runSessionId: res.runSessionId,
-            readableMessage: `Пользователь добавлен в очередь. Номер в очереди: ${res.position}`,
-          }
-        );
-      }
-      if (!res.demoMode && res.treadmillStatus === 'busy') {
-        navigate('/run/queue-busy', {
-          replace: true,
-          state: {
-            participantId: res.participantId,
-            participantFirstName: state?.participantFirstName,
-            participantSex,
-            runTypeId: res.runTypeId,
-            reason: 'treadmill_busy',
-            runSessionId: res.runSessionId,
-          },
-        });
-        return;
-      }
-      /** Другой забег уже идёт — очередь с «Дорожка занята», не экран «Пройдите на дорожку». */
-      if (!res.demoMode && res.otherSessionRunning) {
-        navigate('/run/queue', {
-          replace: true,
-          state: {
-            participantId: res.participantId,
-            runSessionId: res.runSessionId,
-            runTypeId: res.runTypeId,
-            position: res.position,
-            participantSex,
-            participantFirstName: state?.participantFirstName,
-            initialSessionStatus: 'queued',
-            initialOtherSessionRunning: true,
-          },
-        });
-        return;
-      }
-      /**
-       * Свободная дорожка: бэкенд сразу переводит сессию в `running` после TD ack —
-       * показываем «Пройдите на дорожку» (и при `running`, и при `queued` + #1 без чужого running).
-       */
-      if (!res.demoMode && (res.status === 'running' || (res.status === 'queued' && res.position === 1))) {
-        navigate('/run/prepare', {
-          replace: true,
-          state: {
-            participantId: res.participantId,
-            runSessionId: res.runSessionId,
-            runTypeId: res.runTypeId,
-            participantSex,
-            participantFirstName: state?.participantFirstName,
-            demoMode: false,
-            immediateRunning: res.status === 'running',
-          },
-        });
-        return;
-      }
-      if (res.demoMode) {
-        if (res.status === 'running') {
-          navigate('/run/prepare', {
-            replace: true,
-            state: {
-              participantId: res.participantId,
-              runSessionId: res.runSessionId,
-              runTypeId: res.runTypeId,
-              participantSex,
-              participantFirstName: state?.participantFirstName,
-              demoMode: true,
-            },
-          });
-        } else {
-          navigate('/run/queue', {
-            replace: true,
-            state: {
-              participantId: res.participantId,
-              runSessionId: res.runSessionId,
-              runTypeId: res.runTypeId,
-              position: res.position,
-              participantSex,
-              participantFirstName: state?.participantFirstName,
-              demoMode: true,
-            },
-          });
-        }
-        return;
-      }
-      navigate('/run/queue', {
-        replace: true,
-        state: {
-          participantId: res.participantId,
-          runSessionId: res.runSessionId,
-          runTypeId: res.runTypeId,
-          position: res.position,
-          participantSex,
-          participantFirstName: state?.participantFirstName,
-          initialSessionStatus: res.status === 'running' ? 'running' : 'queued',
-          initialOtherSessionRunning: res.otherSessionRunning,
-        },
+      navigateAfterRunStart({
+        res,
+        navigate,
+        participantSex,
+        participantFirstName: state?.participantFirstName,
+        report,
+        clearPhase,
       });
     } catch (e) {
       if (phaseTimer !== undefined) {

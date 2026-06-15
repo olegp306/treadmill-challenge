@@ -10,7 +10,7 @@ export type RemoteLeaderboardEntry = {
   rank?: number;
   participantId: string;
   participantName: string;
-  resultTime: number;
+  resultTime: number | string;
   distance: number;
   speed: number;
   runId: string;
@@ -26,9 +26,15 @@ export type RemoteLeaderboardScopePayload = {
   leaderboard: RemoteLeaderboardEntry[];
 };
 
-function speedFromTimeDistance(resultTime: number, distance: number): number {
-  if (!Number.isFinite(resultTime) || resultTime <= 0 || !Number.isFinite(distance) || distance <= 0) return 0;
-  return distance / resultTime;
+function speedFromTimeDistance(resultTime: number | string, distance: number): number {
+  const numericTime = Number(resultTime);
+  if (!Number.isFinite(numericTime) || numericTime <= 0 || !Number.isFinite(distance) || distance <= 0) return 0;
+  return distance / numericTime;
+}
+
+function resultTimeSortValue(resultTime: number | string): number {
+  const numericTime = Number(resultTime);
+  return Number.isFinite(numericTime) ? numericTime : Number.POSITIVE_INFINITY;
 }
 
 /** Same ordering as `apps/backend/src/services/rankingService.ts` `compareRunResults`. */
@@ -39,9 +45,11 @@ function compareRunResults(
   if (a.runTypeId !== b.runTypeId) return a.runTypeId - b.runTypeId;
   if (a.runTypeId === 0) {
     if (b.resultDistance !== a.resultDistance) return b.resultDistance - a.resultDistance;
-    return a.resultTime - b.resultTime;
+    return resultTimeSortValue(a.resultTime) - resultTimeSortValue(b.resultTime);
   }
-  if (a.resultTime !== b.resultTime) return a.resultTime - b.resultTime;
+  const at = resultTimeSortValue(a.resultTime);
+  const bt = resultTimeSortValue(b.resultTime);
+  if (at !== bt) return at - bt;
   return b.resultDistance - a.resultDistance;
 }
 
@@ -51,7 +59,7 @@ type FinishedRunRow = {
   participantFirstName: string;
   participantLastName: string;
   runTypeId: RunTypeId;
-  resultTime: number;
+  resultTime: number | string;
   resultDistance: number;
   displayTime: string;
 };
@@ -76,6 +84,16 @@ function str(v: unknown): string {
 function num(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+}
+
+function snapshotResultTime(v: unknown): number | string {
+  if (typeof v === 'string') {
+    const raw = v.trim();
+    if (/^\d{1,3}:[0-5]\d$/.test(raw)) return raw;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : raw;
+  }
+  return num(v);
 }
 
 const CAROUSEL_ORDER: Array<{ runTypeId: RunTypeId; sex: Gender }> = [
@@ -138,7 +156,7 @@ function rankForScope(
       participantFirstName: p.first,
       participantLastName: p.last,
       runTypeId,
-      resultTime: num(s.resultTime),
+      resultTime: snapshotResultTime(s.resultTime),
       resultDistance: num(s.resultDistance),
       displayTime,
     });

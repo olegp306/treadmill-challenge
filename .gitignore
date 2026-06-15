@@ -10,6 +10,7 @@ apps/remote-backend/runtime/
 *.log
 logs/
 coverage
+tmp/
 *.tsbuildinfo
 apps/remote-frontend/vite.config.js
 apps/remote-frontend/vite.config.d.ts
