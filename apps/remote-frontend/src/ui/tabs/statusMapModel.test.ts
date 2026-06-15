@@ -17,10 +17,28 @@ describe('buildStatusMapModel', () => {
         },
         td: {
           lastTdEventAt: '2026-05-23T10:03:20.000Z',
-          healthFile: { fps: 60, errors: [] },
+          healthFileUpdatedAt: '2026-05-23T10:03:30.000Z',
+          healthFile: {
+            fps: 60,
+            errors: [],
+            treadmillOnline: true,
+            screenOnline: true,
+            appRunning: true,
+            projectLoaded: true,
+            backendReachable: true,
+            landingReachable: true,
+            powerOk: true,
+            cpuTemp: 55,
+            gpuTemp: 55,
+            ramTemp: 45,
+            ssdTemp: 40,
+          },
         },
         system: {
           internetOk: true,
+          cpuPct: 20,
+          ramPct: 40,
+          diskFreeGb: 120,
         },
         queue: {
           queuedCount: 2,
@@ -93,7 +111,8 @@ describe('buildStatusMapModel', () => {
     expect(model.connection.status).toBe('ok');
     expect(model.hosting.status).toBe('ok');
     expect(model.hosting.title).toBe('Хостинг: Remote Computer (Яндекс Cloud)');
-    expect(model.store.metrics).toContainEqual({ label: 'Remote -> магазин', value: 'connected' });
+    expect(model.store.metrics.every((metric) => metric.status === 'ok')).toBe(true);
+    expect(model.store.metrics).toContainEqual(expect.objectContaining({ label: 'Remote -> магазин', value: 'connected', status: 'ok' }));
     expect(model.connection.metrics).toContainEqual({ label: 'API магазина', value: 'http://100.111.14.30:3001' });
     expect(model.hosting.services.map((s) => s.title)).toEqual([
       'Leaderboard + админка лидерборда',
@@ -170,8 +189,9 @@ describe('buildStatusMapModel', () => {
 
     expect(model.overall.severity).toBe('critical');
     expect(model.connection.status).toBe('critical');
-    expect(model.store.metrics).toContainEqual({ label: 'Remote -> магазин', value: 'offline' });
+    expect(model.store.metrics).toContainEqual(expect.objectContaining({ label: 'Remote -> магазин', value: 'offline', status: 'critical' }));
     expect(model.hosting.services.find((s) => s.title === 'Система бэкапов данных из магазина')?.status).toBe('critical');
-    expect(model.events[0]?.status).toBe('critical');
+    expect(model.events.map((event) => event.title)).not.toContain('Есть критичная проблема');
+    expect(model.events.some((event) => event.status === 'critical')).toBe(true);
   });
 });

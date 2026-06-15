@@ -7,6 +7,22 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.12] - 2026-06-15
+
+### Remote system
+
+- **Remote Admin monitoring:** упрощён экран мониторинга до визуальной схемы состояния системы; детальные live/debug-блоки убраны с вкладки, чтобы экран был компактнее для просмотра из Telegram.
+- **Store status map:** строки параметров магазина теперь имеют собственные красно-зелёные индикаторы состояния для дорожки, экрана, TDHealth, backend, интернета, питания, температур и последней активности.
+- **Monitoring events:** последние события мониторинга теперь сортируются по времени, без отдельного искусственного события “общая критичная проблема”.
+- **Remote versions:** `remote-frontend` поднят до `0.1.9`.
+
+### Verification
+
+- `npx vitest run apps/remote-frontend/src/ui/tabs/statusMapModel.test.ts`
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.11] - 2026-06-15
 
 ### Local / iPad system

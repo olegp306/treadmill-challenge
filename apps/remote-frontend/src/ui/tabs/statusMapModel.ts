@@ -51,6 +51,7 @@ export type HealthStatusPayload = {
 export type StatusMapMetric = {
   label: string;
   value: string;
+  status?: StatusSeverity;
 };
 
 export type StatusMapNode = {
@@ -72,6 +73,7 @@ export type StatusMapEvent = {
   title: string;
   detail: string;
   time: string;
+  sortAt?: number | null;
 };
 
 export type StatusMapModel = {
@@ -101,6 +103,12 @@ function isRecent(iso: string | null | undefined, nowMs: number, thresholdMs: nu
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return null;
   return nowMs - t <= thresholdMs;
+}
+
+function timeMs(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  return Number.isFinite(t) ? t : null;
 }
 
 function formatTime(iso: string | null | undefined): string {
@@ -183,6 +191,14 @@ function statusFromOptionalBoolean(value: boolean | null): StatusSeverity {
   return value ? 'ok' : 'critical';
 }
 
+function redGreenStatus(status: StatusSeverity): StatusSeverity {
+  return status === 'ok' ? 'ok' : 'critical';
+}
+
+function statusFromOptionalBooleanRedGreen(value: boolean | null): StatusSeverity {
+  return value === true ? 'ok' : 'critical';
+}
+
 function statusFromFps(value: number | null): StatusSeverity {
   if (value == null) return 'unknown';
   if (value < 30) return 'critical';
@@ -249,7 +265,7 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
   const ipadStatus = statusFromBoolean(health?.ipad?.online);
   const healthFile = health?.td?.healthFile;
   const tdRecent = isRecent(health?.td?.lastTdEventAt, nowMs, 120_000);
-  const tdHealthFileRecent = isRecent(health?.td?.healthFileUpdatedAt, nowMs, 120_000);
+  const tdHealthFileRecent = isRecent(health?.td?.healthFileUpdatedAt, nowMs, 35 * 60_000);
   const tdSignalStatus = health?.td?.healthFileError
     ? 'critical'
     : tdHealthFileRecent != null
@@ -311,16 +327,41 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
   const pcCpu = health?.system?.cpuPct ?? extractHealthFileNumberAny(healthFile, ['cpu', 'cpuPct', 'cpuLoad']);
   const pcRam = health?.system?.ramPct ?? extractHealthFileNumberAny(healthFile, ['ram', 'ramPct', 'memoryPct']);
   const pcDisk = health?.system?.diskFreeGb ?? extractHealthFileNumberAny(healthFile, ['diskFreeGb', 'ssdFreeGb']);
+  const pcStatus = redGreenStatus(
+    worstKnownStatus([
+      pcCpu == null ? 'unknown' : pcCpu >= 95 ? 'critical' : pcCpu >= 85 ? 'warning' : 'ok',
+      pcRam == null ? 'unknown' : pcRam >= 95 ? 'critical' : pcRam >= 85 ? 'warning' : 'ok',
+      pcDisk == null ? 'unknown' : pcDisk <= 2 ? 'critical' : pcDisk <= 10 ? 'warning' : 'ok',
+    ])
+  );
   const tdJsonValue = health?.td?.healthFileError
     ? health.td.healthFileError
     : health?.td?.healthFileUpdatedAt
       ? formatAgo(health.td.healthFileUpdatedAt, nowMs)
       : 'нет данных';
+  const lastTouchStatus = isRecent(health?.ipad?.lastHeartbeatAt ?? health?.timestamp, nowMs, 35 * 60_000) === true ? 'ok' : 'critical';
+  const storeMetricStatuses: StatusSeverity[] = [
+    statusFromOptionalBooleanRedGreen(treadmillOnline),
+    redGreenStatus(worstKnownStatus([statusFromOptionalBooleanRedGreen(screenOnline), fpsStatus])),
+    redGreenStatus(tdSignalStatus),
+    statusFromOptionalBooleanRedGreen(tdAppRunning),
+    statusFromOptionalBooleanRedGreen(tdProjectLoaded),
+    redGreenStatus(backendStatus),
+    statusFromOptionalBooleanRedGreen(tdBackendReachable),
+    redGreenStatus(remoteStoreStatus),
+    redGreenStatus(internetStatus),
+    statusFromOptionalBooleanRedGreen(landingReachable),
+    statusFromOptionalBooleanRedGreen(powerOk),
+    pcStatus,
+    redGreenStatus(temperatureStatus),
+    health?.runs?.lastSuccessfulRunAt ? 'ok' : 'critical',
+    lastTouchStatus,
+  ];
 
   const store: StatusMapNode = {
     title: 'Магазин',
     status: storeStatus,
-    badge: storeStatus === 'ok' ? 'online' : storeStatus === 'critical' ? 'problem' : 'check',
+    badge: '',
     metrics: [
       { label: 'Дорожка', value: formatOptionalBoolean(treadmillOnline, 'готова', 'нет связи') },
       {
@@ -340,7 +381,7 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
       { label: 'Температуры', value: formatTemperatureSummary(healthFile) },
       { label: 'Последний забег', value: formatTime(health?.runs?.lastSuccessfulRunAt) },
       { label: 'Последнее касание', value: formatAgo(health?.ipad?.lastHeartbeatAt ?? health?.timestamp, nowMs) },
-    ],
+    ].map((metric, index) => ({ ...metric, status: storeMetricStatuses[index] ?? 'critical' })),
   };
 
   const connection: StatusMapNode = {
@@ -401,43 +442,43 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
   };
 
   const events: StatusMapEvent[] = [];
-  if (overallStatus !== 'ok') {
-    events.push({
-      status: overallStatus,
-      title: labelForOverall(overallStatus),
-      detail: health?.errors?.[0] ?? health?.warnings?.[0] ?? backup?.lastError ?? system?.local.lastError ?? 'Проверьте подсвеченные блоки схемы.',
-      time: formatTime(input.healthLoadedAt ?? input.activeMonLoadedAt ?? system?.remote.serverTime),
-    });
-  }
   if (system?.local.online) {
+    const sortAt = timeMs(system.local.lastHealthCheckAt ?? system.remote.serverTime);
     events.push({
       status: 'ok',
       title: 'Remote-сервер видит магазин',
       detail: `Подключение к ${system.local.baseUrl ?? 'local backend'} работает через Tailscale.`,
       time: formatTime(system.local.lastHealthCheckAt ?? system.remote.serverTime),
+      sortAt,
     });
   } else if (system?.local.lastError) {
+    const sortAt = timeMs(system.remote.serverTime);
     events.push({
       status: 'critical',
       title: 'Remote-сервер не видит магазин',
       detail: system.local.lastError,
       time: formatTime(system.remote.serverTime),
+      sortAt,
     });
   }
   if (health) {
+    const sortAt = timeMs(input.healthLoadedAt ?? health.timestamp);
     events.push({
       status: storeStatus,
       title: 'Получен health-сигнал от магазина',
       detail: 'Локальный сервер, интернет, экран и активность магазина обновлены в мониторинге.',
       time: formatTime(input.healthLoadedAt ?? health.timestamp),
+      sortAt,
     });
   }
   if (system?.local.storeHeartbeat?.lastHeartbeatAt) {
+    const sortAt = timeMs(system.local.storeHeartbeat.lastHeartbeatAt);
     events.push({
       status: 'ok',
       title: 'Получен heartbeat от магазина',
       detail: `Последний heartbeat: ${formatAgo(system.local.storeHeartbeat.lastHeartbeatAt, nowMs)}.`,
       time: formatTime(system.local.storeHeartbeat.lastHeartbeatAt),
+      sortAt,
     });
   }
   if (backup?.lastBackupAt || backup?.lastMirrorSuccessAt || system?.backups.lastBackupAt) {
@@ -447,6 +488,7 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
       title: 'Backup сохранен на хостинге',
       detail: backup?.lastError ? backup.lastError : 'Последний снимок данных принят удаленной системой.',
       time: formatTime(lastBackupAt),
+      sortAt: timeMs(lastBackupAt),
     });
   }
   if (health?.runs?.lastSuccessfulRunAt) {
@@ -455,6 +497,7 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
       title: 'Участник завершил забег',
       detail: 'Результат записан локально и попадет в следующие данные leaderboard/backup.',
       time: formatTime(health.runs.lastSuccessfulRunAt),
+      sortAt: timeMs(health.runs.lastSuccessfulRunAt),
     });
   }
   if (backup?.activeUpdatedAt) {
@@ -463,13 +506,16 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
       title: 'Обновлен активный JSON лидерборда',
       detail: backup.activeSource === 'manual_import' ? 'Публичная таблица показывает ручную версию.' : 'Публичная таблица использует выбранный JSON лидерборда.',
       time: formatTime(backup.activeUpdatedAt),
+      sortAt: timeMs(backup.activeUpdatedAt),
     });
   }
+  const alertsSortAt = timeMs(input.activeMonLoadedAt ?? input.healthLoadedAt ?? system?.remote.serverTime);
   events.push({
     status: alertsStatus,
     title: 'Telegram / email alerts готовы',
     detail: 'При критичных проблемах удаленная система сможет отправить уведомление.',
     time: formatTime(input.activeMonLoadedAt ?? input.healthLoadedAt ?? system?.remote.serverTime),
+    sortAt: alertsSortAt,
   });
 
   return {
@@ -481,6 +527,6 @@ export function buildStatusMapModel(input: BuildStatusMapModelInput): StatusMapM
     store,
     connection,
     hosting,
-    events: events.slice(0, 6),
+    events: events.sort((a, b) => (b.sortAt ?? 0) - (a.sortAt ?? 0)).slice(0, 6),
   };
 }

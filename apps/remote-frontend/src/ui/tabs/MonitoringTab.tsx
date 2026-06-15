@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Box, Button, Chip, Divider, Paper, Typography } from '@mui/material';
+import { Alert, Box, Chip, Paper, Typography } from '@mui/material';
 import { api, type RemoteBackupStatus, type RemoteSystemStatus } from '../../api/client';
 import { buildStatusMapModel, type StatusMapMetric, type StatusSeverity } from './statusMapModel';
 
@@ -112,9 +112,12 @@ function MetricRows({ rows }: { rows: StatusMapMetric[] }) {
             fontSize: 13,
           }}
         >
-          <Typography component="span" sx={{ color: '#e0e7ef', fontSize: 13, fontWeight: 800 }}>
-            {row.label}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+            {row.status ? <StatusDot status={row.status} /> : null}
+            <Typography component="span" sx={{ color: '#e0e7ef', fontSize: 13, fontWeight: 800 }}>
+              {row.label}
+            </Typography>
+          </Box>
           <Typography component="span" sx={{ color: '#98a6b8', fontSize: 13, textAlign: 'right' }}>
             {row.value}
           </Typography>
@@ -147,8 +150,6 @@ function StatusMapOverview({
     healthLoadedAt,
     activeMonLoadedAt,
   });
-  const overall = STATUS_COLORS[model.overall.severity];
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Paper
@@ -177,23 +178,6 @@ function StatusMapOverview({
               Быстрый экран для открытия из Telegram-бота: магазин, связь, хостинг, бэкапы и алерты.
             </Typography>
           </Box>
-          <Box
-            sx={{
-              alignSelf: { xs: 'stretch', sm: 'flex-start' },
-              textAlign: 'center',
-              borderRadius: 999,
-              px: 1.5,
-              py: 1,
-              bgcolor: overall.bg,
-              color: overall.fg,
-              border: `1px solid ${overall.border}`,
-              boxShadow: `0 0 24px ${overall.glow}`,
-              fontWeight: 950,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {model.overall.label}
-          </Box>
         </Box>
 
         <Box
@@ -206,11 +190,7 @@ function StatusMapOverview({
         >
           <Paper sx={{ p: 1.5, bgcolor: '#151b22', border: '1px solid #344153', borderRadius: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mb: 1.25 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <StatusDot status={model.store.status} />
-                <Typography sx={{ fontWeight: 950, fontSize: 18 }}>{model.store.title}</Typography>
-              </Box>
-              <StatusBadge status={model.store.status} label={model.store.badge} />
+              <Typography sx={{ fontWeight: 950, fontSize: 18 }}>{model.store.title}</Typography>
             </Box>
             <MetricRows rows={model.store.metrics} />
           </Paper>
@@ -278,7 +258,6 @@ function StatusMapOverview({
       <Paper sx={{ border: '1px solid #303b49', bgcolor: '#121820', borderRadius: 2, overflow: 'hidden' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, p: 1.5, borderBottom: '1px solid #303b49' }}>
           <Typography sx={{ fontWeight: 950 }}>Последние события системы</Typography>
-          <StatusBadge status={model.overall.severity} />
         </Box>
         <Box>
           {model.events.map((event, idx) => (
@@ -308,38 +287,11 @@ function StatusMapOverview({
   );
 }
 
-function formatIso(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString();
-}
-
-function StatusChip({ ok, okLabel, badLabel }: { ok: boolean | null | undefined; okLabel: string; badLabel: string }) {
-  if (ok == null) return <Chip size="small" label="unknown" sx={{ bgcolor: '#2a2a2a', color: '#ddd' }} />;
-  return ok ? (
-    <Chip size="small" label={okLabel} sx={{ bgcolor: '#1b5e20', color: '#fff', fontWeight: 800 }} />
-  ) : (
-    <Chip size="small" label={badLabel} sx={{ bgcolor: '#b71c1c', color: '#fff', fontWeight: 800 }} />
-  );
-}
-
-function safeJsonPreview(v: unknown, maxLen: number): string {
-  try {
-    const s = JSON.stringify(v);
-    return s.length > maxLen ? `${s.slice(0, maxLen)}…` : s;
-  } catch {
-    return '—';
-  }
-}
-
 export function MonitoringTab() {
   const [health, setHealth] = useState<HealthStatusPayload | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
-  const [healthBusy, setHealthBusy] = useState(false);
   const [healthLoadedAt, setHealthLoadedAt] = useState<string | null>(null);
 
-  const [activeMon, setActiveMon] = useState<unknown>(null);
   const [activeMonEmpty, setActiveMonEmpty] = useState(true);
   const [activeMonError, setActiveMonError] = useState<string | null>(null);
   const [activeMonLoadedAt, setActiveMonLoadedAt] = useState<string | null>(null);
@@ -349,15 +301,12 @@ export function MonitoringTab() {
   const loadLiveHealth = useCallback(async () => {
     try {
       setHealthError(null);
-      setHealthBusy(true);
       const h = (await api.healthStatus()) as HealthStatusPayload;
       setHealth(h);
       setHealthLoadedAt(new Date().toISOString());
       setSystemStatus(await api.systemStatus());
     } catch (e) {
       setHealthError(e instanceof Error ? e.message : 'Failed');
-    } finally {
-      setHealthBusy(false);
     }
   }, []);
 
@@ -366,7 +315,6 @@ export function MonitoringTab() {
       setActiveMonError(null);
       const r = await api.activeBackupMonitoring();
       setActiveMonEmpty(r.empty);
-      setActiveMon(r.remote);
       setActiveMonLoadedAt(new Date().toISOString());
     } catch (e) {
       setActiveMonError(e instanceof Error ? e.message : 'Failed');
@@ -410,22 +358,6 @@ export function MonitoringTab() {
     return () => window.removeEventListener('remote-backup-updated', onUpdated);
   }, [loadActiveMonitoring, loadBackupStatus]);
 
-  const tdOnline = (() => {
-    const last = health?.td?.healthFileUpdatedAt ?? health?.td?.lastTdEventAt;
-    if (!last) return null;
-    const dt = new Date(last).getTime();
-    if (!Number.isFinite(dt)) return null;
-    return Date.now() - dt <= 120_000;
-  })();
-
-  const tdHealthErrors = (() => {
-    const hf = health?.td?.healthFile;
-    if (!hf || typeof hf !== 'object') return [];
-    const raw = (hf as Record<string, unknown>).errors;
-    if (!Array.isArray(raw)) return [];
-    return raw.map((v) => (typeof v === 'string' ? v : JSON.stringify(v))).filter(Boolean);
-  })();
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {healthError ? <Alert severity="error">{healthError}</Alert> : null}
@@ -439,136 +371,6 @@ export function MonitoringTab() {
         healthLoadedAt={healthLoadedAt}
         activeMonLoadedAt={activeMonLoadedAt}
       />
-
-      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-          <Typography sx={{ fontWeight: 900 }}>Live: статус с локального backend</Typography>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Typography sx={{ color: '#777', fontSize: 12 }}>обновлено: {formatIso(healthLoadedAt)}</Typography>
-            <Button size="small" variant="contained" disabled={healthBusy} onClick={() => void loadLiveHealth()} sx={{ fontWeight: 800 }}>
-              {healthBusy ? '...' : 'Обновить live'}
-            </Button>
-          </Box>
-        </Box>
-        <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
-        <Typography sx={{ color: '#777', fontSize: 12, mb: 1 }}>
-          Не авто-polling: только по кнопке. Данные таблиц/лидерборда на remote идут из активного JSON лидерборда, не отсюда.
-        </Typography>
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Typography sx={{ color: '#bbb', minWidth: 140 }}>backend</Typography>
-            <StatusChip ok={health?.backendOnline} okLabel="online" badLabel="offline" />
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Typography sx={{ color: '#bbb', minWidth: 140 }}>internetOk</Typography>
-            <StatusChip ok={health?.system?.internetOk} okLabel="ok" badLabel="offline" />
-          </Box>
-          <Typography sx={{ color: '#bbb' }}>appVersion: {health?.appVersion ?? '—'}</Typography>
-          <Typography sx={{ color: '#bbb' }}>timestamp: {formatIso(health?.timestamp)}</Typography>
-        </Box>
-      </Paper>
-
-      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>iPad status (live)</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <Typography sx={{ color: '#bbb', minWidth: 140 }}>online</Typography>
-          <StatusChip ok={health?.ipad?.online} okLabel="online" badLabel="offline" />
-        </Box>
-        <Typography sx={{ color: '#bbb' }}>deviceId: {health?.ipad?.deviceId ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>lastSeen: {formatIso(health?.ipad?.lastHeartbeatAt)}</Typography>
-        {health?.ipad?.currentScreen ? <Typography sx={{ color: '#bbb' }}>currentScreen: {health.ipad.currentScreen}</Typography> : null}
-        {health?.ipad?.route ? <Typography sx={{ color: '#bbb' }}>route: {health.ipad.route}</Typography> : null}
-      </Paper>
-
-      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>TouchDesigner (live)</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <Typography sx={{ color: '#bbb', minWidth: 140 }}>online</Typography>
-          <StatusChip ok={tdOnline} okLabel="online" badLabel="offline" />
-        </Box>
-        <Typography sx={{ color: '#bbb' }}>lastSeen: {formatIso(health?.td?.lastTdEventAt)}</Typography>
-        <Typography sx={{ color: '#bbb' }}>TDHealth.json path: {health?.td?.healthFilePath ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>TDHealth.json source: {health?.td?.healthFilePathSource ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>TDHealth.json updated: {formatIso(health?.td?.healthFileUpdatedAt)}</Typography>
-        <Typography sx={{ color: '#bbb' }}>TDHealth.json size: {health?.td?.healthFileSizeBytes ?? '—'}</Typography>
-        {health?.td?.healthFileError ? (
-          <Typography sx={{ color: '#f2b8b5' }}>TDHealth.json error: {health.td.healthFileError}</Typography>
-        ) : null}
-        <Typography sx={{ color: '#bbb' }}>lastTdSyncOk: {formatIso(health?.td?.lastTdSyncOk)}</Typography>
-        <Typography sx={{ color: '#bbb' }}>lastTdSyncError: {formatIso(health?.td?.lastTdSyncError)}</Typography>
-        <Typography sx={{ color: '#bbb' }}>healthFile: {health?.td?.healthFile ? 'present' : 'missing'}</Typography>
-        {tdHealthErrors.length ? (
-          <Typography sx={{ color: '#f2b8b5', mt: 1 }}>healthFile errors: {tdHealthErrors.join(', ')}</Typography>
-        ) : null}
-      </Paper>
-
-      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>Последний JSON состояния магазина (TDHealth.json)</Typography>
-        <Typography sx={{ color: '#777', fontSize: 12, mb: 1 }}>
-          Это JSON, который локальный backend магазина читает из runtime/health и отдает в remote monitoring.
-        </Typography>
-        <Typography sx={{ color: '#bbb', fontSize: 13, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {health?.td?.healthFile ? safeJsonPreview(health.td.healthFile, 12000) : 'Нет данных TDHealth.json'}
-        </Typography>
-      </Paper>
-
-      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>Queue / Runs (live)</Typography>
-        <Typography sx={{ color: '#bbb' }}>current queue length: {health?.queue?.queuedCount ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>
-          waiting participants: {health?.queue?.waitingParticipants ?? health?.queue?.queuedCount ?? '—'}
-        </Typography>
-        <Typography sx={{ color: '#bbb' }}>
-          active run: {health?.queue?.runningCount != null ? (health.queue.runningCount > 0 ? 'yes' : 'no') : '—'}
-        </Typography>
-        <Typography sx={{ color: '#bbb' }}>last run: {formatIso(health?.runs?.lastSuccessfulRunAt)}</Typography>
-      </Paper>
-
-      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>System metrics (live)</Typography>
-        <Typography sx={{ color: '#bbb' }}>cpuPct: {health?.system?.cpuPct ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>ramPct: {health?.system?.ramPct ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>diskFreeGb: {health?.system?.diskFreeGb ?? '—'}</Typography>
-        <Typography sx={{ color: '#bbb' }}>uptimeSec: {health?.system?.uptimeSec ?? '—'}</Typography>
-      </Paper>
-
-      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>Warnings / Errors (live)</Typography>
-        <Typography sx={{ fontWeight: 800, color: '#bbb', mb: 0.5 }}>warnings</Typography>
-        {health?.warnings?.length ? (
-          <Typography sx={{ color: '#fdd835' }}>{health.warnings.join(', ')}</Typography>
-        ) : (
-          <Typography sx={{ color: '#777' }}>Нет предупреждений</Typography>
-        )}
-        <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
-        <Typography sx={{ fontWeight: 800, color: '#bbb', mb: 0.5 }}>errors</Typography>
-        {health?.errors?.length ? (
-          <Typography sx={{ color: '#ff8a80' }}>{health.errors.join(', ')}</Typography>
-        ) : (
-          <Typography sx={{ color: '#777' }}>Нет ошибок</Typography>
-        )}
-      </Paper>
-
-      <Paper sx={{ p: 2, border: '1px solid #2a2a2a', bgcolor: '#161616' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
-          <Typography sx={{ fontWeight: 900 }}>Активный JSON лидерборда: вложенный monitoring (remote)</Typography>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Typography sx={{ color: '#777', fontSize: 12 }}>загружено: {formatIso(activeMonLoadedAt)}</Typography>
-            <Button size="small" variant="outlined" onClick={() => void loadActiveMonitoring()} sx={{ fontWeight: 800 }}>
-              Обновить
-            </Button>
-          </Box>
-        </Box>
-        <Divider sx={{ my: 1.5, borderColor: '#2a2a2a' }} />
-        {activeMonEmpty ? (
-          <Typography sx={{ color: '#777' }}>Нет активного JSON лидерборда или блок remote отсутствует.</Typography>
-        ) : (
-          <Typography sx={{ color: '#bbb', fontSize: 13, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-            {safeJsonPreview(activeMon, 8000)}
-          </Typography>
-        )}
-      </Paper>
     </Box>
   );
 }
