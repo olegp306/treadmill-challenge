@@ -398,7 +398,7 @@ export default function RunQueuePage() {
               <QueueBusyEstimateLines peopleAhead={queueAheadPeople} waitMinutes={queueWaitMinutes} />
             </>
           ) : (
-            <p style={{ ...rq.titleMain, margin: 0 }}>
+            <p style={{ ...rq.titleMain, margin: 0, whiteSpace: 'nowrap' }}>
               <span>Ваш номер в очереди: </span>
               <span style={rq.titleAccent}>{livePosition}</span>
             </p>

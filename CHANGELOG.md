@@ -7,6 +7,26 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.8] - 2026-06-15
+
+### Local / iPad system
+
+- **Age restriction screen:** убрана вторичная строка «вы можете вернуться на главную.»; на экране остается только сообщение «Участие в забеге доступно только совершеннолетним.»
+- **Queue screens background:** для экранов очереди добавлен явный тёмный серо-чёрный градиент фона, чтобы он соответствовал Figma-состоянию.
+- **Queue number line:** строка «Ваш номер в очереди: N» закреплена как однострочная и в основном экране очереди; номер остается красным через существующий `titleAccent`.
+
+### Remote system
+
+- **Remote versions:** `remote-backend` поднят до `0.1.8`, `remote-frontend` поднят до `0.1.7`.
+
+### Verification
+
+- `npm run build`
+- `npx vitest run apps/frontend/src/utils/runResultFormat.test.ts`
+- `npm test -w apps/remote-backend`
+
+---
+
 ## [0.5.7] - 2026-06-15
 
 ### Local / iPad system

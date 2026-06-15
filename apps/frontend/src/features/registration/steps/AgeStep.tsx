@@ -19,7 +19,6 @@ export function AgeStep({ ageChoice, onAgeChoice, onBack }: Props) {
         aria-label="Подтверждение возраста"
         lines={[
           'Участие в забеге доступно только совершеннолетним.',
-          'вы можете вернуться на главную.',
         ]}
         secondaryLineStyle={reg.ageFigmaBlockedSubtext}
         onBack={onBack}

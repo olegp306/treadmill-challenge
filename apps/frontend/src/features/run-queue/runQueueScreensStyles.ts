@@ -22,6 +22,7 @@ export const rq: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     boxSizing: 'border-box',
+    background: 'linear-gradient(180deg, #19191b 0%, #111113 46%, #080809 100%)',
     boxShadow: 'inset 0 -160px 160px -200px rgba(230, 35, 58, 0.35)',
   },
   sheetGlow: {
