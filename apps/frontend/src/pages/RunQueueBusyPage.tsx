@@ -126,7 +126,7 @@ export default function RunQueueBusyPage() {
       {},
       {
         participantId,
-        readableMessage: 'С экрана «дорожка занята» — подтверждение выхода из забега',
+        readableMessage: 'С экрана «дорожка занята» пользователь нажал «Нет» — подтверждение выхода из забега',
       }
     );
     navigate('/run/leave-queue', {
@@ -200,7 +200,7 @@ export default function RunQueueBusyPage() {
         isTreadmillBusy && state.runSessionId ? (
           <>
             <button type="button" style={rq.btnWide} onClick={goLeaveConfirm}>
-              Сойти с забега
+              Нет
             </button>
             <button type="button" style={rq.btnWideSolid} onClick={goJoinQueue}>
               Занять очередь

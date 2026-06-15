@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.10] - 2026-06-15
+
+### Local / iPad system
+
+- **Treadmill busy flow:** на экране «Дорожка пока занята» левая кнопка теперь называется «Нет» и ведет на экран подтверждения «Вы уверены, что хотите сойти с забега?». На подтверждении повторное «Сойти с забега» снимает участника с забега, а «Нет» возвращает назад на экран «Дорожка пока занята».
+- **TouchDesigner leaderboard tests:** добавлен regression-test, что широкий TouchDesigner leaderboard показывает legacy-результаты `9999`, `166.39` и `166:39` как `--:--` для 1 км и 5 км.
+
+### Verification
+
+- `npx vitest run apps/frontend/src/utils/runResultFormat.test.ts apps/frontend/src/features/td/tdFormat.test.ts`
+- `npm run build:frontend`
+
+---
+
 ## [0.5.9] - 2026-06-15
 
 ### Local / iPad system
