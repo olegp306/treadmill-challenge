@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.16] - 2026-06-19
+
+### Remote system
+
+- **Remote Leaderboard landing hero:** corrected the "Беги на максимум" side marker layout to match Figma: `Москва` sits above the marker block, each side has four horizontal ticks, and the globe marker aligns with the first tick.
+- **Remote Leaderboard route:** added `/liderboard2` as a compatibility alias for the `/leaderboard2` landing page.
+- **Remote versions:** `remote-frontend` raised to `0.1.12`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.15] - 2026-06-19
 
 ### Remote system

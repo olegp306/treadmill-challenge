@@ -32,6 +32,7 @@ export default function App() {
         <Route path="/" element={<RemoteLeaderboardPage />} />
         <Route path="/leaderboard" element={<RemoteLeaderboardPage />} />
         <Route path="/leaderboard2" element={<RemoteLeaderboardLandingPage />} />
+        <Route path="/liderboard2" element={<RemoteLeaderboardLandingPage />} />
         <Route path="/admin" element={<RemoteAdminGate />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

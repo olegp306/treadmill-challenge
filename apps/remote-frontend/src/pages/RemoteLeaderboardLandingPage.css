@@ -124,7 +124,7 @@ body.leaderboard2-route #root {
 
 .leaderboard2__heroBracket {
   position: absolute;
-  top: 24px;
+  top: 74px;
   width: 20px;
   height: 435px;
   opacity: 0.7;
@@ -133,23 +133,25 @@ body.leaderboard2-route #root {
 .leaderboard2__heroBracket--left {
   left: 30px;
   background:
-    linear-gradient(var(--lb2-red), var(--lb2-red)) left top / 20px 1px no-repeat,
-    linear-gradient(var(--lb2-red), var(--lb2-red)) left 50% / 20px 1px no-repeat,
-    linear-gradient(var(--lb2-red), var(--lb2-red)) left bottom / 20px 1px no-repeat;
+    linear-gradient(var(--lb2-red), var(--lb2-red)) left 39px / 20px 1px no-repeat,
+    linear-gradient(var(--lb2-red), var(--lb2-red)) left 158px / 20px 1px no-repeat,
+    linear-gradient(var(--lb2-red), var(--lb2-red)) left 277px / 20px 1px no-repeat,
+    linear-gradient(var(--lb2-red), var(--lb2-red)) left 396px / 20px 1px no-repeat;
 }
 
 .leaderboard2__heroBracket--right {
   right: 30px;
   background:
-    linear-gradient(var(--lb2-red), var(--lb2-red)) right top / 20px 1px no-repeat,
-    linear-gradient(var(--lb2-red), var(--lb2-red)) right 50% / 20px 1px no-repeat,
-    linear-gradient(var(--lb2-red), var(--lb2-red)) right bottom / 20px 1px no-repeat;
+    linear-gradient(var(--lb2-red), var(--lb2-red)) right 39px / 20px 1px no-repeat,
+    linear-gradient(var(--lb2-red), var(--lb2-red)) right 158px / 20px 1px no-repeat,
+    linear-gradient(var(--lb2-red), var(--lb2-red)) right 277px / 20px 1px no-repeat,
+    linear-gradient(var(--lb2-red), var(--lb2-red)) right 396px / 20px 1px no-repeat;
 }
 
 .leaderboard2__heroCenterMarker {
   position: absolute;
   left: 50%;
-  top: 32px;
+  top: 95px;
   z-index: 2;
   width: 37px;
   height: 37px;
