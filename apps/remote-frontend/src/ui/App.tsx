@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import RemoteLeaderboardLandingPage from '../pages/RemoteLeaderboardLandingPage';
 import RemoteLeaderboardPage from '../pages/RemoteLeaderboardPage';
 import { LoginScreen } from './LoginScreen';
 import { RemoteAdminShell } from './RemoteAdminShell';
@@ -30,6 +31,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<RemoteLeaderboardPage />} />
         <Route path="/leaderboard" element={<RemoteLeaderboardPage />} />
+        <Route path="/leaderboard2" element={<RemoteLeaderboardLandingPage />} />
         <Route path="/admin" element={<RemoteAdminGate />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

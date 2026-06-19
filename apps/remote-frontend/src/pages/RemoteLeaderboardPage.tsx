@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   CAROUSEL_ORDER,
   LeaderboardExperience,
@@ -24,6 +25,8 @@ const POLL_MS = 45_000;
 
 export default function RemoteLeaderboardPage() {
   const [backupUnavailableMessage, setBackupUnavailableMessage] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const isEmbed = searchParams.get('embed') === '1';
 
   const fetchAllSlides = useCallback(async (): Promise<SlideState[]> => {
     const res = await fetch('/api/remote/leaderboard-data');
@@ -53,7 +56,7 @@ export default function RemoteLeaderboardPage() {
       fetchAllSlides={fetchAllSlides}
       pollIntervalMs={POLL_MS}
       backupUnavailableMessage={backupUnavailableMessage}
-      layoutMode="desktop"
+      layoutMode={isEmbed ? 'embed' : 'desktop'}
     />
   );
 }

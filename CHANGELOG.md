@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.15] - 2026-06-19
+
+### Remote system
+
+- **Remote Leaderboard landing:** added the new `/leaderboard2` public landing page with the embedded Remote Leaderboard section.
+- **Landing visual pass:** updated the hero, timer, intro CTA buttons, stats card, prize card arrows, Figma-style markers, location labels, and responsive scrolling to better match the supplied Figma layouts.
+- **Remote leaderboard embed:** kept the embedded leaderboard route available for iframe-style placement inside the new landing.
+- **Remote versions:** `remote-frontend` raised to `0.1.11`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.14] - 2026-06-16
 
 ### Local / iPad system

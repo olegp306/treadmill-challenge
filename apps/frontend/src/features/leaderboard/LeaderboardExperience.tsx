@@ -80,8 +80,9 @@ export type LeaderboardExperienceProps = {
   /**
    * `kiosk` = iPad waiting leaderboard (fullscreen shell, scrollIntoView centers in viewport).
    * `desktop` = remote public page: scrollable shell + highlight scroll only inside the center list.
+   * `embed` = reusable remote leaderboard block for landing/iframes: search on its own row, wider tabs, compact carousel.
    */
-  layoutMode?: 'kiosk' | 'desktop';
+  layoutMode?: 'kiosk' | 'desktop' | 'embed';
 };
 
 type NameSearchMatch = { runTypeId: RunTypeId; sex: Gender; participantId: string; runId: string };
@@ -410,144 +411,154 @@ export function LeaderboardExperience({
   const dataUnavailable =
     Boolean(backupUnavailableMessage) &&
     slides.every((s) => !s.loading && !s.error && s.entries.length === 0);
+  const isEmbedLayout = layoutMode === 'embed';
+  const isRemoteLikeLayout = layoutMode === 'desktop' || isEmbedLayout;
+  const isNarrowEmbedLayout = isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= 520;
+
+  const searchControls = (
+    <div
+      ref={searchRowRef}
+      style={{
+        ...styles.searchRow,
+        ...(isEmbedLayout ? styles.searchRowEmbed : {}),
+        ...(isSearchExpanded ? styles.searchRowFocused : {}),
+        ...(isEmbedLayout && isSearchExpanded ? styles.searchRowEmbedFocused : {}),
+      }}
+      onFocusCapture={() => setIsSearchFocused(true)}
+      onBlurCapture={(e) => {
+        const next = e.relatedTarget as Node | null;
+        if (next && searchRowRef.current?.contains(next)) return;
+        setIsSearchFocused(false);
+      }}
+    >
+      <label
+        style={{
+          ...styles.searchBar,
+          ...(isEmbedLayout ? styles.searchBarEmbed : {}),
+          ...(isSearchExpanded ? styles.searchBarFocused : {}),
+          ...(isEmbedLayout && isSearchExpanded ? styles.searchBarEmbedFocused : {}),
+          ...(isSearchFocused ? styles.searchBarActiveFocus : {}),
+        }}
+      >
+        <span style={styles.searchIcon} aria-hidden>
+          <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2" />
+            <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </span>
+        <input
+          type="text"
+          value={searchInputDraft}
+          onChange={(e) => setSearchInputDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (!shouldRunLeaderboardSearchOnKey(e.key, searchInputDraft)) return;
+            e.preventDefault();
+            triggerNameSearch();
+          }}
+          placeholder={isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
+          style={{
+            ...styles.searchInput,
+            ...(showSearchSwitchButtons ? styles.searchInputWithSwitchButtons : {}),
+          }}
+          autoComplete="off"
+        />
+        {showSearchSwitchButtons ? (
+          <span style={styles.searchSwitchButtonsInInput}>
+            <button
+              type="button"
+              aria-label="Предыдущий найденный участник"
+              style={styles.searchSwitchBtnInInput}
+              disabled={!canGoSearchUp}
+              onClick={() => cycleNameSearchMatch(-1)}
+            >
+              <span
+                style={{
+                  ...styles.searchSwitchIconImage,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: canGoSearchUp ? '#ffffff' : 'rgba(255,255,255,0.34)',
+                }}
+              >
+                <LbSearchChevronUp />
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label="Следующий найденный участник"
+              style={styles.searchSwitchBtnInInput}
+              disabled={!canGoSearchDown}
+              onClick={() => cycleNameSearchMatch(1)}
+            >
+              <span
+                style={{
+                  ...styles.searchSwitchIconImage,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: canGoSearchDown ? ui.color.red : 'rgba(255,255,255,0.34)',
+                }}
+              >
+                <LbSearchChevronDown />
+              </span>
+            </button>
+          </span>
+        ) : null}
+      </label>
+      <span
+        style={{
+          ...styles.searchFindBtnSlot,
+          ...(isEmbedLayout ? styles.searchFindBtnSlotEmbed : {}),
+          ...(showSearchFindButton ? styles.searchFindBtnSlotVisible : styles.searchFindBtnSlotHidden),
+        }}
+        aria-hidden={!showSearchFindButton}
+      >
+        <button
+          type="button"
+          style={{
+            ...styles.searchFindBtn,
+            ...(showSearchFindButton ? styles.searchFindBtnVisible : styles.searchFindBtnHidden),
+            ...(searchFindFeedbackActive ? styles.searchFindBtnFeedback : {}),
+          }}
+          onClick={triggerNameSearch}
+          disabled={!showSearchFindButton || searchFindFeedbackActive}
+          aria-busy={searchFindFeedbackActive}
+        >
+          <span style={styles.searchFindBtnText}>Найти</span>
+        </button>
+      </span>
+      {showHomeLink ? (
+        <Link to="/" style={styles.btnHome}>
+          На главную
+        </Link>
+      ) : null}
+    </div>
+  );
 
   return (
-    <ArOzioViewport variant={layoutMode === 'desktop' ? 'remote' : 'kiosk'}>
-      <ScreenContainer style={styles.page}>
-        <Sheet style={styles.sheet}>
-          <div style={styles.sheetInner}>
+    <ArOzioViewport variant={isRemoteLikeLayout ? 'remote' : 'kiosk'}>
+      <ScreenContainer style={{ ...styles.page, ...(isEmbedLayout ? styles.pageEmbed : {}) }}>
+        <Sheet style={{ ...styles.sheet, ...(isEmbedLayout ? styles.sheetEmbed : {}) }}>
+          <div style={{ ...styles.sheetInner, ...(isEmbedLayout ? styles.sheetInnerEmbed : {}) }}>
             <HeaderChrome
-              style={styles.headerRow}
+              style={{ ...styles.headerRow, ...(isEmbedLayout ? styles.headerRowEmbed : {}) }}
               logoStyle={styles.logoMark}
               right={
+                isEmbedLayout ? undefined :
                 <div style={styles.headerRight}>
-                  <div
-                    ref={searchRowRef}
-                    style={{
-                      ...styles.searchRow,
-                      ...(isSearchExpanded ? styles.searchRowFocused : {}),
-                    }}
-                    onFocusCapture={() => setIsSearchFocused(true)}
-                    onBlurCapture={(e) => {
-                      const next = e.relatedTarget as Node | null;
-                      if (next && searchRowRef.current?.contains(next)) return;
-                      setIsSearchFocused(false);
-                    }}
-                  >
-                    <label
-                      style={{
-                        ...styles.searchBar,
-                        ...(isSearchExpanded ? styles.searchBarFocused : {}),
-                        ...(isSearchFocused ? styles.searchBarActiveFocus : {}),
-                      }}
-                    >
-                      <span style={styles.searchIcon} aria-hidden>
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="100%"
-                          height="100%"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2" />
-                          <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      </span>
-                      <input
-                        type="text"
-                        value={searchInputDraft}
-                        onChange={(e) => setSearchInputDraft(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (!shouldRunLeaderboardSearchOnKey(e.key, searchInputDraft)) return;
-                          e.preventDefault();
-                          triggerNameSearch();
-                        }}
-                        placeholder={isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
-                        style={{
-                          ...styles.searchInput,
-                          ...(showSearchSwitchButtons ? styles.searchInputWithSwitchButtons : {}),
-                        }}
-                        autoComplete="off"
-                      />
-                      {showSearchSwitchButtons ? (
-                        <span style={styles.searchSwitchButtonsInInput}>
-                          <button
-                            type="button"
-                            aria-label="Предыдущий найденный участник"
-                            style={styles.searchSwitchBtnInInput}
-                            disabled={!canGoSearchUp}
-                            onClick={() => cycleNameSearchMatch(-1)}
-                          >
-                            <span
-                              style={{
-                                ...styles.searchSwitchIconImage,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: canGoSearchUp ? '#ffffff' : 'rgba(255,255,255,0.34)',
-                              }}
-                            >
-                              <LbSearchChevronUp />
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Следующий найденный участник"
-                            style={styles.searchSwitchBtnInInput}
-                            disabled={!canGoSearchDown}
-                            onClick={() => cycleNameSearchMatch(1)}
-                          >
-                            <span
-                              style={{
-                                ...styles.searchSwitchIconImage,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: canGoSearchDown ? ui.color.red : 'rgba(255,255,255,0.34)',
-                              }}
-                            >
-                              <LbSearchChevronDown />
-                            </span>
-                          </button>
-                        </span>
-                      ) : null}
-                    </label>
-                    <span
-                      style={{
-                        ...styles.searchFindBtnSlot,
-                        ...(showSearchFindButton ? styles.searchFindBtnSlotVisible : styles.searchFindBtnSlotHidden),
-                      }}
-                      aria-hidden={!showSearchFindButton}
-                    >
-                      <button
-                        type="button"
-                        style={{
-                          ...styles.searchFindBtn,
-                          ...(showSearchFindButton ? styles.searchFindBtnVisible : styles.searchFindBtnHidden),
-                          ...(searchFindFeedbackActive ? styles.searchFindBtnFeedback : {}),
-                        }}
-                        onClick={triggerNameSearch}
-                        disabled={!showSearchFindButton || searchFindFeedbackActive}
-                        aria-busy={searchFindFeedbackActive}
-                      >
-                        <span style={styles.searchFindBtnText}>Найти</span>
-                      </button>
-                    </span>
-                    {showHomeLink ? (
-                      <Link to="/" style={styles.btnHome}>
-                        На главную
-                      </Link>
-                    ) : null}
-                  </div>
+                  {searchControls}
                 </div>
               }
             />
 
-            <div style={styles.genderTabs}>
+            {isEmbedLayout ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
+
+            <div style={{ ...styles.genderTabs, ...(isEmbedLayout ? styles.genderTabsEmbed : {}) }}>
               <button
                 type="button"
                 style={{
                   ...styles.genderTab,
+                  ...(isEmbedLayout ? styles.genderTabEmbed : {}),
                   ...(selectedSex === 'female' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
                 onClick={() => setGenderTab('female')}
@@ -558,6 +569,7 @@ export function LeaderboardExperience({
                 type="button"
                 style={{
                   ...styles.genderTab,
+                  ...(isEmbedLayout ? styles.genderTabEmbed : {}),
                   ...(selectedSex === 'male' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
                 onClick={() => setGenderTab('male')}
@@ -569,6 +581,7 @@ export function LeaderboardExperience({
             <div
               style={{
                 ...styles.leaderboardRow,
+                ...(isEmbedLayout ? styles.leaderboardRowEmbed : {}),
                 opacity: isCarouselFading ? 0.14 : 1,
                 transition: `opacity ${CAROUSEL_FADE_MS}ms ease`,
               }}
@@ -591,35 +604,42 @@ export function LeaderboardExperience({
               <button
                 type="button"
                 aria-label="Предыдущий зачёт"
-                style={{ ...styles.arrowBtn, ...styles.arrowBtnLeft, left: w(8) }}
+                style={{
+                  ...styles.arrowBtn,
+                  ...styles.arrowBtnLeft,
+                  ...(isEmbedLayout ? styles.arrowBtnEmbed : {}),
+                  left: isEmbedLayout ? w(4) : w(8),
+                }}
                 onClick={() => shiftCarousel(-1)}
               >
                 <LbCarouselArrow rotationDeg={180} />
               </button>
 
-              <aside
-                style={{
-                  ...styles.sideColLayer1,
-                  ...styles.colCarouselFlankLeft,
-                  pointerEvents: 'none',
-                }}
-                aria-hidden
-              >
-                <LeaderboardStack
-                  entries={leftEntries}
-                  runTypeId={leftRunType}
-                  scoped
-                  highlightId={undefined}
-                  highlightRunId={undefined}
-                  highlightRef={null}
-                  dim
-                  loading={slides[leftIdx]?.loading}
-                  error={slides[leftIdx]?.error}
-                  emptyHint="Пока нет результатов в этом зачёте."
-                />
-              </aside>
+              {!isEmbedLayout ? (
+                <aside
+                  style={{
+                    ...styles.sideColLayer1,
+                    ...styles.colCarouselFlankLeft,
+                    pointerEvents: 'none',
+                  }}
+                  aria-hidden
+                >
+                  <LeaderboardStack
+                    entries={leftEntries}
+                    runTypeId={leftRunType}
+                    scoped
+                    highlightId={undefined}
+                    highlightRunId={undefined}
+                    highlightRef={null}
+                    dim
+                    loading={slides[leftIdx]?.loading}
+                    error={slides[leftIdx]?.error}
+                    emptyHint="Пока нет результатов в этом зачёте."
+                  />
+                </aside>
+              ) : null}
 
-              <section style={styles.mainColLayer2}>
+              <section style={{ ...styles.mainColLayer2, ...(isEmbedLayout ? styles.mainColLayer2Embed : {}) }}>
                 <LeaderboardStack
                   entries={centerEntries}
                   runTypeId={centerScope.runTypeId}
@@ -627,40 +647,49 @@ export function LeaderboardExperience({
                   highlightId={showHighlight ? activeHighlightParticipantId : undefined}
                   highlightRunId={showHighlight ? activeHighlightRunId : undefined}
                   highlightRef={highlightRef}
-                  scrollBodyRef={layoutMode === 'desktop' ? centerListScrollRef : undefined}
+                  scrollBodyRef={isRemoteLikeLayout ? centerListScrollRef : undefined}
                   dim={false}
                   loading={centerLoading}
                   error={centerError}
+                  compact={isEmbedLayout}
+                  narrow={isNarrowEmbedLayout}
                   emptyHint="Пока нет результатов в этом зачёте."
                 />
               </section>
 
-              <aside
-                style={{
-                  ...styles.sideColLayer3,
-                  ...styles.colCarouselFlankRight,
-                  pointerEvents: 'none',
-                }}
-                aria-hidden
-              >
-                <LeaderboardStack
-                  entries={rightEntries}
-                  runTypeId={rightRunType}
-                  scoped
-                  highlightId={undefined}
-                  highlightRunId={undefined}
-                  highlightRef={null}
-                  dim
-                  loading={slides[rightIdx]?.loading}
-                  error={slides[rightIdx]?.error}
-                  emptyHint="Пока нет результатов в этом зачёте."
-                />
-              </aside>
+              {!isEmbedLayout ? (
+                <aside
+                  style={{
+                    ...styles.sideColLayer3,
+                    ...styles.colCarouselFlankRight,
+                    pointerEvents: 'none',
+                  }}
+                  aria-hidden
+                >
+                  <LeaderboardStack
+                    entries={rightEntries}
+                    runTypeId={rightRunType}
+                    scoped
+                    highlightId={undefined}
+                    highlightRunId={undefined}
+                    highlightRef={null}
+                    dim
+                    loading={slides[rightIdx]?.loading}
+                    error={slides[rightIdx]?.error}
+                    emptyHint="Пока нет результатов в этом зачёте."
+                  />
+                </aside>
+              ) : null}
 
               <button
                 type="button"
                 aria-label="Следующий зачёт"
-                style={{ ...styles.arrowBtn, ...styles.arrowBtnRight, right: w(8) }}
+                style={{
+                  ...styles.arrowBtn,
+                  ...styles.arrowBtnRight,
+                  ...(isEmbedLayout ? styles.arrowBtnEmbed : {}),
+                  right: isEmbedLayout ? w(4) : w(8),
+                }}
                 onClick={() => shiftCarousel(1)}
               >
                 <LbCarouselArrow rotationDeg={0} />
@@ -687,6 +716,8 @@ function LeaderboardStack({
   loading,
   error,
   emptyHint,
+  compact = false,
+  narrow = false,
 }: {
   entries: LeaderboardEntry[];
   runTypeId: RunTypeId;
@@ -700,6 +731,8 @@ function LeaderboardStack({
   loading?: boolean;
   error?: string | null;
   emptyHint?: string;
+  compact?: boolean;
+  narrow?: boolean;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
   const rows = dim ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
@@ -710,16 +743,18 @@ function LeaderboardStack({
         ...styles.stackCard,
         ...(dim ? styles.stackDim : {}),
         ...(dim ? {} : styles.stackCardMain),
+        ...(compact ? styles.stackCardCompact : {}),
       }}
     >
       <div style={styles.stackHeaderBar}>
-        <p style={styles.stackHeaderLabel}>{title}</p>
+        <p style={{ ...styles.stackHeaderLabel, ...(compact ? styles.stackHeaderLabelCompact : {}) }}>{title}</p>
       </div>
       <div
         ref={scrollBodyRef as Ref<HTMLDivElement> | undefined}
         style={{
           ...styles.stackBody,
           ...(dim ? styles.stackBodyDim : styles.stackBodyMain),
+          ...(compact ? styles.stackBodyCompact : {}),
         }}
       >
         {loading ? <p style={styles.muted}>Загрузка…</p> : null}
@@ -743,10 +778,18 @@ function LeaderboardStack({
                     ...styles.lbRow,
                     ...(dim ? styles.lbRowBack : {}),
                     ...(top3 ? styles.lbRowTop : {}),
+                    ...(compact ? styles.lbRowCompact : {}),
+                    ...(narrow ? styles.lbRowNarrow : {}),
                   }}
                 >
-                  <div style={styles.lbRowLeft}>
-                    <span style={{ ...styles.lbRank, ...(dim ? styles.lbRankBack : {}) }}>
+                  <div style={{ ...styles.lbRowLeft, ...(compact ? styles.lbRowLeftCompact : {}) }}>
+                    <span
+                      style={{
+                        ...styles.lbRank,
+                        ...(dim ? styles.lbRankBack : {}),
+                        ...(compact ? styles.lbRankCompact : {}),
+                      }}
+                    >
                       {e.rank ?? i + 1}
                     </span>
                     <span
@@ -754,12 +797,22 @@ function LeaderboardStack({
                         ...styles.lbName,
                         ...(dim ? styles.lbNameBack : {}),
                         ...(isHighlight ? styles.lbNameHighlight : {}),
+                        ...(compact ? styles.lbNameCompact : {}),
                       }}
                     >
                       {e.participantName}
                     </span>
                   </div>
-                  <span style={{ ...styles.lbResult, ...(dim ? styles.lbResultBack : {}) }}>{resultStr}</span>
+                  <span
+                    style={{
+                      ...styles.lbResult,
+                      ...(dim ? styles.lbResultBack : {}),
+                      ...(compact ? styles.lbResultCompact : {}),
+                      ...(narrow ? styles.lbResultNarrow : {}),
+                    }}
+                  >
+                    {resultStr}
+                  </span>
                 </div>
               );
             })
@@ -783,12 +836,24 @@ const styles: Record<string, CSSProperties> = {
     minHeight: '100%',
     overflow: 'hidden',
   },
+  pageEmbed: {
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    height: 'auto',
+    minHeight: '100%',
+  },
   sheet: {
     flex: 1,
     minHeight: 0,
     width: '100%',
     borderRadius: w(48),
     boxSizing: 'border-box',
+  },
+  sheetEmbed: {
+    borderRadius: w(26),
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   sheetInner: {
     position: 'relative',
@@ -801,6 +866,10 @@ const styles: Record<string, CSSProperties> = {
     overflow: 'hidden',
     boxSizing: 'border-box',
   },
+  sheetInnerEmbed: {
+    gap: h(16),
+    padding: `${h(30)} ${w(28)} ${h(30)}`,
+  },
   headerRow: {
     display: 'flex',
     flexDirection: 'row',
@@ -808,6 +877,9 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: 'space-between',
     gap: w(24),
     flexWrap: 'wrap',
+  },
+  headerRowEmbed: {
+    justifyContent: 'flex-start',
   },
   logoMark: {
     margin: 0,
@@ -843,12 +915,29 @@ const styles: Record<string, CSSProperties> = {
     width: w(1220),
     justifyContent: 'flex-start',
   },
+  searchRowEmbed: {
+    width: '100%',
+    maxWidth: '100%',
+    flexWrap: 'wrap',
+    gap: `${h(12)} ${w(14)}`,
+  },
+  searchRowEmbedFocused: {
+    width: '100%',
+  },
+  embedSearchWrap: {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+  },
   searchFindBtnSlot: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
     flexShrink: 0,
     width: w(230),
+  },
+  searchFindBtnSlotEmbed: {
+    width: 'auto',
   },
   searchFindBtnSlotVisible: {
     opacity: 1,
@@ -910,6 +999,14 @@ const styles: Record<string, CSSProperties> = {
   },
   searchBarFocused: {
     minWidth: w(620),
+  },
+  searchBarEmbed: {
+    minWidth: 0,
+    width: '100%',
+    flex: '1 1 100%',
+  },
+  searchBarEmbedFocused: {
+    minWidth: 0,
   },
   searchBarActiveFocus: {
     borderColor: 'rgba(255,255,255,0.52)',
@@ -1004,6 +1101,11 @@ const styles: Record<string, CSSProperties> = {
     boxSizing: 'border-box',
     gap: w(8),
   },
+  genderTabsEmbed: {
+    width: '100%',
+    maxWidth: '100%',
+    minHeight: h(98),
+  },
   genderTab: {
     flex: 1,
     border: 'none',
@@ -1015,6 +1117,11 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 500,
     lineHeight: h(39),
     fontSynthesis: 'none',
+  },
+  genderTabEmbed: {
+    fontSize: 'clamp(7px, 2vw, 11px)',
+    lineHeight: 1,
+    letterSpacing: '0.01em',
   },
   genderTabActive: {
     background: '#fff',
@@ -1036,6 +1143,10 @@ const styles: Record<string, CSSProperties> = {
     paddingRight: 0,
     boxSizing: 'border-box',
     overflow: 'hidden',
+  },
+  leaderboardRowEmbed: {
+    minHeight: h(940),
+    maxWidth: '100%',
   },
   arrowBtn: {
     position: 'absolute' as const,
@@ -1062,6 +1173,11 @@ const styles: Record<string, CSSProperties> = {
   },
   arrowBtnRight: {
     transform: 'translate(2%, calc(-50% - 10px))',
+  },
+  arrowBtnEmbed: {
+    width: w(68),
+    height: w(68),
+    zIndex: 8,
   },
   arrowIconImageInner: {
     width: '42%',
@@ -1115,6 +1231,14 @@ const styles: Record<string, CSSProperties> = {
     transition: 'transform 0.45s ease',
     boxSizing: 'border-box',
   },
+  mainColLayer2Embed: {
+    position: 'relative',
+    left: 'auto',
+    top: 'auto',
+    width: '100%',
+    maxWidth: '100%',
+    transform: 'none',
+  },
   stackCard: {
     display: 'flex',
     flexDirection: 'column',
@@ -1132,6 +1256,10 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(255, 100, 119, 0.6)',
     boxShadow:
       '0 0 0 1px rgba(230, 35, 58, 0.45), 0 18px 48px rgba(0,0,0,0.55), 0 0 60px rgba(230, 35, 58, 0.12)',
+  },
+  stackCardCompact: {
+    minHeight: h(820),
+    maxHeight: h(900),
   },
   stackDim: {
     opacity: 0.9,
@@ -1166,6 +1294,11 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.03em',
     lineHeight: 1.15,
   },
+  stackHeaderLabelCompact: {
+    fontSize: 'clamp(9px, 2.8vw, 15px)',
+    padding: 'clamp(7px, 2vw, 12px) clamp(8px, 2.4vw, 14px)',
+    borderRadius: 'clamp(8px, 2.4vw, 16px)',
+  },
   stackBody: {
     flex: 1,
     minHeight: 0,
@@ -1177,6 +1310,10 @@ const styles: Record<string, CSSProperties> = {
     WebkitOverflowScrolling: 'touch',
     scrollBehavior: 'smooth',
     overscrollBehavior: 'contain',
+  },
+  stackBodyCompact: {
+    padding: `${h(16)} ${w(14)} ${h(20)}`,
+    gap: h(10),
   },
   /** Центральный leaderboard: полный список + аккуратный тонкий scrollbar. */
   stackBodyMain: {
@@ -1204,6 +1341,17 @@ const styles: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
     fontSize: w(20),
   },
+  lbRowCompact: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    gap: 'clamp(4px, 1.4vw, 8px)',
+    padding: 'clamp(4px, 1.3vw, 7px) clamp(5px, 1.5vw, 9px)',
+    borderRadius: 'clamp(6px, 2vw, 12px)',
+  },
+  lbRowNarrow: {
+    gridTemplateColumns: 'minmax(0, 1fr)',
+    alignItems: 'start',
+  },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',
   },
@@ -1214,6 +1362,9 @@ const styles: Record<string, CSSProperties> = {
     gap: w(24),
     minWidth: 0,
     flex: 1,
+  },
+  lbRowLeftCompact: {
+    gap: 'clamp(4px, 1.4vw, 8px)',
   },
   lbRankBack: {
     fontSize: w(20),
@@ -1228,6 +1379,10 @@ const styles: Record<string, CSSProperties> = {
     color: '#fff',
     fontSize: w(30),
     letterSpacing: '0.02em',
+  },
+  lbRankCompact: {
+    minWidth: 'clamp(14px, 4vw, 24px)',
+    fontSize: 'clamp(8px, 2.3vw, 12px)',
   },
   lbNameBack: {
     fontSize: w(20),
@@ -1245,6 +1400,10 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.03em',
     fontSynthesis: 'none',
   },
+  lbNameCompact: {
+    fontSize: 'clamp(8px, 2.3vw, 12px)',
+    letterSpacing: '0.015em',
+  },
   lbNameHighlight: {
     color: ui.color.red,
   },
@@ -1260,6 +1419,19 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.09em',
     textAlign: 'right',
     flexShrink: 0,
+  },
+  lbResultCompact: {
+    fontSize: 'clamp(8px, 2.3vw, 12px)',
+    letterSpacing: '0.04em',
+    maxWidth: 'clamp(44px, 18vw, 96px)',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  lbResultNarrow: {
+    justifySelf: 'start',
+    marginLeft: 'clamp(20px, 6vw, 34px)',
+    maxWidth: '100%',
   },
   muted: {
     margin: 0,
