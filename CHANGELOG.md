@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.65] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** adjusted the FAQ heading and question rows to better match the mobile reference: one-line title, larger question typography, and cleaner open-answer spacing.
+- **Remote Leaderboard landing content:** updated prize and CTA copy to use the reference `PUMA DEVIATE NITRO ELITE TRAIL` / `DEVIATE NITRO?` naming.
+- **Remote versions:** `remote-frontend` raised to `0.1.61`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright checks at 320px and 444px confirmed no horizontal overflow after the FAQ typography update.
+
+---
+
 ## [0.5.64] - 2026-06-20
 
 ### Remote system

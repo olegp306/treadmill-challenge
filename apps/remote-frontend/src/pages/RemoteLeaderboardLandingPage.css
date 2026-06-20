@@ -2318,40 +2318,42 @@ body.leaderboard2-route #root {
 
   .leaderboard2__faq h2 {
     width: 100%;
-    font-size: 54px;
-    line-height: 0.9;
-    white-space: normal;
-    transform: none;
+    display: flex;
+    gap: 0.08em;
+    font-size: 72px;
+    line-height: 0.82;
+    white-space: nowrap;
+    transform: scaleX(0.74);
     transform-origin: left top;
   }
 
   .leaderboard2__faq h2 span {
-    display: block;
+    display: inline;
   }
 
   .leaderboard2__faqList summary {
-    grid-template-columns: 34px minmax(0, 1fr) 26px;
-    min-height: 58px;
+    grid-template-columns: 42px minmax(0, 1fr) 26px;
+    min-height: 68px;
     align-items: center;
-    font-size: 15px;
+    font-size: 18px;
   }
 
   .leaderboard2__faqList summary .leaderboard2__faqQuestion {
-    width: 125%;
-    transform: scaleX(0.8);
+    width: 118%;
+    transform: scaleX(0.84);
     transform-origin: left center;
   }
 
   .leaderboard2__faqList details {
-    padding: 26px 0;
+    padding: 22px 0;
   }
 
   .leaderboard2__faqList p {
-    margin-top: 18px;
+    margin-top: 10px;
     margin-left: 58px;
-    max-width: 300px;
-    font-size: 14px;
-    line-height: 1.3;
+    max-width: 272px;
+    font-size: 16px;
+    line-height: 1.22;
   }
 
   .leaderboard2__history {
@@ -2908,28 +2910,30 @@ body.leaderboard2-route #root {
 
   .leaderboard2__faq h2 {
     width: 100%;
-    font-size: 42px;
-    line-height: 0.9;
-    white-space: normal;
-    transform: none;
+    display: flex;
+    gap: 0.08em;
+    font-size: 56px;
+    line-height: 0.82;
+    white-space: nowrap;
+    transform: scaleX(0.72);
     transform-origin: left top;
   }
 
   .leaderboard2__faq h2 span {
-    display: block;
+    display: inline;
   }
 
   .leaderboard2__faqList summary {
-    grid-template-columns: 28px minmax(0, 1fr) 18px;
-    gap: 7px;
-    font-size: 12px;
+    grid-template-columns: 34px minmax(0, 1fr) 20px;
+    gap: 8px;
+    font-size: 14px;
     line-height: 1.04;
     align-items: center;
   }
 
   .leaderboard2__faqList summary .leaderboard2__faqQuestion {
-    width: 100%;
-    transform: scaleX(0.76);
+    width: 116%;
+    transform: scaleX(0.82);
     transform-origin: left center;
   }
 
