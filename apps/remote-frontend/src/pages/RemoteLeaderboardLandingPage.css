@@ -2873,12 +2873,13 @@ body.leaderboard2-route #root {
     grid-template-columns: 28px minmax(0, 1fr) 18px;
     gap: 7px;
     font-size: 12px;
-    line-height: 0.9;
+    line-height: 1.04;
+    align-items: center;
   }
 
   .leaderboard2__faqList summary .leaderboard2__faqQuestion {
     width: 100%;
-    transform: scaleX(0.8);
+    transform: scaleX(0.76);
     transform-origin: left center;
   }
 

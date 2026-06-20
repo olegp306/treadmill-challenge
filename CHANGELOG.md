@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.43] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** improved the 320px FAQ block readability on `/leaderboard2`: question rows now have enough line-height and no longer visually overlap when wrapped.
+- **Remote versions:** `remote-frontend` raised to `0.1.39`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.42] - 2026-06-20
 
 ### Remote system
