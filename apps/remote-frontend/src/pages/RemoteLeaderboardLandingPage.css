@@ -2237,7 +2237,7 @@ body.leaderboard2-route #root {
     top: 188px;
     width: 280px;
     opacity: 0.92;
-    filter: sepia(0.3) saturate(1.18) brightness(0.72) contrast(1.1);
+    filter: grayscale(1) brightness(0.82) contrast(1.12);
     transform: rotate(-8deg);
   }
 

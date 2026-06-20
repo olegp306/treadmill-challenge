@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.52] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** adjusted the `/leaderboard2` prize-card MAGMAX shoe filter to match the black/gray Figma reference instead of the previous warm tint.
+- **Remote versions:** `remote-frontend` raised to `0.1.48`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile check at 375px confirmed the prize card still stays within the 343px content column.
+
+---
+
 ## [0.5.51] - 2026-06-20
 
 ### Remote system
