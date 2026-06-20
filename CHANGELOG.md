@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.34] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** continued the top-to-bottom `/leaderboard2` mobile Figma alignment: the hero title is now split into controlled mobile lines, timer digits are compacted to avoid clipping, and the top stats/run-mode typography is tightened for the 320px layout without changing desktop styles.
+- **Remote versions:** `remote-frontend` raised to `0.1.30`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.33] - 2026-06-20
 
 ### Remote system

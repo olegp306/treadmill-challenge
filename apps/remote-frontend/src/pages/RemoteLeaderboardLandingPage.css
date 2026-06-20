@@ -2474,14 +2474,24 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__heroTitle {
-    width: 320px;
-    top: 27px;
-    font-size: 70px;
+    left: 10px;
+    top: 36px;
+    width: 300px;
+    font-size: 58px;
+    line-height: 0.82;
+  }
+
+  .leaderboard2__heroTitleFirstLine {
+    display: block;
+    transform: scaleX(0.62);
+    transform-origin: left top;
   }
 
   .leaderboard2__heroTitleSecondLine {
-    width: 390px;
-    transform: scaleX(0.4);
+    display: block;
+    width: 530px;
+    transform: scaleX(0.44);
+    transform-origin: left top;
   }
 
   .leaderboard2__heroCard {
@@ -2527,22 +2537,22 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__timerValue {
-    font-size: 28px;
-    letter-spacing: 2.8px;
+    font-size: 25px;
+    letter-spacing: 1.6px;
   }
 
   .leaderboard2__timerLabel {
-    margin-top: 9px;
-    font-size: 10px;
+    margin-top: 8px;
+    font-size: 9px;
   }
 
   .leaderboard2__participants {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .leaderboard2__participants span {
-    margin-bottom: 8px;
-    font-size: 27px;
+    margin-bottom: 7px;
+    font-size: 25px;
   }
 
   .leaderboard2__introTitle {
@@ -2587,21 +2597,24 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__statCell {
-    top: 44px;
-    grid-template-columns: 55px 1fr;
-    gap: 14px;
+    top: 45px;
+    grid-template-columns: 50px minmax(0, 178px);
+    gap: 12px;
   }
 
   .leaderboard2__statCell + .leaderboard2__statCell {
-    top: 126px;
+    top: 127px;
   }
 
   .leaderboard2__statCell strong {
-    font-size: 55px;
+    font-size: 50px;
   }
 
   .leaderboard2__statCell span {
-    font-size: 17px;
+    font-size: 15px;
+    line-height: 0.9;
+    transform: scaleX(0.9);
+    transform-origin: left center;
   }
 
   .leaderboard2__sectionHead--split h2,
@@ -2664,19 +2677,19 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__modeText strong {
-    width: 300px;
-    font-size: 52px;
-    line-height: 0.72;
-    transform: scaleX(0.6);
+    width: 420px;
+    font-size: 46px;
+    line-height: 0.74;
+    transform: scaleX(0.62);
     transform-origin: left center;
   }
 
   .leaderboard2__modeText p {
-    width: 290px;
+    width: 360px;
     margin-top: 16px;
-    font-size: 16px;
+    font-size: 15px;
     line-height: 0.95;
-    transform: scaleX(0.7);
+    transform: scaleX(0.72);
     transform-origin: left center;
   }
 
