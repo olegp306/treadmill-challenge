@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.21] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** added a dedicated 361-480px layout pass for `/leaderboard2`: tightened the hero, timer, stats, FAQ, history, and footer sections so the mobile landing sits closer to the Figma reference and avoids horizontal overflow on 444px screens.
+- **Remote versions:** `remote-frontend` raised to `0.1.17`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.20] - 2026-06-20
 
 ### Remote system

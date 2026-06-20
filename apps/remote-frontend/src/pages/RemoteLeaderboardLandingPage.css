@@ -1971,6 +1971,347 @@ body.leaderboard2-route #root {
   }
 }
 
+@media (min-width: 361px) and (max-width: 480px) {
+  html,
+  body {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+
+  .leaderboard2__header,
+  .leaderboard2__heroCard,
+  .leaderboard2__timerCard,
+  .leaderboard2__intro,
+  .leaderboard2__stats,
+  .leaderboard2__how,
+  .leaderboard2__disciplines,
+  .leaderboard2__rating,
+  .leaderboard2__prize,
+  .leaderboard2__finalCta,
+  .leaderboard2__faq,
+  .leaderboard2__history,
+  .leaderboard2__footer {
+    width: calc(100vw - 32px);
+  }
+
+  .leaderboard2__header {
+    height: 62px;
+    padding: 26px 0 14px;
+  }
+
+  .leaderboard2__heroCard {
+    height: 228px;
+  }
+
+  .leaderboard2__heroMedia {
+    inset: -54px -96px auto -76px;
+    width: 560px;
+    height: 334px;
+  }
+
+  .leaderboard2__heroTitle {
+    top: 42px;
+    font-size: 64px;
+  }
+
+  .leaderboard2__place {
+    bottom: 16px;
+  }
+
+  .leaderboard2__timerCard {
+    min-height: 108px;
+    margin-top: 10px;
+    padding: 8px 16px 10px;
+    gap: 2px;
+  }
+
+  .leaderboard2__timerValue {
+    font-size: 32px;
+  }
+
+  .leaderboard2__timerLabel {
+    margin-top: 6px;
+    font-size: 10px;
+  }
+
+  .leaderboard2__participants span {
+    margin-bottom: 4px;
+    font-size: 34px;
+  }
+
+  .leaderboard2__intro {
+    margin-top: 28px;
+  }
+
+  .leaderboard2__introTitle {
+    font-size: 27px !important;
+    line-height: 0.96 !important;
+  }
+
+  .leaderboard2__actions {
+    margin-top: 18px;
+    gap: 10px;
+  }
+
+  .leaderboard2__actions a {
+    min-height: 42px;
+  }
+
+  .leaderboard2__stats {
+    height: 150px;
+    margin-top: 38px;
+  }
+
+  .leaderboard2__stats::after {
+    top: 78px;
+  }
+
+  .leaderboard2__statsWordmark {
+    top: 12px;
+    left: 108px;
+    font-size: 17px;
+  }
+
+  .leaderboard2__statsShoe {
+    width: 100%;
+    height: 150px;
+  }
+
+  .leaderboard2__statCell {
+    left: 26px;
+    top: 38px;
+    grid-template-columns: 76px 1fr;
+  }
+
+  .leaderboard2__statCell + .leaderboard2__statCell {
+    top: 91px;
+  }
+
+  .leaderboard2__statCell strong {
+    font-size: 54px;
+  }
+
+  .leaderboard2__statCell span {
+    font-size: 17px;
+  }
+
+  .leaderboard2__how,
+  .leaderboard2__disciplines,
+  .leaderboard2__rating,
+  .leaderboard2__prize,
+  .leaderboard2__finalCta,
+  .leaderboard2__faq {
+    margin-top: 80px;
+  }
+
+  .leaderboard2__sectionHead--split h2 {
+    width: 520px;
+    font-size: 28px;
+    line-height: 0.98;
+    white-space: nowrap;
+    text-align: left;
+    text-align-last: auto;
+    transform: scaleX(0.76);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__stepGrid {
+    margin-top: 30px;
+    gap: 14px;
+  }
+
+  .leaderboard2__step {
+    min-height: 220px;
+  }
+
+  .leaderboard2__modeCard {
+    min-height: 430px;
+  }
+
+  .leaderboard2__modeControls {
+    top: 26px;
+    left: auto;
+    right: 18px;
+    bottom: auto;
+    display: flex;
+    gap: 10px;
+    width: auto;
+  }
+
+  .leaderboard2__modeControls .leaderboard2__carouselButton {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    border-color: var(--lb2-red);
+    background: var(--lb2-red);
+  }
+
+  .leaderboard2__modeControls .leaderboard2__carouselIcon {
+    width: 12px;
+    height: 12px;
+    border-color: #fff;
+  }
+
+  .leaderboard2__modeCta {
+    display: inline-flex;
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 22px;
+    min-height: 52px;
+  }
+
+  .leaderboard2__leaderboardFrameWrap,
+  .leaderboard2__leaderboardFrame {
+    height: 760px;
+  }
+
+  .leaderboard2__prizeHeader {
+    top: 22px;
+    right: 22px;
+  }
+
+  .leaderboard2__prizeHeader .leaderboard2__carouselButton + .leaderboard2__carouselButton {
+    display: inline-flex;
+  }
+
+  .leaderboard2__faq h2 {
+    font-size: 46px;
+  }
+
+  .leaderboard2__faqList summary {
+    font-size: 20px;
+  }
+
+  .leaderboard2__history {
+    margin-top: 76px;
+  }
+
+  .leaderboard2__historyHead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 92px;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .leaderboard2__historyHead h2 {
+    width: 310px;
+    font-size: 44px;
+    line-height: 0.9;
+    transform: scaleX(0.74);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__historyHead span {
+    width: 92px;
+    min-height: 62px;
+    margin-top: 0;
+    padding: 0 12px;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.05;
+    text-align: center;
+  }
+
+  .leaderboard2__historyHead span::after {
+    width: 8px;
+    height: 8px;
+    border-width: 2px;
+  }
+
+  .leaderboard2__historyTabs {
+    margin-top: 24px;
+    min-height: 56px;
+    gap: 8px;
+  }
+
+  .leaderboard2__historyTabs button {
+    font-size: 15px;
+  }
+
+  .leaderboard2__historyGrid {
+    margin-top: 20px;
+    gap: 12px;
+  }
+
+  .leaderboard2__historyGrid article {
+    min-height: 188px;
+    padding: 20px 18px;
+    overflow: hidden;
+  }
+
+  .leaderboard2__historyGrid p {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+
+  .leaderboard2__historyGrid h3 {
+    margin-top: 22px;
+    font-size: 22px;
+  }
+
+  .leaderboard2__historyGrid strong {
+    margin-top: 18px;
+    font-size: 48px;
+  }
+
+  .leaderboard2__footer {
+    margin-top: 54px;
+  }
+
+  .leaderboard2__socialsLabel {
+    display: none;
+  }
+
+  .leaderboard2__socials {
+    margin-top: 18px;
+    gap: 18px;
+  }
+
+  .leaderboard2__socials span {
+    width: 40px;
+    height: 40px;
+  }
+
+  .leaderboard2__subscribe {
+    margin-top: 26px;
+  }
+
+  .leaderboard2__subscribe label {
+    font-size: 24px;
+    line-height: 0.98;
+  }
+
+  .leaderboard2__subscribe input {
+    height: 48px;
+    margin-top: 18px;
+  }
+
+  .leaderboard2__subscribe button {
+    height: 50px;
+    margin-top: 10px;
+  }
+
+  .leaderboard2__subscribeNote,
+  .leaderboard2__copyright {
+    display: none;
+  }
+}
+
 @media (max-width: 360px) {
   .leaderboard2 {
     overflow-x: clip;
