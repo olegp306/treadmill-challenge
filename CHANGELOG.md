@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.27] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** aligned the 361-480px `/leaderboard2` content width with the mobile Figma reference and adjusted the run-mode carousel arrows so they no longer collide with the discipline title.
+- **Remote versions:** `remote-frontend` raised to `0.1.23`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.26] - 2026-06-20
 
 ### Remote system

@@ -1995,7 +1995,9 @@ body.leaderboard2-route #root {
   .leaderboard2__faq,
   .leaderboard2__history,
   .leaderboard2__footer {
-    width: calc(100vw - 32px);
+    width: min(calc(100vw - 32px), 343px);
+    margin-left: 16px;
+    margin-right: auto;
   }
 
   .leaderboard2__header {
@@ -2157,10 +2159,10 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__modeText strong {
-    width: 460px;
-    font-size: 82px;
+    width: 430px;
+    font-size: 76px;
     line-height: 0.72;
-    transform: scaleX(0.58);
+    transform: scaleX(0.54);
     transform-origin: left top;
   }
 
@@ -2174,26 +2176,26 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__modeControls {
-    top: 26px;
+    top: 24px;
     left: auto;
-    right: 18px;
+    right: 0;
     bottom: auto;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     width: auto;
   }
 
   .leaderboard2__modeControls .leaderboard2__carouselButton {
-    width: 46px;
-    height: 46px;
+    width: 38px;
+    height: 38px;
     border-radius: 999px;
     border-color: var(--lb2-red);
     background: var(--lb2-red);
   }
 
   .leaderboard2__modeControls .leaderboard2__carouselIcon {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-color: #fff;
   }
 
