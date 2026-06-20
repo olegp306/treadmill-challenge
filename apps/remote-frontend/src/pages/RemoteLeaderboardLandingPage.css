@@ -1970,3 +1970,382 @@ body.leaderboard2-route #root {
     text-transform: uppercase;
   }
 }
+
+@media (max-width: 360px) {
+  .leaderboard2 {
+    overflow-x: clip;
+  }
+
+  .leaderboard2__header,
+  .leaderboard2__heroCard,
+  .leaderboard2__timerCard,
+  .leaderboard2__intro,
+  .leaderboard2__stats,
+  .leaderboard2__how,
+  .leaderboard2__disciplines,
+  .leaderboard2__rating,
+  .leaderboard2__prize,
+  .leaderboard2__finalCta,
+  .leaderboard2__faq,
+  .leaderboard2__history,
+  .leaderboard2__footer {
+    width: calc(100vw - 32px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .leaderboard2__header {
+    height: 50px;
+    padding: 20px 0 10px;
+  }
+
+  .leaderboard2__heroTitle {
+    width: 320px;
+    font-size: 47px;
+  }
+
+  .leaderboard2__heroTitleSecondLine {
+    width: 390px;
+    transform: scaleX(0.52);
+  }
+
+  .leaderboard2__heroCard {
+    height: 210px;
+    border-radius: 14px;
+  }
+
+  .leaderboard2__heroMedia {
+    inset: -42px -78px auto -58px;
+    width: 454px;
+    height: 290px;
+  }
+
+  .leaderboard2__heroCenterMarker {
+    right: 13px;
+    top: 13px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .leaderboard2__place {
+    bottom: 12px;
+    font-size: 6px;
+    letter-spacing: 1.7px;
+  }
+
+  .leaderboard2__place::before,
+  .leaderboard2__place::after {
+    height: 20px;
+  }
+
+  .leaderboard2__timerCard {
+    min-height: 128px;
+    margin-top: 10px;
+    padding: 14px 12px 13px;
+    border-radius: 14px;
+    gap: 8px;
+  }
+
+  .leaderboard2__timerPart,
+  .leaderboard2__timerPart:first-child {
+    min-width: 45px;
+  }
+
+  .leaderboard2__timerValue {
+    font-size: 25px;
+    letter-spacing: 0.8px;
+  }
+
+  .leaderboard2__participants {
+    font-size: 9px;
+  }
+
+  .leaderboard2__participants span {
+    margin-bottom: 5px;
+    font-size: 34px;
+  }
+
+  .leaderboard2__introTitle {
+    font-size: 20px !important;
+  }
+
+  .leaderboard2__intro {
+    margin-top: 34px;
+  }
+
+  .leaderboard2__actions a {
+    min-height: 36px;
+    font-size: 8px;
+  }
+
+  .leaderboard2__statsShoe {
+    width: 100%;
+    height: 224px;
+  }
+
+  .leaderboard2__statsWordmark {
+    top: 14px;
+    left: 68px;
+    font-size: 17px;
+  }
+
+  .leaderboard2__stats {
+    height: 224px;
+    margin-top: 34px;
+  }
+
+  .leaderboard2__statCell {
+    top: 58px;
+    grid-template-columns: 62px 1fr;
+    gap: 9px;
+  }
+
+  .leaderboard2__statCell + .leaderboard2__statCell {
+    top: 143px;
+  }
+
+  .leaderboard2__statCell strong {
+    font-size: 61px;
+  }
+
+  .leaderboard2__statCell span {
+    font-size: 16px;
+  }
+
+  .leaderboard2__sectionHead--split h2,
+  .leaderboard2__disciplines h2 {
+    width: 100%;
+    font-size: 27px;
+    line-height: 0.96;
+    text-align: center;
+    text-align-last: center;
+  }
+
+  .leaderboard2__sectionHead--rating h2 {
+    width: 340px;
+    font-size: 33px;
+    line-height: 0.92;
+    transform: scaleX(0.82);
+  }
+
+  .leaderboard2__modeCard {
+    min-height: 366px;
+    padding: 28px 18px 18px;
+    background-size: 286px auto;
+    background-position: 78% 48%;
+    overflow: hidden;
+  }
+
+  .leaderboard2__modeText strong {
+    width: 360px;
+    font-size: 56px;
+    line-height: 0.72;
+    transform: scaleX(0.61);
+  }
+
+  .leaderboard2__modeText p {
+    width: 360px;
+    margin-top: 16px;
+    font-size: 16px;
+    line-height: 0.95;
+    transform: scaleX(0.7);
+  }
+
+  .leaderboard2__modeControls {
+    left: 14px;
+    right: 14px;
+  }
+
+  .leaderboard2__leaderboardFrameWrap {
+    height: 520px;
+  }
+
+  .leaderboard2__leaderboardFrame {
+    height: 520px;
+  }
+
+  .leaderboard2__prize {
+    min-height: 490px;
+  }
+
+  .leaderboard2__prizeHeader {
+    top: 186px;
+  }
+
+  .leaderboard2__prizeImage {
+    left: 8px;
+    top: 230px;
+    width: 286px;
+  }
+
+  .leaderboard2__prize strong {
+    font-size: 50px;
+  }
+
+  .leaderboard2__prize span {
+    max-width: 300px;
+    font-size: 50px;
+    transform: scaleX(0.72);
+  }
+
+  .leaderboard2__finalCta strong {
+    width: 380px;
+    font-size: 46px;
+    transform: scaleX(0.64);
+  }
+
+  .leaderboard2__finalCtaGeo {
+    left: 24px;
+    right: 24px;
+  }
+
+  .leaderboard2__finalCtaGeoText {
+    font-size: 9px;
+    letter-spacing: 2.8px;
+  }
+
+  .leaderboard2__faq h2 {
+    font-size: 34px;
+  }
+
+  .leaderboard2__faqList summary {
+    grid-template-columns: 34px minmax(0, 1fr) 24px;
+    gap: 8px;
+    font-size: 15px;
+  }
+
+  .leaderboard2__faqList summary .leaderboard2__faqQuestion {
+    width: 100%;
+  }
+
+  .leaderboard2__historyHead h2 {
+    font-size: 34px;
+    width: 260px;
+    margin-top: 0;
+    line-height: 0.9;
+    transform: scaleX(0.74);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__historyHead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 70px;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .leaderboard2__history {
+    margin-top: 72px;
+  }
+
+  .leaderboard2__historyHead span {
+    width: 70px;
+    min-height: 52px;
+    margin-top: 0;
+    padding: 0 10px;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.05;
+    text-align: center;
+  }
+
+  .leaderboard2__historyHead span::after {
+    width: 7px;
+    height: 7px;
+    border-width: 2px;
+  }
+
+  .leaderboard2__historyGrid article {
+    min-height: 224px;
+    padding-left: 18px;
+    padding-right: 18px;
+    overflow: hidden;
+  }
+
+  .leaderboard2__historyTabs {
+    gap: 8px;
+  }
+
+  .leaderboard2__historyTabs button {
+    min-width: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 13px;
+  }
+
+  .leaderboard2__historyGrid p {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 9px 12px;
+    font-size: 10px;
+  }
+
+  .leaderboard2__historyGrid h3 {
+    width: 100%;
+    font-size: 23px;
+    transform: none;
+  }
+
+  .leaderboard2__historyGrid strong {
+    font-size: 56px;
+  }
+
+  .leaderboard2__socials {
+    margin-top: 12px;
+    gap: 13px;
+  }
+
+  .leaderboard2__socials span {
+    width: 34px;
+    height: 34px;
+  }
+
+  .leaderboard2__subscribe label {
+    font-size: 19px;
+    line-height: 1.02;
+  }
+
+  .leaderboard2__subscribe {
+    margin-top: 24px;
+  }
+
+  .leaderboard2__subscribe input {
+    height: 46px;
+    margin-top: 18px;
+    font-size: 12px;
+  }
+
+  .leaderboard2__subscribe button {
+    height: 48px;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .leaderboard2__subscribeNote {
+    margin-top: 22px;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .leaderboard2__copyright {
+    margin-top: 44px;
+    padding-top: 16px;
+    font-size: 9px;
+  }
+
+  .leaderboard2__footerLogo {
+    display: block;
+    width: 360px;
+    font-size: 25px !important;
+    transform: scaleX(0.78);
+    transform-origin: left center;
+  }
+}

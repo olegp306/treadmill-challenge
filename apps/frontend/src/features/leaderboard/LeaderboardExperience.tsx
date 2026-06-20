@@ -562,6 +562,7 @@ export function LeaderboardExperience({
             ) : null}
 
             {isEmbedLayout && !isNarrowEmbedLayout ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
+            {isNarrowEmbedLayout ? <div style={styles.embedSearchWrapNarrow}>{searchControls}</div> : null}
 
             <div style={{ ...styles.genderTabs, ...(isEmbedLayout ? styles.genderTabsEmbed : {}), ...(isNarrowEmbedLayout ? styles.genderTabsEmbedNarrow : {}) }}>
               <button
@@ -667,7 +668,7 @@ export function LeaderboardExperience({
                   error={centerError}
                   compact={isEmbedLayout}
                   narrow={isNarrowEmbedLayout}
-                  topSlot={isNarrowEmbedLayout ? searchControls : undefined}
+                  topSlot={undefined}
                   emptyHint="Пока нет результатов в этом зачёте."
                 />
               </section>
@@ -955,7 +956,7 @@ const styles: Record<string, CSSProperties> = {
   },
   searchRowEmbedNarrow: {
     display: 'grid',
-    gridTemplateColumns: '1fr 104px',
+    gridTemplateColumns: '1fr 82px',
     alignItems: 'stretch',
     gap: '6px',
   },
@@ -966,6 +967,10 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     display: 'flex',
     justifyContent: 'center',
+  },
+  embedSearchWrapNarrow: {
+    width: '100%',
+    display: 'block',
   },
   searchFindBtnSlot: {
     display: 'inline-flex',
@@ -978,7 +983,7 @@ const styles: Record<string, CSSProperties> = {
     width: 'auto',
   },
   searchFindBtnSlotEmbedNarrow: {
-    width: '104px',
+    width: '82px',
     alignItems: 'stretch',
   },
   searchFindBtnSlotVisible: {
@@ -1006,10 +1011,10 @@ const styles: Record<string, CSSProperties> = {
   },
   searchFindBtnEmbedNarrow: {
     width: '100%',
-    minHeight: '36px',
-    padding: '10px 12px',
-    borderRadius: '9px',
-    fontSize: '10px',
+    minHeight: '34px',
+    padding: '9px 10px',
+    borderRadius: '8px',
+    fontSize: '9px',
   },
   searchFindBtnText: {
     display: 'inline-block',
@@ -1055,10 +1060,10 @@ const styles: Record<string, CSSProperties> = {
     flex: '1 1 100%',
   },
   searchBarEmbedNarrow: {
-    minHeight: '36px',
-    padding: '8px 10px',
-    borderRadius: '9px',
-    gap: '8px',
+    minHeight: '34px',
+    padding: '7px 9px',
+    borderRadius: '8px',
+    gap: '7px',
   },
   searchBarEmbedFocused: {
     minWidth: 0,
@@ -1185,9 +1190,9 @@ const styles: Record<string, CSSProperties> = {
     minHeight: h(98),
   },
   genderTabsEmbedNarrow: {
-    minHeight: '48px',
-    borderRadius: '14px',
-    padding: '5px',
+    minHeight: '42px',
+    borderRadius: '13px',
+    padding: '4px',
     gap: '4px',
   },
   genderTab: {
@@ -1208,8 +1213,8 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.01em',
   },
   genderTabEmbedNarrow: {
-    borderRadius: '10px',
-    fontSize: '12px',
+    borderRadius: '9px',
+    fontSize: '10px',
     lineHeight: 1,
   },
   genderTabActive: {
@@ -1238,7 +1243,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: '100%',
   },
   leaderboardRowEmbedNarrow: {
-    minHeight: '780px',
+    minHeight: '512px',
     overflow: 'visible',
   },
   arrowBtn: {
@@ -1358,9 +1363,9 @@ const styles: Record<string, CSSProperties> = {
     maxHeight: h(900),
   },
   stackCardNarrow: {
-    minHeight: '720px',
-    maxHeight: '760px',
-    borderRadius: '14px',
+    minHeight: '512px',
+    maxHeight: '512px',
+    borderRadius: '12px',
   },
   stackDim: {
     opacity: 0.9,
@@ -1396,7 +1401,7 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.15,
   },
   stackHeaderBarNarrow: {
-    padding: '10px 9px 8px',
+    padding: '8px 8px 7px',
   },
   stackHeaderLabelCompact: {
     fontSize: 'clamp(9px, 2.8vw, 15px)',
@@ -1411,9 +1416,9 @@ const styles: Record<string, CSSProperties> = {
     background: 'linear-gradient(180deg, #5f0b18 0%, #37050d 100%)',
     border: '1px solid rgba(235, 30, 55, 0.72)',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-    fontSize: '12px',
-    padding: '12px 14px',
-    borderRadius: '11px',
+    fontSize: '10px',
+    padding: '10px 12px',
+    borderRadius: '10px',
     textAlign: 'left',
   },
   stackHeaderTextNarrow: {
@@ -1431,7 +1436,7 @@ const styles: Record<string, CSSProperties> = {
     flexShrink: 0,
   },
   stackTopSlot: {
-    padding: '0 9px 8px',
+    padding: '0 8px 8px',
     flexShrink: 0,
   },
   stackBody: {
@@ -1451,7 +1456,7 @@ const styles: Record<string, CSSProperties> = {
     gap: h(10),
   },
   stackBodyNarrow: {
-    padding: '8px 9px 12px',
+    padding: '7px 8px 10px',
     gap: '7px',
     overflowY: 'visible',
   },
@@ -1491,9 +1496,9 @@ const styles: Record<string, CSSProperties> = {
   lbRowNarrow: {
     gridTemplateColumns: 'minmax(0, 1fr) auto',
     alignItems: 'center',
-    minHeight: '50px',
-    gap: '10px',
-    padding: '10px 12px',
+    minHeight: '42px',
+    gap: '8px',
+    padding: '8px 10px',
   },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',
@@ -1531,8 +1536,8 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 'clamp(8px, 2.3vw, 12px)',
   },
   lbRankNarrow: {
-    minWidth: '18px',
-    fontSize: '13px',
+    minWidth: '16px',
+    fontSize: '11px',
   },
   lbNameBack: {
     fontSize: w(20),

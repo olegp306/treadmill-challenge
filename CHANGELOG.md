@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.19] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the `/leaderboard2` mobile layout for 320px screens: compacted the hero/timer rhythm, fixed the Amazing Red stats card spacing, reduced lower-page vertical gaps, and kept the page free of horizontal overflow.
+- **Remote Leaderboard embed:** adjusted the embedded leaderboard mobile state so search appears above gender tabs, the controls fit narrow screens, and the rating list is denser for landing-page placement.
+- **Remote prizes copy:** updated the landing prize/CTA copy to the current `PUMA DEVIATE NITRO` wording.
+- **Remote versions:** `remote-frontend` raised to `0.1.15`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.18] - 2026-06-20
 
 ### Remote system
