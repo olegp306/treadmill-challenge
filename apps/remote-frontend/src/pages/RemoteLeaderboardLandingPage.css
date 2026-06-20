@@ -1193,7 +1193,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__heroCard {
-    height: 262px;
+    height: 214px;
     border-radius: 20px;
   }
 
@@ -2011,7 +2011,7 @@ body.leaderboard2-route #root {
   .leaderboard2__faq,
   .leaderboard2__history,
   .leaderboard2__footer {
-    width: calc(100vw - 32px);
+    width: min(343px, calc(100vw - 32px));
     margin-left: 16px;
     margin-right: auto;
   }
@@ -2022,7 +2022,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__heroCard {
-    height: 262px;
+    height: 214px;
     border-radius: 20px;
   }
 
@@ -2047,11 +2047,12 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__timerCard {
-    min-height: 124px;
+    height: 104px;
+    min-height: 104px;
     margin-top: 13px;
-    padding: 13px 16px 12px;
+    padding: 10px 16px 9px;
     border-radius: 20px;
-    gap: 10px;
+    gap: 5px;
   }
 
   .leaderboard2__timer {
@@ -2066,8 +2067,8 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__timerValue {
-    font-size: 32px;
-    letter-spacing: 2px;
+    font-size: 29px;
+    letter-spacing: 1.5px;
   }
 
   .leaderboard2__timerValue span {
@@ -2075,23 +2076,23 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__timerLabel {
-    margin-top: 9px;
+    margin-top: 5px;
     font-size: 11px;
   }
 
   .leaderboard2__participants span {
     display: block;
-    margin-bottom: 4px;
-    font-size: 36px;
+    margin-bottom: 2px;
+    font-size: 32px;
   }
 
   .leaderboard2__intro {
-    margin-top: 38px;
+    margin-top: 28px;
   }
 
   .leaderboard2__introTitle {
-    font-size: 30px !important;
-    line-height: 0.95 !important;
+    font-size: 27px !important;
+    line-height: 0.92 !important;
   }
 
   .leaderboard2__actions {
@@ -2105,7 +2106,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__stats {
     height: 198px;
-    margin-top: 58px;
+    margin-top: 46px;
     border-radius: 12px;
   }
 

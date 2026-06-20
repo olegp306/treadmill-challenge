@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.70] - 2026-06-21
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** aligned the 361-480px mobile layout with the Figma reference grid by restoring the 343px content width cap and compacting the hero/timer/intro area so the first screen sits closer to the provided mobile reference.
+- **Remote versions:** `remote-frontend` raised to `0.1.66`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright screenshot at 444px confirmed the mobile blocks use the reference-width grid, no horizontal overflow appears, and the top section is more compact against the provided comparison screenshot.
+
+---
+
 ## [0.5.69] - 2026-06-20
 
 ### Remote system
