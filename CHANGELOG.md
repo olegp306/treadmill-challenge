@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.53] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** aligned the first `/leaderboard2` mobile screen closer to the Figma reference by restoring the taller hero/timer cards, matching the intro text wrapping, adding the missing spacing before the red stats card, and keeping the timer row inside the 343px content column.
+- **Remote versions:** `remote-frontend` raised to `0.1.49`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile check at 375px confirmed `document/body` width stays `375`, the timer card stays within `343px`, and the first-screen section positions match the Figma mobile layout more closely.
+
+---
+
 ## [0.5.52] - 2026-06-20
 
 ### Remote system
