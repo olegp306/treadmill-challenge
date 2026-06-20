@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.44] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the 320px footer subscription block on `/leaderboard2`: the footer logo now stays within the card width and the subscription title/input spacing is more controlled.
+- **Remote versions:** `remote-frontend` raised to `0.1.40`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.43] - 2026-06-20
 
 ### Remote system

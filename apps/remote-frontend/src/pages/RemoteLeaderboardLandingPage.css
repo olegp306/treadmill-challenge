@@ -2998,17 +2998,19 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__subscribe label {
-    font-size: 17px;
-    line-height: 1.02;
+    display: block;
+    max-width: 240px;
+    font-size: 13px;
+    line-height: 1.06;
   }
 
   .leaderboard2__subscribe {
-    margin-top: 11px;
+    margin-top: 13px;
   }
 
   .leaderboard2__subscribe input {
     height: 34px;
-    margin-top: 9px;
+    margin-top: 12px;
     font-size: 12px;
   }
 
@@ -3028,9 +3030,9 @@ body.leaderboard2-route #root {
 
   .leaderboard2__footerLogo {
     display: block;
-    width: 360px;
-    font-size: 25px !important;
-    transform: scaleX(0.78);
+    width: 288px;
+    font-size: 24px !important;
+    transform: scaleX(0.82);
     transform-origin: left center;
   }
 }
