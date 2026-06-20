@@ -2977,14 +2977,15 @@ body.leaderboard2-route #root {
   .leaderboard2__footer {
     margin-top: 42px;
     padding-bottom: 0;
+    overflow: hidden;
   }
 
   .leaderboard2__footer::after {
-    right: -44px;
-    bottom: -58px;
-    width: 260px;
-    height: 210px;
-    opacity: 0.72;
+    right: 0;
+    bottom: -52px;
+    width: 196px;
+    height: 196px;
+    opacity: 0.68;
   }
 
   .leaderboard2__socialsLabel {

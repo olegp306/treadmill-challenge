@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.46] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the 320px footer glow on `/leaderboard2` so the footer no longer creates horizontal overflow while preserving the compact subscription layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.42`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.45] - 2026-06-20
 
 ### Remote system
