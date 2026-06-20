@@ -2197,7 +2197,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__modeText {
-    min-height: 324px;
+    min-height: 308px;
   }
 
   .leaderboard2__modeText strong {
@@ -2245,12 +2245,14 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__modeCta {
-    display: none;
+    display: flex;
     position: absolute;
     left: 22px;
     right: 22px;
-    bottom: 18px;
+    bottom: 84px;
     min-height: 52px;
+    border-radius: 12px;
+    font-size: 14px;
   }
 
   .leaderboard2__leaderboardFrameWrap,

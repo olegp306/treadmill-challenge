@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.61] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** restored the "Принять вызов" CTA inside the `/leaderboard2` mobile run-mode card and adjusted the card body spacing so the CTA and carousel controls fit together.
+- **Remote versions:** `remote-frontend` raised to `0.1.57`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome mobile metrics at 375px confirmed the mode CTA is visible, the carousel controls remain below it, and page width stays `375px`.
+
+---
+
 ## [0.5.60] - 2026-06-20
 
 ### Remote system
