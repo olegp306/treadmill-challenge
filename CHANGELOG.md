@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.23] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the `/leaderboard2` mobile rating and lower-page rhythm: enlarged the embedded rating window, aligned the visible leaderboard controls with the Figma reference, and added more breathing room to the mobile FAQ block.
+- **Remote versions:** `remote-frontend` raised to `0.1.19`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.22] - 2026-06-20
 
 ### Remote system
