@@ -2237,12 +2237,21 @@ body.leaderboard2-route #root {
     display: inline-flex;
   }
 
+  .leaderboard2__prizeImage {
+    left: 150px;
+    top: 246px;
+    width: 220px;
+    opacity: 0.82;
+    filter: sepia(0.38) saturate(1.25) brightness(0.78) contrast(1.08);
+    transform: rotate(-9deg);
+  }
+
   .leaderboard2__faq h2 {
-    width: 620px;
-    font-size: 52px;
+    width: 680px;
+    font-size: 62px;
     line-height: 0.9;
     white-space: nowrap;
-    transform: scaleX(0.78);
+    transform: scaleX(0.76);
     transform-origin: left top;
   }
 
@@ -2267,14 +2276,14 @@ body.leaderboard2-route #root {
 
   .leaderboard2__faqList p {
     margin-top: 18px;
-    margin-left: 34px;
-    max-width: 330px;
+    margin-left: 58px;
+    max-width: 300px;
     font-size: 14px;
     line-height: 1.3;
   }
 
   .leaderboard2__history {
-    margin-top: 76px;
+    margin-top: 60px;
   }
 
   .leaderboard2__historyHead {
@@ -2327,8 +2336,8 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__historyGrid article {
-    min-height: 188px;
-    padding: 20px 18px;
+    min-height: 168px;
+    padding: 18px 16px;
     overflow: hidden;
   }
 
@@ -2346,13 +2355,13 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__historyGrid h3 {
-    margin-top: 22px;
-    font-size: 22px;
+    margin-top: 18px;
+    font-size: 19px;
   }
 
   .leaderboard2__historyGrid strong {
-    margin-top: 18px;
-    font-size: 48px;
+    margin-top: 16px;
+    font-size: 44px;
   }
 
   .leaderboard2__footer {
