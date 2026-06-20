@@ -2831,17 +2831,29 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faq h2 {
-    font-size: 34px;
+    width: 520px;
+    font-size: 44px;
+    line-height: 0.9;
+    white-space: nowrap;
+    transform: scaleX(0.62);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__faq h2 span {
+    display: inline;
   }
 
   .leaderboard2__faqList summary {
-    grid-template-columns: 34px minmax(0, 1fr) 24px;
-    gap: 8px;
-    font-size: 15px;
+    grid-template-columns: 32px minmax(0, 1fr) 22px;
+    gap: 7px;
+    font-size: 13px;
+    line-height: 0.92;
   }
 
   .leaderboard2__faqList summary .leaderboard2__faqQuestion {
     width: 100%;
+    transform: scaleX(0.84);
+    transform-origin: left center;
   }
 
   .leaderboard2__historyHead h2 {
