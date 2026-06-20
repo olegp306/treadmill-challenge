@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.38] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the bottom footer of `/leaderboard2`: reduced the gap after race history, shortened the subscription footer, and softened the red glow so the mobile ending sits closer to the Figma reference.
+- **Remote versions:** `remote-frontend` raised to `0.1.34`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.37] - 2026-06-20
 
 ### Remote system

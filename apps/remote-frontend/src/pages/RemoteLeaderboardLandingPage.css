@@ -2960,6 +2960,24 @@ body.leaderboard2-route #root {
     gap: 8px;
   }
 
+  .leaderboard2__footer {
+    margin-top: 42px;
+    padding-bottom: 0;
+  }
+
+  .leaderboard2__footer::after {
+    right: -44px;
+    bottom: -58px;
+    width: 260px;
+    height: 210px;
+    opacity: 0.72;
+  }
+
+  .leaderboard2__socialsLabel {
+    margin-top: 18px;
+    font-size: 12px;
+  }
+
   .leaderboard2__socials span {
     width: 24px;
     height: 24px;
