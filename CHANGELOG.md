@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.68] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** reduced the embedded rating frame height on mobile so the leaderboard no longer leaves a large empty black tail before the prizes block, while keeping page scroll-through over rating rows.
+- **Remote versions:** `remote-frontend` raised to `0.1.64`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright checks at 320px, 375px, and 444px confirmed no horizontal overflow, reduced rating frame height, prizes move closer to the reference position, and wheel scrolling over rating rows still scrolls the page.
+
+---
+
 ## [0.5.67] - 2026-06-20
 
 ### Remote system

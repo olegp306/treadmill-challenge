@@ -1,6 +1,6 @@
 {
   "name": "@treadmill-challenge/shared",
-  "version": "0.5.67",
+  "version": "0.5.68",
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
