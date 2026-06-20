@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.67] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** changed the run-mode carousel arrows on 361-480px mobile screens back to the reference-style round buttons in the top-right of the card.
+- **Remote versions:** `remote-frontend` raised to `0.1.63`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright checks at 375px and 444px confirmed the round mode arrows, bottom CTA placement, and no horizontal overflow.
+
+---
+
 ## [0.5.66] - 2026-06-20
 
 ### Remote system
