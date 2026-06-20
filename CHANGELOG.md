@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.60] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** adjusted the `/leaderboard2` red Amazing Red stats card spacing and mobile stat text alignment closer to the Figma mobile reference.
+- **Remote versions:** `remote-frontend` raised to `0.1.56`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome mobile screenshot at 375px confirmed the page width remains `375px` after the stats-card adjustment.
+
+---
+
 ## [0.5.59] - 2026-06-20
 
 ### Remote system
