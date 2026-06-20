@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.18] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the `/leaderboard2` mobile layout against the Figma prototype: tuned the run mode typography, prize shoe placement, final CTA geo marks, FAQ spacing, and lower-page rhythm.
+- **Remote versions:** `remote-frontend` raised to `0.1.14`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.17] - 2026-06-20
 
 ### Remote system

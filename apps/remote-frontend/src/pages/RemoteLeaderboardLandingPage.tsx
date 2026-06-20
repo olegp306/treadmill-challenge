@@ -308,6 +308,13 @@ export default function RemoteLeaderboardLandingPage() {
           <span>NITRO 2?</span>
         </strong>
         <p>Выбирай дисциплину, показывай максимум и следи за своим результатом в рейтинге.</p>
+        <div className="leaderboard2__finalCtaGeo" aria-hidden>
+          <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topLeft" />
+          <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topRight" />
+          <span className="leaderboard2__finalCtaGeoText">55° 50' 8" N&nbsp;&nbsp;&nbsp;37° 37' 2" E.</span>
+          <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomLeft" />
+          <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomRight" />
+        </div>
         <a href="#rating">Принять вызов</a>
       </section>
 
