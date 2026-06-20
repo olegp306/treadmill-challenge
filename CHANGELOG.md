@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.72] - 2026-06-21
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** changed the embedded rating block into a mobile showcase view that exposes only the top of the leaderboard list, keeps the long black reference-style tail before prizes, and preserves page scrolling across the whole rating area.
+- **Remote versions:** `remote-frontend` raised to `0.1.68`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright checks at 320px, 375px, and 444px confirmed no horizontal overflow and verified that wheel scrolling over the rating tail still scrolls the page.
+
+---
+
 ## [0.5.71] - 2026-06-21
 
 ### Remote system

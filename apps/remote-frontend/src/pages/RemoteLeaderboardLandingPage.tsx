@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import type { TouchEvent, WheelEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LogoMark } from '@local-fe/ui/components/LogoMark';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
 import './RemoteLeaderboardLandingPage.css';
@@ -104,8 +105,33 @@ function CarouselButton({
 export default function RemoteLeaderboardLandingPage() {
   const [activeDiscipline, setActiveDiscipline] = useState(0);
   const [activePrize, setActivePrize] = useState(0);
+  const ratingTouchYRef = useRef<number | null>(null);
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
+
+  const handleRatingWheel = (e: WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'auto' });
+  };
+
+  const handleRatingTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    ratingTouchYRef.current = e.touches[0]?.clientY ?? null;
+  };
+
+  const handleRatingTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    const currentY = e.touches[0]?.clientY ?? null;
+    const previousY = ratingTouchYRef.current;
+    if (currentY === null || previousY === null) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.scrollBy({ top: previousY - currentY, behavior: 'auto' });
+    ratingTouchYRef.current = currentY;
+  };
+
+  const handleRatingTouchEnd = () => {
+    ratingTouchYRef.current = null;
+  };
 
   useEffect(() => {
     document.body.classList.add('leaderboard2-route');
@@ -262,7 +288,14 @@ export default function RemoteLeaderboardLandingPage() {
           <h2 id="leaderboard2-rating-title">Рейтинг участников</h2>
           <p className="leaderboard2__marker">[ 04 ]</p>
         </div>
-        <div className="leaderboard2__leaderboardFrameWrap">
+        <div
+          className="leaderboard2__leaderboardFrameWrap"
+          onWheelCapture={handleRatingWheel}
+          onTouchStartCapture={handleRatingTouchStart}
+          onTouchMoveCapture={handleRatingTouchMove}
+          onTouchEndCapture={handleRatingTouchEnd}
+          onTouchCancelCapture={handleRatingTouchEnd}
+        >
           <RemoteLeaderboardView embed hideEmbedBrand embedSearchPlacement="above-tabs" />
         </div>
       </section>

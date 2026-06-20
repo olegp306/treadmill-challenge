@@ -757,9 +757,17 @@ body.leaderboard2-route #root {
 }
 
 @media (max-width: 520px) {
+  .leaderboard2 .leaderboard2__leaderboardFrameWrap .ar-ozio-remote-lb-viewport {
+    height: 220px !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
   .leaderboard2 .leaderboard2__leaderboardFrameWrap .ar-ozio-remote-lb-viewport > .ar-ozio-remote-lb-canvas {
     width: 100% !important;
     max-width: 100% !important;
+    height: 220px !important;
+    min-height: 220px !important;
     margin: 0 !important;
     --ar-cqh: calc((100vw - 32px) * 1640 / 2360 / 100) !important;
   }
@@ -2258,7 +2266,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__leaderboardFrameWrap,
   .leaderboard2__leaderboardFrame {
-    height: 520px;
+    height: 840px;
   }
 
   .leaderboard2__prizeHeader {
@@ -2785,11 +2793,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__leaderboardFrameWrap {
-    height: 520px;
+    height: 760px;
   }
 
   .leaderboard2__leaderboardFrame {
-    height: 520px;
+    height: 760px;
   }
 
   .leaderboard2__prize {
