@@ -1527,9 +1527,9 @@ const styles: Record<string, CSSProperties> = {
   lbRowNarrow: {
     gridTemplateColumns: 'minmax(0, 1fr) auto',
     alignItems: 'center',
-    minHeight: '42px',
-    gap: '8px',
-    padding: '8px 10px',
+    minHeight: '28px',
+    gap: '6px',
+    padding: '5px 8px',
   },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',
@@ -1546,7 +1546,7 @@ const styles: Record<string, CSSProperties> = {
     gap: 'clamp(4px, 1.4vw, 8px)',
   },
   lbRowLeftNarrow: {
-    gap: '10px',
+    gap: '7px',
   },
   lbRankBack: {
     fontSize: w(20),
@@ -1567,8 +1567,8 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 'clamp(8px, 2.3vw, 12px)',
   },
   lbRankNarrow: {
-    minWidth: '16px',
-    fontSize: '11px',
+    minWidth: '14px',
+    fontSize: '8px',
   },
   lbNameBack: {
     fontSize: w(20),
@@ -1591,7 +1591,7 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.015em',
   },
   lbNameNarrow: {
-    fontSize: '15px',
+    fontSize: '10px',
     lineHeight: 1.08,
     whiteSpace: 'normal',
   },
@@ -1622,8 +1622,8 @@ const styles: Record<string, CSSProperties> = {
   lbResultNarrow: {
     justifySelf: 'end',
     marginLeft: 0,
-    maxWidth: '96px',
-    fontSize: '15px',
+    maxWidth: '72px',
+    fontSize: '10px',
     letterSpacing: '0.02em',
   },
   muted: {

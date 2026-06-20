@@ -2004,18 +2004,18 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__heroCard {
-    height: 228px;
+    height: 200px;
   }
 
   .leaderboard2__heroMedia {
-    inset: -54px -96px auto -76px;
-    width: 560px;
-    height: 334px;
+    inset: -34px -72px auto -58px;
+    width: 520px;
+    height: 292px;
   }
 
   .leaderboard2__heroTitle {
-    top: 42px;
-    font-size: 64px;
+    top: 56px;
+    font-size: 56px;
   }
 
   .leaderboard2__place {
@@ -2023,9 +2023,9 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__timerCard {
-    min-height: 108px;
-    margin-top: 10px;
-    padding: 8px 16px 10px;
+    min-height: 110px;
+    margin-top: 0;
+    padding: 6px 16px 8px;
     gap: 2px;
   }
 
@@ -2063,7 +2063,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__stats {
     height: 150px;
-    margin-top: 38px;
+    margin-top: 64px;
   }
 
   .leaderboard2__stats::after {
@@ -2125,11 +2125,52 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__step {
-    min-height: 220px;
+    min-height: 190px;
+    padding-top: 24px;
+    padding-bottom: 22px;
+  }
+
+  .leaderboard2__step h3 {
+    margin-top: 22px;
+  }
+
+  .leaderboard2__step p {
+    margin-top: 10px;
+  }
+
+  .leaderboard2__disciplines {
+    margin-top: 68px;
   }
 
   .leaderboard2__modeCard {
-    min-height: 430px;
+    min-height: 390px;
+    padding-top: 30px;
+    background:
+      radial-gradient(ellipse at 58% 46%, rgba(230, 35, 58, 0.38), transparent 38%),
+      linear-gradient(90deg, rgba(230, 35, 58, 0.09), rgba(0, 0, 0, 0.28)),
+      url('/assets/leaderboard2/shoe-1112.png') 80% 43% / 330px auto no-repeat,
+      var(--lb2-card);
+  }
+
+  .leaderboard2__modeText {
+    min-height: 272px;
+  }
+
+  .leaderboard2__modeText strong {
+    width: 460px;
+    font-size: 82px;
+    line-height: 0.72;
+    transform: scaleX(0.58);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__modeText p {
+    width: 470px;
+    margin-top: 18px;
+    font-size: 20px;
+    line-height: 0.94;
+    transform: scaleX(0.6);
+    transform-origin: left top;
   }
 
   .leaderboard2__modeControls {
@@ -2161,13 +2202,30 @@ body.leaderboard2-route #root {
     position: absolute;
     left: 22px;
     right: 22px;
-    bottom: 22px;
+    bottom: 18px;
     min-height: 52px;
   }
 
   .leaderboard2__leaderboardFrameWrap,
   .leaderboard2__leaderboardFrame {
     height: 760px;
+  }
+
+  .leaderboard2__leaderboardFrameWrap {
+    position: relative;
+  }
+
+  .leaderboard2__leaderboardFrameWrap::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 212px;
+    bottom: 10px;
+    z-index: 2;
+    border-radius: 0 0 14px 14px;
+    background: #000;
+    pointer-events: none;
   }
 
   .leaderboard2__prizeHeader {
@@ -2193,7 +2251,12 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faqList summary {
-    font-size: 20px;
+    grid-template-columns: 34px minmax(0, 1fr) 26px;
+    font-size: 18px;
+  }
+
+  .leaderboard2__faqList summary .leaderboard2__faqQuestion {
+    width: min(292px, 100%);
   }
 
   .leaderboard2__history {
