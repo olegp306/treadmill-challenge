@@ -763,7 +763,7 @@ function LeaderboardStack({
   topSlot?: ReactNode;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
-  const rows = dim || narrow ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
+  const rows = dim ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
 
   return (
     <div
@@ -1487,9 +1487,11 @@ const styles: Record<string, CSSProperties> = {
     gap: h(10),
   },
   stackBodyNarrow: {
-    padding: '7px 8px 10px',
-    gap: '7px',
-    overflowY: 'visible',
+    padding: '8px 8px 12px',
+    gap: '8px',
+    overflowY: 'auto',
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'rgba(255,255,255,0.22) transparent',
   },
   /** Центральный leaderboard: полный список + аккуратный тонкий scrollbar. */
   stackBodyMain: {
@@ -1527,9 +1529,9 @@ const styles: Record<string, CSSProperties> = {
   lbRowNarrow: {
     gridTemplateColumns: 'minmax(0, 1fr) auto',
     alignItems: 'center',
-    minHeight: '28px',
-    gap: '6px',
-    padding: '5px 8px',
+    minHeight: '40px',
+    gap: '8px',
+    padding: '8px 9px',
   },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',

@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.31] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the embedded mobile leaderboard in `/leaderboard2`: the narrow embed now behaves as a scrollable rating window, keeps lower participant rows partially hidden inside the card, and preserves the landing page section rhythm without horizontal overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.27`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.30] - 2026-06-20
 
 ### Remote system
