@@ -210,8 +210,8 @@ body.td-route {
 @media (max-width: 520px) {
   .ar-ozio-remote-lb-viewport > .ar-ozio-remote-lb-canvas {
     width: 100vw;
-    height: 760px;
-    min-height: 760px;
+    height: 520px;
+    min-height: 520px;
     aspect-ratio: auto;
     /*
      * Keep old 2360x1640 vertical design units while fitting the mobile

@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.55] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** fixed the embedded mobile leaderboard on `/leaderboard2` so the 10-row rating block fits without the previous large empty black area and without clipping the table before the prizes section.
+- **Remote versions:** `remote-frontend` raised to `0.1.51`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile checks at 375px confirmed `document/body` width stays `375`, the embedded leaderboard canvas is `520px`, and the landing iframe wrapper matches the compact rating height.
+
+---
+
 ## [0.5.54] - 2026-06-20
 
 ### Remote system
