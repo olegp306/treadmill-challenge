@@ -2896,9 +2896,8 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__historyGrid article {
-    min-height: 158px;
-    padding-left: 18px;
-    padding-right: 18px;
+    min-height: 136px;
+    padding: 18px 16px;
     overflow: hidden;
   }
 
@@ -2907,8 +2906,8 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__historyGrid {
-    margin-top: 18px;
-    gap: 10px;
+    margin-top: 16px;
+    gap: 8px;
   }
 
   .leaderboard2__historyTabs button {
@@ -2927,47 +2926,47 @@ body.leaderboard2-route #root {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding: 8px 11px;
-    font-size: 9px;
+    padding: 7px 10px;
+    font-size: 8px;
   }
 
   .leaderboard2__historyGrid h3 {
     width: 100%;
-    font-size: 19px;
+    font-size: 17px;
     transform: none;
   }
 
   .leaderboard2__historyGrid strong {
-    font-size: 42px;
+    font-size: 36px;
   }
 
   .leaderboard2__socials {
-    margin-top: 12px;
-    gap: 13px;
+    margin-top: 10px;
+    gap: 10px;
   }
 
   .leaderboard2__socials span {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
   }
 
   .leaderboard2__subscribe label {
-    font-size: 19px;
+    font-size: 17px;
     line-height: 1.02;
   }
 
   .leaderboard2__subscribe {
-    margin-top: 18px;
+    margin-top: 14px;
   }
 
   .leaderboard2__subscribe input {
-    height: 42px;
-    margin-top: 14px;
+    height: 38px;
+    margin-top: 12px;
     font-size: 12px;
   }
 
   .leaderboard2__subscribe button {
-    height: 44px;
+    height: 40px;
     margin-top: 10px;
     font-size: 12px;
   }

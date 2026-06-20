@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.33] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** compacted the lower `/leaderboard2` mobile history and subscription area: race-history cards, social dots, and subscribe controls now sit closer to the Figma mobile rhythm while preserving the 320px no-overflow layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.29`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.32] - 2026-06-20
 
 ### Remote system
