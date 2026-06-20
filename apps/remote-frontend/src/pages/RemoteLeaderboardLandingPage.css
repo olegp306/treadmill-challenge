@@ -2180,7 +2180,16 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faq h2 {
-    font-size: 46px;
+    width: 620px;
+    font-size: 52px;
+    line-height: 0.9;
+    white-space: nowrap;
+    transform: scaleX(0.78);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__faq h2 span {
+    display: inline;
   }
 
   .leaderboard2__faqList summary {
