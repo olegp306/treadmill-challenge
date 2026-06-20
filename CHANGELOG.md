@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.50] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** adjusted the 375px "Режимы забега" card typography on `/leaderboard2` so the title/description use real mobile widths instead of oversized scaled boxes.
+- **Remote versions:** `remote-frontend` raised to `0.1.46`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile check at 375px confirmed the discipline card stays within the 343px content column.
+
+---
+
 ## [0.5.49] - 2026-06-20
 
 ### Remote system

@@ -2159,19 +2159,21 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__modeText strong {
-    width: 430px;
-    font-size: 76px;
-    line-height: 0.72;
-    transform: scaleX(0.54);
+    width: 100%;
+    max-width: 255px;
+    font-size: 41px;
+    line-height: 0.82;
+    transform: none;
     transform-origin: left top;
   }
 
   .leaderboard2__modeText p {
-    width: 470px;
+    width: 100%;
+    max-width: 250px;
     margin-top: 18px;
-    font-size: 20px;
-    line-height: 0.94;
-    transform: scaleX(0.6);
+    font-size: 13px;
+    line-height: 1.04;
+    transform: none;
     transform-origin: left top;
   }
 
