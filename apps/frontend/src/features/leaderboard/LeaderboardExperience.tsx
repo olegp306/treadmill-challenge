@@ -1,4 +1,4 @@
-import type { CSSProperties, Ref, RefObject } from 'react';
+import type { CSSProperties, ReactNode, Ref, RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
@@ -402,18 +402,18 @@ export function LeaderboardExperience({
 
   const centerLoading = slides[centerIdx]?.loading ?? true;
   const centerError = slides[centerIdx]?.error ?? null;
-  const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
-  const showSearchFindButton = searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH;
-  const showSearchSwitchButtons = nameSearchMatches.length > 1;
-  const canGoSearchUp = showSearchSwitchButtons && nameSearchMatchIndex > 0;
-  const canGoSearchDown = showSearchSwitchButtons && nameSearchMatchIndex < nameSearchMatches.length - 1;
-
   const dataUnavailable =
     Boolean(backupUnavailableMessage) &&
     slides.every((s) => !s.loading && !s.error && s.entries.length === 0);
   const isEmbedLayout = layoutMode === 'embed';
   const isRemoteLikeLayout = layoutMode === 'desktop' || isEmbedLayout;
   const isNarrowEmbedLayout = isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= 520;
+  const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
+  const canSubmitNameSearch = searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH;
+  const showSearchFindButton = canSubmitNameSearch || isNarrowEmbedLayout;
+  const showSearchSwitchButtons = nameSearchMatches.length > 1;
+  const canGoSearchUp = showSearchSwitchButtons && nameSearchMatchIndex > 0;
+  const canGoSearchDown = showSearchSwitchButtons && nameSearchMatchIndex < nameSearchMatches.length - 1;
 
   const searchControls = (
     <div
@@ -421,6 +421,7 @@ export function LeaderboardExperience({
       style={{
         ...styles.searchRow,
         ...(isEmbedLayout ? styles.searchRowEmbed : {}),
+        ...(isNarrowEmbedLayout ? styles.searchRowEmbedNarrow : {}),
         ...(isSearchExpanded ? styles.searchRowFocused : {}),
         ...(isEmbedLayout && isSearchExpanded ? styles.searchRowEmbedFocused : {}),
       }}
@@ -435,6 +436,7 @@ export function LeaderboardExperience({
         style={{
           ...styles.searchBar,
           ...(isEmbedLayout ? styles.searchBarEmbed : {}),
+          ...(isNarrowEmbedLayout ? styles.searchBarEmbedNarrow : {}),
           ...(isSearchExpanded ? styles.searchBarFocused : {}),
           ...(isEmbedLayout && isSearchExpanded ? styles.searchBarEmbedFocused : {}),
           ...(isSearchFocused ? styles.searchBarActiveFocus : {}),
@@ -455,25 +457,28 @@ export function LeaderboardExperience({
             e.preventDefault();
             triggerNameSearch();
           }}
-          placeholder={isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
+          placeholder={isNarrowEmbedLayout ? 'поиск участника' : isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
           style={{
             ...styles.searchInput,
+            ...(isNarrowEmbedLayout ? styles.searchInputEmbedNarrow : {}),
             ...(showSearchSwitchButtons ? styles.searchInputWithSwitchButtons : {}),
+            ...(showSearchSwitchButtons && isNarrowEmbedLayout ? styles.searchInputWithSwitchButtonsNarrow : {}),
           }}
           autoComplete="off"
         />
         {showSearchSwitchButtons ? (
-          <span style={styles.searchSwitchButtonsInInput}>
+          <span style={{ ...styles.searchSwitchButtonsInInput, ...(isNarrowEmbedLayout ? styles.searchSwitchButtonsInInputNarrow : {}) }}>
             <button
               type="button"
               aria-label="Предыдущий найденный участник"
-              style={styles.searchSwitchBtnInInput}
+              style={{ ...styles.searchSwitchBtnInInput, ...(isNarrowEmbedLayout ? styles.searchSwitchBtnInInputNarrow : {}) }}
               disabled={!canGoSearchUp}
               onClick={() => cycleNameSearchMatch(-1)}
             >
               <span
                 style={{
                   ...styles.searchSwitchIconImage,
+                  ...(isNarrowEmbedLayout ? styles.searchSwitchIconImageNarrow : {}),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -486,13 +491,14 @@ export function LeaderboardExperience({
             <button
               type="button"
               aria-label="Следующий найденный участник"
-              style={styles.searchSwitchBtnInInput}
+              style={{ ...styles.searchSwitchBtnInInput, ...(isNarrowEmbedLayout ? styles.searchSwitchBtnInInputNarrow : {}) }}
               disabled={!canGoSearchDown}
               onClick={() => cycleNameSearchMatch(1)}
             >
               <span
                 style={{
                   ...styles.searchSwitchIconImage,
+                  ...(isNarrowEmbedLayout ? styles.searchSwitchIconImageNarrow : {}),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -509,6 +515,7 @@ export function LeaderboardExperience({
         style={{
           ...styles.searchFindBtnSlot,
           ...(isEmbedLayout ? styles.searchFindBtnSlotEmbed : {}),
+          ...(isNarrowEmbedLayout ? styles.searchFindBtnSlotEmbedNarrow : {}),
           ...(showSearchFindButton ? styles.searchFindBtnSlotVisible : styles.searchFindBtnSlotHidden),
         }}
         aria-hidden={!showSearchFindButton}
@@ -517,11 +524,12 @@ export function LeaderboardExperience({
           type="button"
           style={{
             ...styles.searchFindBtn,
+            ...(isNarrowEmbedLayout ? styles.searchFindBtnEmbedNarrow : {}),
             ...(showSearchFindButton ? styles.searchFindBtnVisible : styles.searchFindBtnHidden),
             ...(searchFindFeedbackActive ? styles.searchFindBtnFeedback : {}),
           }}
           onClick={triggerNameSearch}
-          disabled={!showSearchFindButton || searchFindFeedbackActive}
+          disabled={!canSubmitNameSearch || searchFindFeedbackActive}
           aria-busy={searchFindFeedbackActive}
         >
           <span style={styles.searchFindBtnText}>Найти</span>
@@ -540,25 +548,28 @@ export function LeaderboardExperience({
       <ScreenContainer style={{ ...styles.page, ...(isEmbedLayout ? styles.pageEmbed : {}) }}>
         <Sheet style={{ ...styles.sheet, ...(isEmbedLayout ? styles.sheetEmbed : {}) }}>
           <div style={{ ...styles.sheetInner, ...(isEmbedLayout ? styles.sheetInnerEmbed : {}) }}>
-            <HeaderChrome
-              style={{ ...styles.headerRow, ...(isEmbedLayout ? styles.headerRowEmbed : {}) }}
-              logoStyle={styles.logoMark}
-              right={
-                isEmbedLayout ? undefined :
-                <div style={styles.headerRight}>
-                  {searchControls}
-                </div>
-              }
-            />
+            {!isNarrowEmbedLayout ? (
+              <HeaderChrome
+                style={{ ...styles.headerRow, ...(isEmbedLayout ? styles.headerRowEmbed : {}) }}
+                logoStyle={styles.logoMark}
+                right={
+                  isEmbedLayout ? undefined :
+                  <div style={styles.headerRight}>
+                    {searchControls}
+                  </div>
+                }
+              />
+            ) : null}
 
-            {isEmbedLayout ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
+            {isEmbedLayout && !isNarrowEmbedLayout ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
 
-            <div style={{ ...styles.genderTabs, ...(isEmbedLayout ? styles.genderTabsEmbed : {}) }}>
+            <div style={{ ...styles.genderTabs, ...(isEmbedLayout ? styles.genderTabsEmbed : {}), ...(isNarrowEmbedLayout ? styles.genderTabsEmbedNarrow : {}) }}>
               <button
                 type="button"
                 style={{
                   ...styles.genderTab,
                   ...(isEmbedLayout ? styles.genderTabEmbed : {}),
+                  ...(isNarrowEmbedLayout ? styles.genderTabEmbedNarrow : {}),
                   ...(selectedSex === 'female' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
                 onClick={() => setGenderTab('female')}
@@ -570,6 +581,7 @@ export function LeaderboardExperience({
                 style={{
                   ...styles.genderTab,
                   ...(isEmbedLayout ? styles.genderTabEmbed : {}),
+                  ...(isNarrowEmbedLayout ? styles.genderTabEmbedNarrow : {}),
                   ...(selectedSex === 'male' ? styles.genderTabActive : styles.genderTabIdle),
                 }}
                 onClick={() => setGenderTab('male')}
@@ -582,6 +594,7 @@ export function LeaderboardExperience({
               style={{
                 ...styles.leaderboardRow,
                 ...(isEmbedLayout ? styles.leaderboardRowEmbed : {}),
+                ...(isNarrowEmbedLayout ? styles.leaderboardRowEmbedNarrow : {}),
                 opacity: isCarouselFading ? 0.14 : 1,
                 transition: `opacity ${CAROUSEL_FADE_MS}ms ease`,
               }}
@@ -608,6 +621,7 @@ export function LeaderboardExperience({
                   ...styles.arrowBtn,
                   ...styles.arrowBtnLeft,
                   ...(isEmbedLayout ? styles.arrowBtnEmbed : {}),
+                  ...(isNarrowEmbedLayout ? styles.arrowBtnEmbedNarrow : {}),
                   left: isEmbedLayout ? w(4) : w(8),
                 }}
                 onClick={() => shiftCarousel(-1)}
@@ -653,6 +667,7 @@ export function LeaderboardExperience({
                   error={centerError}
                   compact={isEmbedLayout}
                   narrow={isNarrowEmbedLayout}
+                  topSlot={isNarrowEmbedLayout ? searchControls : undefined}
                   emptyHint="Пока нет результатов в этом зачёте."
                 />
               </section>
@@ -688,6 +703,7 @@ export function LeaderboardExperience({
                   ...styles.arrowBtn,
                   ...styles.arrowBtnRight,
                   ...(isEmbedLayout ? styles.arrowBtnEmbed : {}),
+                  ...(isNarrowEmbedLayout ? styles.arrowBtnEmbedNarrow : {}),
                   right: isEmbedLayout ? w(4) : w(8),
                 }}
                 onClick={() => shiftCarousel(1)}
@@ -718,6 +734,7 @@ function LeaderboardStack({
   emptyHint,
   compact = false,
   narrow = false,
+  topSlot,
 }: {
   entries: LeaderboardEntry[];
   runTypeId: RunTypeId;
@@ -733,9 +750,10 @@ function LeaderboardStack({
   emptyHint?: string;
   compact?: boolean;
   narrow?: boolean;
+  topSlot?: ReactNode;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
-  const rows = dim ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
+  const rows = dim || narrow ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
 
   return (
     <div
@@ -744,17 +762,23 @@ function LeaderboardStack({
         ...(dim ? styles.stackDim : {}),
         ...(dim ? {} : styles.stackCardMain),
         ...(compact ? styles.stackCardCompact : {}),
+        ...(narrow ? styles.stackCardNarrow : {}),
       }}
     >
-      <div style={styles.stackHeaderBar}>
-        <p style={{ ...styles.stackHeaderLabel, ...(compact ? styles.stackHeaderLabelCompact : {}) }}>{title}</p>
+      <div style={{ ...styles.stackHeaderBar, ...(narrow ? styles.stackHeaderBarNarrow : {}) }}>
+        <p style={{ ...styles.stackHeaderLabel, ...(compact ? styles.stackHeaderLabelCompact : {}), ...(narrow ? styles.stackHeaderLabelNarrow : {}) }}>
+          <span style={narrow ? styles.stackHeaderTextNarrow : undefined}>{title}</span>
+          {narrow ? <span style={styles.stackHeaderChevronNarrow} aria-hidden /> : null}
+        </p>
       </div>
+      {topSlot ? <div style={styles.stackTopSlot}>{topSlot}</div> : null}
       <div
         ref={scrollBodyRef as Ref<HTMLDivElement> | undefined}
         style={{
           ...styles.stackBody,
           ...(dim ? styles.stackBodyDim : styles.stackBodyMain),
           ...(compact ? styles.stackBodyCompact : {}),
+          ...(narrow ? styles.stackBodyNarrow : {}),
         }}
       >
         {loading ? <p style={styles.muted}>Загрузка…</p> : null}
@@ -782,12 +806,19 @@ function LeaderboardStack({
                     ...(narrow ? styles.lbRowNarrow : {}),
                   }}
                 >
-                  <div style={{ ...styles.lbRowLeft, ...(compact ? styles.lbRowLeftCompact : {}) }}>
+                  <div
+                    style={{
+                      ...styles.lbRowLeft,
+                      ...(compact ? styles.lbRowLeftCompact : {}),
+                      ...(narrow ? styles.lbRowLeftNarrow : {}),
+                    }}
+                  >
                     <span
                       style={{
                         ...styles.lbRank,
                         ...(dim ? styles.lbRankBack : {}),
                         ...(compact ? styles.lbRankCompact : {}),
+                        ...(narrow ? styles.lbRankNarrow : {}),
                       }}
                     >
                       {e.rank ?? i + 1}
@@ -798,6 +829,7 @@ function LeaderboardStack({
                         ...(dim ? styles.lbNameBack : {}),
                         ...(isHighlight ? styles.lbNameHighlight : {}),
                         ...(compact ? styles.lbNameCompact : {}),
+                        ...(narrow ? styles.lbNameNarrow : {}),
                       }}
                     >
                       {e.participantName}
@@ -921,6 +953,12 @@ const styles: Record<string, CSSProperties> = {
     flexWrap: 'wrap',
     gap: `${h(12)} ${w(14)}`,
   },
+  searchRowEmbedNarrow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 104px',
+    alignItems: 'stretch',
+    gap: '6px',
+  },
   searchRowEmbedFocused: {
     width: '100%',
   },
@@ -938,6 +976,10 @@ const styles: Record<string, CSSProperties> = {
   },
   searchFindBtnSlotEmbed: {
     width: 'auto',
+  },
+  searchFindBtnSlotEmbedNarrow: {
+    width: '104px',
+    alignItems: 'stretch',
   },
   searchFindBtnSlotVisible: {
     opacity: 1,
@@ -961,6 +1003,13 @@ const styles: Record<string, CSSProperties> = {
     fontSynthesis: 'none',
     cursor: 'pointer',
     transition: 'opacity 220ms ease, transform 220ms ease',
+  },
+  searchFindBtnEmbedNarrow: {
+    width: '100%',
+    minHeight: '36px',
+    padding: '10px 12px',
+    borderRadius: '9px',
+    fontSize: '10px',
   },
   searchFindBtnText: {
     display: 'inline-block',
@@ -1005,6 +1054,12 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     flex: '1 1 100%',
   },
+  searchBarEmbedNarrow: {
+    minHeight: '36px',
+    padding: '8px 10px',
+    borderRadius: '9px',
+    gap: '8px',
+  },
   searchBarEmbedFocused: {
     minWidth: 0,
   },
@@ -1035,8 +1090,18 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.02em',
     fontSynthesis: 'none',
   },
+  searchInputEmbedNarrow: {
+    fontFamily: '"Proxima Nova", Arial, sans-serif',
+    fontSize: '11px',
+    fontWeight: 400,
+    letterSpacing: '0',
+    textTransform: 'none',
+  },
   searchInputWithSwitchButtons: {
     paddingRight: w(188),
+  },
+  searchInputWithSwitchButtonsNarrow: {
+    paddingRight: '92px',
   },
   searchSwitchButtonsInInput: {
     position: 'absolute',
@@ -1048,6 +1113,10 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: w(28),
     zIndex: 2,
+  },
+  searchSwitchButtonsInInputNarrow: {
+    right: '8px',
+    gap: '8px',
   },
   searchSwitchBtnInInput: {
     width: w(76),
@@ -1062,12 +1131,21 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  searchSwitchBtnInInputNarrow: {
+    width: '36px',
+    height: '32px',
+    borderRadius: '8px',
+  },
   searchSwitchIconImage: {
     width: w(64),
     height: h(40),
     display: 'block',
     objectFit: 'contain',
     pointerEvents: 'none',
+  },
+  searchSwitchIconImageNarrow: {
+    width: '26px',
+    height: '20px',
   },
   btnHome: {
     display: 'inline-flex',
@@ -1106,6 +1184,12 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: '100%',
     minHeight: h(98),
   },
+  genderTabsEmbedNarrow: {
+    minHeight: '48px',
+    borderRadius: '14px',
+    padding: '5px',
+    gap: '4px',
+  },
   genderTab: {
     flex: 1,
     border: 'none',
@@ -1122,6 +1206,11 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 'clamp(7px, 2vw, 11px)',
     lineHeight: 1,
     letterSpacing: '0.01em',
+  },
+  genderTabEmbedNarrow: {
+    borderRadius: '10px',
+    fontSize: '12px',
+    lineHeight: 1,
   },
   genderTabActive: {
     background: '#fff',
@@ -1147,6 +1236,10 @@ const styles: Record<string, CSSProperties> = {
   leaderboardRowEmbed: {
     minHeight: h(940),
     maxWidth: '100%',
+  },
+  leaderboardRowEmbedNarrow: {
+    minHeight: '780px',
+    overflow: 'visible',
   },
   arrowBtn: {
     position: 'absolute' as const,
@@ -1178,6 +1271,9 @@ const styles: Record<string, CSSProperties> = {
     width: w(68),
     height: w(68),
     zIndex: 8,
+  },
+  arrowBtnEmbedNarrow: {
+    display: 'none',
   },
   arrowIconImageInner: {
     width: '42%',
@@ -1261,6 +1357,11 @@ const styles: Record<string, CSSProperties> = {
     minHeight: h(820),
     maxHeight: h(900),
   },
+  stackCardNarrow: {
+    minHeight: '720px',
+    maxHeight: '760px',
+    borderRadius: '14px',
+  },
   stackDim: {
     opacity: 0.9,
     filter: 'grayscale(1) saturate(0)',
@@ -1294,10 +1395,44 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.03em',
     lineHeight: 1.15,
   },
+  stackHeaderBarNarrow: {
+    padding: '10px 9px 8px',
+  },
   stackHeaderLabelCompact: {
     fontSize: 'clamp(9px, 2.8vw, 15px)',
     padding: 'clamp(7px, 2vw, 12px) clamp(8px, 2.4vw, 14px)',
     borderRadius: 'clamp(8px, 2.4vw, 16px)',
+  },
+  stackHeaderLabelNarrow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '10px',
+    background: 'linear-gradient(180deg, #5f0b18 0%, #37050d 100%)',
+    border: '1px solid rgba(235, 30, 55, 0.72)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+    fontSize: '12px',
+    padding: '12px 14px',
+    borderRadius: '11px',
+    textAlign: 'left',
+  },
+  stackHeaderTextNarrow: {
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  stackHeaderChevronNarrow: {
+    width: '8px',
+    height: '8px',
+    borderRight: '2px solid rgba(255,255,255,0.9)',
+    borderBottom: '2px solid rgba(255,255,255,0.9)',
+    transform: 'rotate(45deg) translateY(-2px)',
+    flexShrink: 0,
+  },
+  stackTopSlot: {
+    padding: '0 9px 8px',
+    flexShrink: 0,
   },
   stackBody: {
     flex: 1,
@@ -1314,6 +1449,11 @@ const styles: Record<string, CSSProperties> = {
   stackBodyCompact: {
     padding: `${h(16)} ${w(14)} ${h(20)}`,
     gap: h(10),
+  },
+  stackBodyNarrow: {
+    padding: '8px 9px 12px',
+    gap: '7px',
+    overflowY: 'visible',
   },
   /** Центральный leaderboard: полный список + аккуратный тонкий scrollbar. */
   stackBodyMain: {
@@ -1349,8 +1489,11 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 'clamp(6px, 2vw, 12px)',
   },
   lbRowNarrow: {
-    gridTemplateColumns: 'minmax(0, 1fr)',
-    alignItems: 'start',
+    gridTemplateColumns: 'minmax(0, 1fr) auto',
+    alignItems: 'center',
+    minHeight: '50px',
+    gap: '10px',
+    padding: '10px 12px',
   },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',
@@ -1365,6 +1508,9 @@ const styles: Record<string, CSSProperties> = {
   },
   lbRowLeftCompact: {
     gap: 'clamp(4px, 1.4vw, 8px)',
+  },
+  lbRowLeftNarrow: {
+    gap: '10px',
   },
   lbRankBack: {
     fontSize: w(20),
@@ -1383,6 +1529,10 @@ const styles: Record<string, CSSProperties> = {
   lbRankCompact: {
     minWidth: 'clamp(14px, 4vw, 24px)',
     fontSize: 'clamp(8px, 2.3vw, 12px)',
+  },
+  lbRankNarrow: {
+    minWidth: '18px',
+    fontSize: '13px',
   },
   lbNameBack: {
     fontSize: w(20),
@@ -1403,6 +1553,11 @@ const styles: Record<string, CSSProperties> = {
   lbNameCompact: {
     fontSize: 'clamp(8px, 2.3vw, 12px)',
     letterSpacing: '0.015em',
+  },
+  lbNameNarrow: {
+    fontSize: '15px',
+    lineHeight: 1.08,
+    whiteSpace: 'normal',
   },
   lbNameHighlight: {
     color: ui.color.red,
@@ -1429,9 +1584,11 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
   },
   lbResultNarrow: {
-    justifySelf: 'start',
-    marginLeft: 'clamp(20px, 6vw, 34px)',
-    maxWidth: '100%',
+    justifySelf: 'end',
+    marginLeft: 0,
+    maxWidth: '96px',
+    fontSize: '15px',
+    letterSpacing: '0.02em',
   },
   muted: {
     margin: 0,

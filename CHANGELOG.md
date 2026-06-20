@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.17] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** continued the mobile Figma pass for `/leaderboard2`: tightened hero typography, added the mobile Remote Leaderboard embed state, refined stats, prize, FAQ, history, and footer sections, and kept the page scrollable on desktop/mobile.
+- **Remote Leaderboard embed:** default landing embed now opens the 5 km male rating view used in the supplied layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.13`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.16] - 2026-06-19
 
 ### Remote system

@@ -22,7 +22,7 @@ const STEPS = [
   },
   {
     number: '03',
-    title: 'Следи за позицией',
+    title: 'Следи за рейтингом',
     text: 'Возвращайся в лидерборд и смотри, как меняется твое место в рейтинге!',
   },
 ];
@@ -46,9 +46,9 @@ const PRIZES = [
   {
     label: 'Призы месяца:',
     brand: 'PUMA',
-    model: 'Deviate NITRO Elite Trail',
+    model: 'MAGMAX NITRO 2',
     text: 'Главный приз для лучших участников месяца в каждой дисциплине.',
-    image: '/assets/leaderboard2/shoe-1111.png',
+    image: '/assets/leaderboard2/shoe-1112.png',
   },
   {
     label: 'Готов попасть в топ-10?',
@@ -108,6 +108,12 @@ export default function RemoteLeaderboardLandingPage() {
 
   useEffect(() => {
     document.body.classList.add('leaderboard2-route');
+    const hash = window.location.hash;
+    if (hash) {
+      window.setTimeout(() => {
+        document.querySelector(hash)?.scrollIntoView({ block: 'start' });
+      }, 0);
+    }
     return () => document.body.classList.remove('leaderboard2-route');
   }, []);
 
@@ -129,10 +135,12 @@ export default function RemoteLeaderboardLandingPage() {
           <span>Ходынский бульвар 4</span>
         </div>
         <h1 className="leaderboard2__heroTitle">
-          Беги
+          <span className="leaderboard2__heroTitleFirstLine">Беги</span>
           <br />
-          на <br className="leaderboard2__heroMobileBreak" />
-          максимум.
+          <span className="leaderboard2__heroTitleSecondLine">
+            на <br className="leaderboard2__heroMobileBreak" />
+            максимум.
+          </span>
         </h1>
       </section>
 
@@ -157,13 +165,18 @@ export default function RemoteLeaderboardLandingPage() {
         <p className="leaderboard2__marker">( 01 )</p>
         <div className="leaderboard2__introContent">
           <h2 id="leaderboard2-intro-title" className="leaderboard2__introTitle">
-            Каждый месяц лучшие
-            <br />
-            мужчины и женщины в каждой
-            <br />
-            дисциплине получают пару
-            <br />
-            новых кроссовок.
+            <span className="leaderboard2__introDesktop">
+              Каждый месяц лучшие
+              <br />
+              мужчины и женщины в каждой
+              <br />
+              дисциплине получают пару
+              <br />
+              новых кроссовок.
+            </span>
+            <span className="leaderboard2__introMobile">
+              Каждый месяц лучшие атлеты в каждой дисциплине выигрывают новые кроссовки.
+            </span>
           </h2>
           <div className="leaderboard2__actions">
             <a href="#rating">Смотреть рейтинг</a>
@@ -172,14 +185,14 @@ export default function RemoteLeaderboardLandingPage() {
         </div>
       </section>
 
-      <section className="leaderboard2__stats" aria-label="Параметры челленджа">
+      <section className="leaderboard2__stats" id="stats" aria-label="Параметры челленджа">
         <div className="leaderboard2__statsRay leaderboard2__statsRay--top" aria-hidden />
         <div className="leaderboard2__statsRay leaderboard2__statsRay--bottom" aria-hidden />
         <div className="leaderboard2__statsWordmark" aria-label="AMAZING RED">
           <span>AMAZING</span>
           <span>RED</span>
         </div>
-        <img className="leaderboard2__statsShoe" src="/assets/leaderboard2/stats-shoe.png" alt="" />
+        <img className="leaderboard2__statsShoe" src="/assets/leaderboard2/stats-layer-figma.png" alt="" />
         <div className="leaderboard2__statCell">
           <strong>3</strong>
           <span>Беговых режима</span>
@@ -190,13 +203,10 @@ export default function RemoteLeaderboardLandingPage() {
         </div>
       </section>
 
-      <section className="leaderboard2__how" aria-labelledby="leaderboard2-how-title">
+      <section className="leaderboard2__how" id="how" aria-labelledby="leaderboard2-how-title">
         <div className="leaderboard2__sectionHead leaderboard2__sectionHead--split">
           <p className="leaderboard2__marker">[ 0 2 ]</p>
-          <h2 id="leaderboard2-how-title">
-            <span>Как это</span>
-            <span>работает</span>
-          </h2>
+          <h2 id="leaderboard2-how-title">Как это работает</h2>
         </div>
         <div className="leaderboard2__stepGrid">
           {STEPS.map((step, index) => (
@@ -214,12 +224,19 @@ export default function RemoteLeaderboardLandingPage() {
         </div>
       </section>
 
-      <section className="leaderboard2__disciplines" aria-labelledby="leaderboard2-disciplines-title">
+      <section className="leaderboard2__disciplines" id="disciplines" aria-labelledby="leaderboard2-disciplines-title">
         <h2 id="leaderboard2-disciplines-title">Режимы забега</h2>
         <div className="leaderboard2__modeCard">
           <div className="leaderboard2__modeText">
             <strong>{discipline.title}</strong>
-            <p>{discipline.text}</p>
+            <p>
+              <span className="leaderboard2__modeFullText">{discipline.text}</span>
+              <span className="leaderboard2__modeShortText">
+                {discipline.text.split('.')[0].split(' ').slice(0, 2).join(' ')}
+                <br />
+                {discipline.text.split('.')[0].split(' ').slice(2).join(' ')}.
+              </span>
+            </p>
           </div>
           <div className="leaderboard2__modeControls">
             <CarouselButton
@@ -247,14 +264,14 @@ export default function RemoteLeaderboardLandingPage() {
         <div className="leaderboard2__leaderboardFrameWrap">
           <iframe
             className="leaderboard2__leaderboardFrame"
-            src="/leaderboard?embed=1"
+            src="/leaderboard?embed=1&runTypeId=2&sex=male"
             title="Remote leaderboard"
             loading="eager"
           />
         </div>
       </section>
 
-      <section className="leaderboard2__prize" aria-label="Призы месяца">
+      <section className="leaderboard2__prize" id="prizes" aria-label="Призы месяца">
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--topLeft" aria-hidden />
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--topRight" aria-hidden />
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--bottomLeft" aria-hidden />
@@ -280,18 +297,22 @@ export default function RemoteLeaderboardLandingPage() {
         </div>
       </section>
 
-      <section className="leaderboard2__finalCta">
+      <section className="leaderboard2__finalCta" id="final-cta">
         <h2>
           Готов попасть
           <br />в топ-10
           <br />и забрать свою пару
         </h2>
-        <strong>Deviate NITRO?</strong>
+        <strong>
+          <span>PUMA MAGMAX</span>
+          <span>NITRO 2?</span>
+        </strong>
         <p>Выбирай дисциплину, показывай максимум и следи за своим результатом в рейтинге.</p>
         <a href="#rating">Принять вызов</a>
       </section>
 
-      <section className="leaderboard2__faq" aria-labelledby="leaderboard2-faq-title">
+      <section className="leaderboard2__faq" id="faq" aria-labelledby="leaderboard2-faq-title">
+        <p className="leaderboard2__marker leaderboard2__faqMarker">[ 05 ]</p>
         <h2 id="leaderboard2-faq-title">
           <span>Частые</span>
           <span>вопросы</span>
@@ -301,7 +322,7 @@ export default function RemoteLeaderboardLandingPage() {
             <details key={item.q} open={index === 0}>
               <summary>
                 <span>[ 0{index + 1} ]</span>
-                {item.q}
+                <span className="leaderboard2__faqQuestion">{item.q}</span>
               </summary>
               <p>{item.a}</p>
             </details>
@@ -309,7 +330,7 @@ export default function RemoteLeaderboardLandingPage() {
         </div>
       </section>
 
-      <section className="leaderboard2__history" aria-labelledby="leaderboard2-history-title">
+      <section className="leaderboard2__history" id="history" aria-labelledby="leaderboard2-history-title">
         <div className="leaderboard2__historyHead">
           <h2 id="leaderboard2-history-title">История забегов</h2>
           <span>Май 2026</span>
@@ -333,6 +354,7 @@ export default function RemoteLeaderboardLandingPage() {
 
       <footer className="leaderboard2__footer">
         <LogoMark className="leaderboard2__footerLogo" />
+        <p className="leaderboard2__socialsLabel">Мы в социальных сетях</p>
         <div className="leaderboard2__socials" aria-hidden>
           <span />
           <span />
@@ -347,6 +369,11 @@ export default function RemoteLeaderboardLandingPage() {
           </label>
           <button type="button">Подписаться</button>
         </form>
+        <p className="leaderboard2__subscribeNote">
+          Подписываясь на рассылку, вы соглашаетесь на обработку персональных данных в соответствии с условиями политики
+          конфиденциальности.
+        </p>
+        <p className="leaderboard2__copyright">© Inventive Retail Group, 2026</p>
       </footer>
     </main>
   );

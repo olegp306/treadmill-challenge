@@ -207,6 +207,20 @@ body.td-route {
   margin: 0 auto;
 }
 
+@media (max-width: 520px) {
+  .ar-ozio-remote-lb-viewport > .ar-ozio-remote-lb-canvas {
+    width: 100vw;
+    height: 760px;
+    min-height: 760px;
+    aspect-ratio: auto;
+    /*
+     * Keep old 2360x1640 vertical design units while fitting the mobile
+     * embed tightly around the 10-row leaderboard list.
+     */
+    --ar-cqh: calc(100vw * 1640 / 2360 / 100) !important;
+  }
+}
+
 /*
  * Registration inputs: iPad keeps TS `w()` sizes; narrow viewports (iPhone, short landscape)
  * cap font size so placeholders fit. Always ≥16px to avoid iOS focus zoom.
