@@ -410,7 +410,7 @@ export function LeaderboardExperience({
   const isNarrowEmbedLayout = isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= 520;
   const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
   const canSubmitNameSearch = searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH;
-  const showSearchFindButton = canSubmitNameSearch || isNarrowEmbedLayout;
+  const showSearchFindButton = canSubmitNameSearch;
   const showSearchSwitchButtons = nameSearchMatches.length > 1;
   const canGoSearchUp = showSearchSwitchButtons && nameSearchMatchIndex > 0;
   const canGoSearchDown = showSearchSwitchButtons && nameSearchMatchIndex < nameSearchMatches.length - 1;
@@ -422,6 +422,7 @@ export function LeaderboardExperience({
         ...styles.searchRow,
         ...(isEmbedLayout ? styles.searchRowEmbed : {}),
         ...(isNarrowEmbedLayout ? styles.searchRowEmbedNarrow : {}),
+        ...(isNarrowEmbedLayout && !showSearchFindButton ? styles.searchRowEmbedNarrowIdle : {}),
         ...(isSearchExpanded ? styles.searchRowFocused : {}),
         ...(isEmbedLayout && isSearchExpanded ? styles.searchRowEmbedFocused : {}),
       }}
@@ -517,6 +518,7 @@ export function LeaderboardExperience({
           ...(isEmbedLayout ? styles.searchFindBtnSlotEmbed : {}),
           ...(isNarrowEmbedLayout ? styles.searchFindBtnSlotEmbedNarrow : {}),
           ...(showSearchFindButton ? styles.searchFindBtnSlotVisible : styles.searchFindBtnSlotHidden),
+          ...(isNarrowEmbedLayout && !showSearchFindButton ? styles.searchFindBtnSlotNarrowHidden : {}),
         }}
         aria-hidden={!showSearchFindButton}
       >
@@ -559,6 +561,13 @@ export function LeaderboardExperience({
                   </div>
                 }
               />
+            ) : null}
+
+            {isNarrowEmbedLayout ? (
+              <div style={styles.embedNarrowBrand} aria-label="AMAZING RED">
+                <span>AMAZING</span>
+                <span style={styles.embedNarrowBrandRed}>RED</span>
+              </div>
             ) : null}
 
             {isEmbedLayout && !isNarrowEmbedLayout ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
@@ -960,6 +969,9 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'stretch',
     gap: '6px',
   },
+  searchRowEmbedNarrowIdle: {
+    gridTemplateColumns: '1fr',
+  },
   searchRowEmbedFocused: {
     width: '100%',
   },
@@ -971,6 +983,22 @@ const styles: Record<string, CSSProperties> = {
   embedSearchWrapNarrow: {
     width: '100%',
     display: 'block',
+  },
+  embedNarrowBrand: {
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: '3px',
+    alignSelf: 'flex-start',
+    margin: '0 0 -2px 2px',
+    color: '#fff',
+    fontFamily: '"Druk Wide Cyr"',
+    fontSize: '5px',
+    lineHeight: 1,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+  },
+  embedNarrowBrandRed: {
+    color: ui.color.red,
   },
   searchFindBtnSlot: {
     display: 'inline-flex',
@@ -991,6 +1019,9 @@ const styles: Record<string, CSSProperties> = {
   },
   searchFindBtnSlotHidden: {
     opacity: 0,
+  },
+  searchFindBtnSlotNarrowHidden: {
+    display: 'none',
   },
   searchFindBtn: {
     flexShrink: 0,

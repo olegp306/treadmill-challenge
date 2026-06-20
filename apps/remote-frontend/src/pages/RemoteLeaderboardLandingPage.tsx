@@ -264,7 +264,7 @@ export default function RemoteLeaderboardLandingPage() {
         <div className="leaderboard2__leaderboardFrameWrap">
           <iframe
             className="leaderboard2__leaderboardFrame"
-            src="/leaderboard?embed=1&runTypeId=2&sex=male"
+            src="/leaderboard?embed=1&runTypeId=0&sex=male"
             title="Remote leaderboard"
             loading="eager"
           />

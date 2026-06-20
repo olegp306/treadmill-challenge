@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.20] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** continued the `/leaderboard2` mobile Figma pass: tightened the run-mode card, fixed the carousel arrows so they no longer collide with the title, and kept the 320px layout free of horizontal overflow.
+- **Remote Leaderboard embed:** refined the embedded mobile leaderboard inside the landing: added the compact `AMAZING RED` brand line above search and kept the search button hidden until the query is actionable.
+- **Remote versions:** `remote-frontend` raised to `0.1.16`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.19] - 2026-06-20
 
 ### Remote system
