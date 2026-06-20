@@ -1999,38 +1999,38 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__header {
-    height: 62px;
-    padding: 26px 0 14px;
+    height: 54px;
+    padding: 22px 0 10px;
   }
 
   .leaderboard2__heroCard {
-    height: 200px;
+    height: 184px;
   }
 
   .leaderboard2__heroMedia {
-    inset: -34px -72px auto -58px;
-    width: 520px;
-    height: 292px;
+    inset: -36px -66px auto -54px;
+    width: 500px;
+    height: 278px;
   }
 
   .leaderboard2__heroTitle {
-    top: 56px;
-    font-size: 56px;
+    top: 52px;
+    font-size: 52px;
   }
 
   .leaderboard2__place {
-    bottom: 16px;
+    bottom: 13px;
   }
 
   .leaderboard2__timerCard {
-    min-height: 110px;
+    min-height: 98px;
     margin-top: 0;
     padding: 6px 16px 8px;
     gap: 2px;
   }
 
   .leaderboard2__timerValue {
-    font-size: 32px;
+    font-size: 30px;
   }
 
   .leaderboard2__timerLabel {
@@ -2039,12 +2039,12 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__participants span {
-    margin-bottom: 4px;
-    font-size: 34px;
+    margin-bottom: 2px;
+    font-size: 32px;
   }
 
   .leaderboard2__intro {
-    margin-top: 28px;
+    margin-top: 24px;
   }
 
   .leaderboard2__introTitle {
@@ -2063,7 +2063,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__stats {
     height: 176px;
-    margin-top: 64px;
+    margin-top: 52px;
   }
 
   .leaderboard2__stats::after {

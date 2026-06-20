@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.26] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** compacted the first `/leaderboard2` mobile screen so the hero, timer, intro copy, and Amazing Red stats card sit closer to the Figma mobile reference while preserving the desktop layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.22`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.25] - 2026-06-20
 
 ### Remote system
