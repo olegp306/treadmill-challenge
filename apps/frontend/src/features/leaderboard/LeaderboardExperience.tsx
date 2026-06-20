@@ -83,6 +83,10 @@ export type LeaderboardExperienceProps = {
    * `embed` = reusable remote leaderboard block for landing/iframes: search on its own row, wider tabs, compact carousel.
    */
   layoutMode?: 'kiosk' | 'desktop' | 'embed';
+  /** Landing/mobile embed already has page branding above the rating block. */
+  hideEmbedBrand?: boolean;
+  /** Landing/mobile embed places search below the run selector inside the stack. */
+  embedSearchPlacement?: 'above-tabs' | 'stack-top';
 };
 
 type NameSearchMatch = { runTypeId: RunTypeId; sex: Gender; participantId: string; runId: string };
@@ -120,6 +124,8 @@ export function LeaderboardExperience({
   pollIntervalMs = 0,
   backupUnavailableMessage = null,
   layoutMode = 'kiosk',
+  hideEmbedBrand = false,
+  embedSearchPlacement = 'above-tabs',
 }: LeaderboardExperienceProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -408,6 +414,7 @@ export function LeaderboardExperience({
   const isEmbedLayout = layoutMode === 'embed';
   const isRemoteLikeLayout = layoutMode === 'desktop' || isEmbedLayout;
   const isNarrowEmbedLayout = isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= 520;
+  const useStackSearch = isNarrowEmbedLayout && embedSearchPlacement === 'stack-top';
   const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
   const canSubmitNameSearch = searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH;
   const showSearchFindButton = canSubmitNameSearch;
@@ -563,7 +570,7 @@ export function LeaderboardExperience({
               />
             ) : null}
 
-            {isNarrowEmbedLayout ? (
+            {isNarrowEmbedLayout && !hideEmbedBrand ? (
               <div style={styles.embedNarrowBrand} aria-label="AMAZING RED">
                 <span>AMAZING</span>
                 <span style={styles.embedNarrowBrandRed}>RED</span>
@@ -571,7 +578,7 @@ export function LeaderboardExperience({
             ) : null}
 
             {isEmbedLayout && !isNarrowEmbedLayout ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
-            {isNarrowEmbedLayout ? <div style={styles.embedSearchWrapNarrow}>{searchControls}</div> : null}
+            {isNarrowEmbedLayout && !useStackSearch ? <div style={styles.embedSearchWrapNarrow}>{searchControls}</div> : null}
 
             <div style={{ ...styles.genderTabs, ...(isEmbedLayout ? styles.genderTabsEmbed : {}), ...(isNarrowEmbedLayout ? styles.genderTabsEmbedNarrow : {}) }}>
               <button
@@ -677,7 +684,7 @@ export function LeaderboardExperience({
                   error={centerError}
                   compact={isEmbedLayout}
                   narrow={isNarrowEmbedLayout}
-                  topSlot={undefined}
+                  topSlot={useStackSearch ? searchControls : undefined}
                   emptyHint="Пока нет результатов в этом зачёте."
                 />
               </section>

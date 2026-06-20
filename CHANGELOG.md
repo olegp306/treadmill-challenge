@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.62] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** adjusted the embedded `/leaderboard2` rating controls to match the landing layout more closely: the internal compact brand is hidden and search now sits inside the leaderboard card below the run selector.
+- **Remote versions:** `remote-frontend` raised to `0.1.58`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome mobile screenshot/metrics at 375px confirmed the embedded rating no longer renders its own wordmark, keeps width at `343px`, and page width stays `375px`.
+
+---
+
 ## [0.5.61] - 2026-06-20
 
 ### Remote system

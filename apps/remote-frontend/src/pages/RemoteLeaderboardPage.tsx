@@ -23,7 +23,15 @@ type LeaderboardDataOk =
 
 const POLL_MS = 45_000;
 
-export function RemoteLeaderboardView({ embed = false }: { embed?: boolean }) {
+export function RemoteLeaderboardView({
+  embed = false,
+  hideEmbedBrand = false,
+  embedSearchPlacement = 'above-tabs',
+}: {
+  embed?: boolean;
+  hideEmbedBrand?: boolean;
+  embedSearchPlacement?: 'above-tabs' | 'stack-top';
+}) {
   const [backupUnavailableMessage, setBackupUnavailableMessage] = useState<string | null>(null);
 
   const fetchAllSlides = useCallback(async (): Promise<SlideState[]> => {
@@ -55,6 +63,8 @@ export function RemoteLeaderboardView({ embed = false }: { embed?: boolean }) {
       pollIntervalMs={POLL_MS}
       backupUnavailableMessage={backupUnavailableMessage}
       layoutMode={embed ? 'embed' : 'desktop'}
+      hideEmbedBrand={hideEmbedBrand}
+      embedSearchPlacement={embedSearchPlacement}
     />
   );
 }
