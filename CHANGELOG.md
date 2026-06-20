@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.41] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** strengthened the 320px hero shoe artwork on `/leaderboard2` so the first card reads closer to the Figma mobile reference while keeping the no-overflow layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.37`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.40] - 2026-06-20
 
 ### Remote system

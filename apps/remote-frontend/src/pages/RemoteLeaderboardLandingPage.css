@@ -2503,6 +2503,8 @@ body.leaderboard2-route #root {
     inset: -58px -118px auto -132px;
     width: 468px;
     height: 315px;
+    opacity: 0.48;
+    filter: grayscale(1) contrast(1.22);
   }
 
   .leaderboard2__heroCenterMarker {
