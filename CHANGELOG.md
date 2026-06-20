@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.51] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the 375px prize-card MAGMAX shoe bounds on `/leaderboard2` so the rotated image stays inside the card without hidden horizontal overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.47`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile check at 375px confirmed the prize card stays within the 343px content column.
+
+---
+
 ## [0.5.50] - 2026-06-20
 
 ### Remote system
