@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.71] - 2026-06-21
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the middle mobile sections so the How It Works heading stays on one line, the instruction cards keep the reference-like visual weight, and the run-mode card/rating transition moves closer to the provided mobile Figma comparison.
+- **Remote versions:** `remote-frontend` raised to `0.1.67`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright checks at 320px, 375px, and 444px confirmed no horizontal overflow and stable mobile positions for the How, run-mode, and rating sections.
+
+---
+
 ## [0.5.70] - 2026-06-21
 
 ### Remote system

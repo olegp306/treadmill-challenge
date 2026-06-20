@@ -2155,17 +2155,17 @@ body.leaderboard2-route #root {
   .leaderboard2__sectionHead--split h2 {
     width: 100%;
     max-width: 343px;
-    font-size: 35px;
-    line-height: 0.92;
-    white-space: normal;
+    font-size: 25px;
+    line-height: 0.9;
+    white-space: nowrap;
     text-align: left;
-    text-align-last: right;
+    text-align-last: auto;
     transform: none;
     transform-origin: left top;
   }
 
   .leaderboard2__stepGrid {
-    margin-top: 30px;
+    margin-top: 28px;
     gap: 14px;
   }
 
@@ -2184,12 +2184,12 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__disciplines {
-    margin-top: 68px;
+    margin-top: 54px;
   }
 
   .leaderboard2__modeCard {
-    min-height: 470px;
-    padding: 34px 22px 22px;
+    min-height: 405px;
+    padding: 32px 22px 20px;
     background:
       radial-gradient(ellipse at 56% 48%, rgba(230, 35, 58, 0.42), transparent 42%),
       linear-gradient(90deg, rgba(230, 35, 58, 0.08), rgba(0, 0, 0, 0.34)),
@@ -2198,7 +2198,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__modeText {
-    min-height: 308px;
+    min-height: 242px;
   }
 
   .leaderboard2__modeText strong {
@@ -2213,7 +2213,7 @@ body.leaderboard2-route #root {
   .leaderboard2__modeText p {
     width: 430px;
     max-width: none;
-    margin-top: 18px;
+    margin-top: 14px;
     font-size: 20px;
     line-height: 0.92;
     transform: scaleX(0.72);
@@ -2250,7 +2250,7 @@ body.leaderboard2-route #root {
     position: absolute;
     left: 22px;
     right: 22px;
-    bottom: 24px;
+    bottom: 22px;
     min-height: 52px;
     border-radius: 12px;
     font-size: 14px;
