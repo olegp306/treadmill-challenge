@@ -2062,33 +2062,33 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__stats {
-    height: 150px;
+    height: 176px;
     margin-top: 64px;
   }
 
   .leaderboard2__stats::after {
-    top: 78px;
+    top: 94px;
   }
 
   .leaderboard2__statsWordmark {
-    top: 12px;
+    top: 17px;
     left: 108px;
     font-size: 17px;
   }
 
   .leaderboard2__statsShoe {
     width: 100%;
-    height: 150px;
+    height: 176px;
   }
 
   .leaderboard2__statCell {
     left: 26px;
-    top: 38px;
+    top: 52px;
     grid-template-columns: 76px 1fr;
   }
 
   .leaderboard2__statCell + .leaderboard2__statCell {
-    top: 91px;
+    top: 112px;
   }
 
   .leaderboard2__statCell strong {
