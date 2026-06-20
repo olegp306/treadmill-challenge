@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.54] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** aligned the `/leaderboard2` "Как это работает" and "Режимы забега" mobile sections closer to the Figma reference with the split heading, larger discipline card typography, bottom red carousel controls, and wider mode description text.
+- **Remote versions:** `remote-frontend` raised to `0.1.50`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile check at 375px confirmed `document/body` width stays `375`, the mode card stays within `343px`, and the carousel controls stay inside the content column.
+
+---
+
 ## [0.5.53] - 2026-06-20
 
 ### Remote system
