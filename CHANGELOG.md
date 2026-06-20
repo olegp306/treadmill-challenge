@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.36] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the embedded mobile leaderboard used inside `/leaderboard2`: participant rows are denser on narrow embeds, keeping the rating block more controlled and closer to the Figma mobile composition.
+- **Remote versions:** `remote-frontend` raised to `0.1.32`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.35] - 2026-06-20
 
 ### Remote system

@@ -1394,6 +1394,7 @@ const styles: Record<string, CSSProperties> = {
     maxHeight: h(900),
   },
   stackCardNarrow: {
+    height: '512px',
     minHeight: '512px',
     maxHeight: '512px',
     borderRadius: '12px',
@@ -1487,8 +1488,8 @@ const styles: Record<string, CSSProperties> = {
     gap: h(10),
   },
   stackBodyNarrow: {
-    padding: '8px 8px 12px',
-    gap: '8px',
+    padding: '7px 8px 10px',
+    gap: '6px',
     overflowY: 'auto',
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(255,255,255,0.22) transparent',
@@ -1529,9 +1530,9 @@ const styles: Record<string, CSSProperties> = {
   lbRowNarrow: {
     gridTemplateColumns: 'minmax(0, 1fr) auto',
     alignItems: 'center',
-    minHeight: '40px',
+    minHeight: '34px',
     gap: '8px',
-    padding: '8px 9px',
+    padding: '6px 8px',
   },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',
@@ -1593,7 +1594,7 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.015em',
   },
   lbNameNarrow: {
-    fontSize: '10px',
+    fontSize: '9px',
     lineHeight: 1.08,
     whiteSpace: 'normal',
   },
@@ -1624,8 +1625,8 @@ const styles: Record<string, CSSProperties> = {
   lbResultNarrow: {
     justifySelf: 'end',
     marginLeft: 0,
-    maxWidth: '72px',
-    fontSize: '10px',
+    maxWidth: '66px',
+    fontSize: '9px',
     letterSpacing: '0.02em',
   },
   muted: {
