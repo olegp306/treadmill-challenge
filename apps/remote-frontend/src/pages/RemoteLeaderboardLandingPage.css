@@ -2231,18 +2231,23 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__prizeImage {
-    left: 120px;
-    top: 160px;
-    width: 190px;
-    opacity: 0.78;
-    filter: sepia(0.38) saturate(1.25) brightness(0.78) contrast(1.08);
-    transform: rotate(-9deg);
+    left: 54px;
+    top: 178px;
+    width: 300px;
+    opacity: 0.92;
+    filter: sepia(0.3) saturate(1.18) brightness(0.72) contrast(1.1);
+    transform: rotate(-8deg);
   }
 
   .leaderboard2__prize strong,
   .leaderboard2__prize span {
     font-size: 46px;
     line-height: 0.84;
+  }
+
+  .leaderboard2__prize p {
+    margin-bottom: 8px;
+    font-size: 14px;
   }
 
   .leaderboard2__prize span {
@@ -2389,6 +2394,15 @@ body.leaderboard2-route #root {
 
   .leaderboard2__footer {
     margin-top: 54px;
+    overflow: hidden;
+  }
+
+  .leaderboard2__footer::after {
+    right: 0;
+    bottom: -48px;
+    width: 232px;
+    height: 208px;
+    opacity: 0.68;
   }
 
   .leaderboard2__socialsLabel {
@@ -2764,11 +2778,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__prizeImage {
-    left: 50px;
-    top: 182px;
-    width: 218px;
-    opacity: 0.78;
-    transform: rotate(10deg);
+    left: 34px;
+    top: 188px;
+    width: 290px;
+    opacity: 0.9;
+    transform: rotate(-8deg);
   }
 
   .leaderboard2__prize strong {

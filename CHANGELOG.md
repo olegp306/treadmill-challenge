@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.48] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** adjusted the `/leaderboard2` prize card so the MAGMAX shoe is larger and positioned closer to the Figma mobile layout.
+- **Remote Leaderboard landing mobile:** clipped the 375px footer glow so it no longer creates internal horizontal overflow while preserving the subscription block.
+- **Remote versions:** `remote-frontend` raised to `0.1.44`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile check at 375px confirmed document width stays `375/375`.
+
+---
+
 ## [0.5.47] - 2026-06-20
 
 ### Remote system
