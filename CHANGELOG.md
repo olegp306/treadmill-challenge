@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.49] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the 375px "Как это работает" heading on `/leaderboard2` so it fits on one line without clipping or hidden horizontal overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.45`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile check at 375px confirmed the "Как это работает" section and heading stay within the 343px content column.
+
+---
+
 ## [0.5.48] - 2026-06-20
 
 ### Remote system

@@ -2111,13 +2111,13 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__sectionHead--split h2 {
-    width: 520px;
-    font-size: 28px;
+    width: 100%;
+    font-size: 22px;
     line-height: 0.98;
     white-space: nowrap;
     text-align: left;
     text-align-last: auto;
-    transform: scaleX(0.76);
+    transform: none;
     transform-origin: left top;
   }
 
