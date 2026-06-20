@@ -2287,11 +2287,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__prizeImage {
-    left: -12px;
-    top: 224px;
-    width: 405px;
+    left: 72px;
+    top: 292px;
+    width: 285px;
     opacity: 1;
-    filter: grayscale(1) brightness(1.08) contrast(1.08);
+    filter: saturate(0.72) sepia(0.18) brightness(0.92) contrast(1.02);
     transform: rotate(-6deg);
   }
 
@@ -2319,6 +2319,10 @@ body.leaderboard2-route #root {
 
   .leaderboard2__finalCta {
     margin-top: 48px;
+  }
+
+  .leaderboard2__finalCtaGeo {
+    display: none;
   }
 
   .leaderboard2__faq {
@@ -2908,6 +2912,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__finalCtaGeo {
+    display: none;
     left: 24px;
     right: 24px;
   }

@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.73] - 2026-06-21
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the lower mobile prize/CTA area: the prize shoe now sits closer to the reference card, and the mobile CTA no longer keeps the extra coordinate caption layer.
+- **Scroll verification:** rechecked page scrolling on `/leaderboard2`, including gestures over the embedded leaderboard area, to make sure the rating block does not trap wheel or touch scrolling.
+- **Remote versions:** `remote-frontend` raised to `0.1.69`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright checks at 320px, 375px, 444px, and desktop width confirmed no horizontal overflow, full wheel/touch reach to page bottom, and page scroll passthrough over the embedded rating block.
+
+---
+
 ## [0.5.72] - 2026-06-21
 
 ### Remote system
