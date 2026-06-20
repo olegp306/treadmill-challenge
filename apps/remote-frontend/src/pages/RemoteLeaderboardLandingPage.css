@@ -2257,7 +2257,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__leaderboardFrameWrap,
   .leaderboard2__leaderboardFrame {
-    height: 520px;
+    height: 880px;
   }
 
   .leaderboard2__prizeHeader {
@@ -2447,7 +2447,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__socialsLabel {
-    display: block;
+    display: none;
     margin-top: 20px;
     font-size: 13px;
   }
@@ -2482,14 +2482,14 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__subscribeNote {
-    display: block;
+    display: none;
     margin-top: 24px;
     font-size: 11px;
     line-height: 1.38;
   }
 
   .leaderboard2__copyright {
-    display: block;
+    display: none;
     margin-top: 34px;
     font-size: 10px;
   }
@@ -2782,11 +2782,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__leaderboardFrameWrap {
-    height: 520px;
+    height: 900px;
   }
 
   .leaderboard2__leaderboardFrame {
-    height: 520px;
+    height: 900px;
   }
 
   .leaderboard2__prize {
@@ -3039,6 +3039,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__socialsLabel {
+    display: none;
     margin-top: 18px;
     font-size: 12px;
   }

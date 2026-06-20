@@ -7,6 +7,22 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.64] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** moved the embedded rating search above the gender tabs to match the mobile reference flow.
+- **Remote Leaderboard landing mobile:** enlarged the mobile rating frame so the leaderboard block has the same long-page presence as the Figma mobile layout instead of feeling clipped.
+- **Remote Leaderboard landing mobile:** removed footer service captions/legal copy on mobile, leaving the compact logo/social/subscription block.
+- **Remote versions:** `remote-frontend` raised to `0.1.60`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile audit at 320px and 375px confirmed no horizontal overflow, rating-row scroll still passes through to the page, footer service captions are hidden, and the page reaches the bottom by real wheel scrolling.
+
+---
+
 ## [0.5.63] - 2026-06-20
 
 ### Remote system

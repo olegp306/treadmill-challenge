@@ -263,7 +263,7 @@ export default function RemoteLeaderboardLandingPage() {
           <p className="leaderboard2__marker">[ 04 ]</p>
         </div>
         <div className="leaderboard2__leaderboardFrameWrap">
-          <RemoteLeaderboardView embed hideEmbedBrand embedSearchPlacement="stack-top" />
+          <RemoteLeaderboardView embed hideEmbedBrand embedSearchPlacement="above-tabs" />
         </div>
       </section>
 
