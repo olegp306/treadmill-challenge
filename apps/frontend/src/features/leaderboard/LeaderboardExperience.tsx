@@ -1274,7 +1274,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: '100%',
   },
   leaderboardRowEmbedNarrow: {
-    minHeight: '512px',
+    minHeight: '474px',
     overflow: 'visible',
   },
   arrowBtn: {
@@ -1394,9 +1394,9 @@ const styles: Record<string, CSSProperties> = {
     maxHeight: h(900),
   },
   stackCardNarrow: {
-    height: '512px',
-    minHeight: '512px',
-    maxHeight: '512px',
+    height: '474px',
+    minHeight: '474px',
+    maxHeight: '474px',
     borderRadius: '12px',
   },
   stackDim: {
@@ -1433,7 +1433,7 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.15,
   },
   stackHeaderBarNarrow: {
-    padding: '8px 8px 7px',
+    padding: '7px 8px 6px',
   },
   stackHeaderLabelCompact: {
     fontSize: 'clamp(9px, 2.8vw, 15px)',
@@ -1448,8 +1448,8 @@ const styles: Record<string, CSSProperties> = {
     background: 'linear-gradient(180deg, #5f0b18 0%, #37050d 100%)',
     border: '1px solid rgba(235, 30, 55, 0.72)',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-    fontSize: '10px',
-    padding: '10px 12px',
+    fontSize: '9px',
+    padding: '9px 12px',
     borderRadius: '10px',
     textAlign: 'left',
   },
@@ -1488,8 +1488,8 @@ const styles: Record<string, CSSProperties> = {
     gap: h(10),
   },
   stackBodyNarrow: {
-    padding: '7px 8px 10px',
-    gap: '6px',
+    padding: '6px 8px 9px',
+    gap: '5px',
     overflowY: 'auto',
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(255,255,255,0.22) transparent',
@@ -1530,9 +1530,9 @@ const styles: Record<string, CSSProperties> = {
   lbRowNarrow: {
     gridTemplateColumns: 'minmax(0, 1fr) auto',
     alignItems: 'center',
-    minHeight: '34px',
+    minHeight: '31px',
     gap: '8px',
-    padding: '6px 8px',
+    padding: '5px 8px',
   },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',
