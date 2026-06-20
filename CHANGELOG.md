@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.57] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** aligned the `/leaderboard2` "История забегов" mobile section with the Figma structure by moving the month selector into its own full-width control and restoring footer social/newsletter support text.
+- **Remote versions:** `remote-frontend` raised to `0.1.53`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome mobile screenshot at 375px confirmed `document/body` width stays `375` after the history/footer layout update.
+
+---
+
 ## [0.5.56] - 2026-06-20
 
 ### Remote system
