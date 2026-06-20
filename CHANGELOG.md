@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.69] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** removed the empty black tail under the embedded rating list on mobile and expanded page-scroll passthrough to the whole embedded leaderboard card so touch/scroll gestures do not get trapped around the rating block.
+- **Remote versions:** `remote-frontend` raised to `0.1.65`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright checks at 320px, 375px, and 444px confirmed no horizontal overflow, page scrolling over the rating block, and the prize block moving directly after the mobile rating card.
+
+---
+
 ## [0.5.68] - 2026-06-20
 
 ### Remote system

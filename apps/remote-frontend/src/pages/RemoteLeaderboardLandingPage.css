@@ -2257,7 +2257,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__leaderboardFrameWrap,
   .leaderboard2__leaderboardFrame {
-    height: 720px;
+    height: 520px;
   }
 
   .leaderboard2__prizeHeader {
@@ -2784,11 +2784,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__leaderboardFrameWrap {
-    height: 720px;
+    height: 520px;
   }
 
   .leaderboard2__leaderboardFrame {
-    height: 720px;
+    height: 520px;
   }
 
   .leaderboard2__prize {

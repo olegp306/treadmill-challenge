@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode, Ref, RefObject } from 'react';
+import type { CSSProperties, ReactNode, Ref, RefObject, TouchEvent, WheelEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
@@ -775,9 +775,40 @@ function LeaderboardStack({
   const title = getRunOption(runTypeId).title.toUpperCase();
   const rows = dim || narrow ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
   const pageScrollTouchYRef = useRef<number | null>(null);
+  const handlePageScrollWheel = pageScrollPassthrough
+    ? (e: WheelEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        window.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'auto' });
+      }
+    : undefined;
+  const handlePageScrollTouchStart = pageScrollPassthrough
+    ? (e: TouchEvent<HTMLDivElement>) => {
+        pageScrollTouchYRef.current = e.touches[0]?.clientY ?? null;
+      }
+    : undefined;
+  const handlePageScrollTouchMove = pageScrollPassthrough
+    ? (e: TouchEvent<HTMLDivElement>) => {
+        const currentY = e.touches[0]?.clientY ?? null;
+        const previousY = pageScrollTouchYRef.current;
+        if (currentY === null || previousY === null) return;
+        e.preventDefault();
+        window.scrollBy({ top: previousY - currentY, behavior: 'auto' });
+        pageScrollTouchYRef.current = currentY;
+      }
+    : undefined;
+  const handlePageScrollTouchEnd = pageScrollPassthrough
+    ? () => {
+        pageScrollTouchYRef.current = null;
+      }
+    : undefined;
 
   return (
     <div
+      onWheelCapture={handlePageScrollWheel}
+      onTouchStartCapture={handlePageScrollTouchStart}
+      onTouchMoveCapture={handlePageScrollTouchMove}
+      onTouchEndCapture={handlePageScrollTouchEnd}
+      onTouchCancelCapture={handlePageScrollTouchEnd}
       style={{
         ...styles.stackCard,
         ...(dim ? styles.stackDim : {}),
@@ -795,40 +826,12 @@ function LeaderboardStack({
       {topSlot ? <div style={styles.stackTopSlot}>{topSlot}</div> : null}
       <div
         ref={scrollBodyRef as Ref<HTMLDivElement> | undefined}
-        onWheel={
-          pageScrollPassthrough
-            ? (e) => {
-                e.preventDefault();
-                window.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'auto' });
-              }
-            : undefined
-        }
-        onTouchStart={
-          pageScrollPassthrough
-            ? (e) => {
-                pageScrollTouchYRef.current = e.touches[0]?.clientY ?? null;
-              }
-            : undefined
-        }
-        onTouchMove={
-          pageScrollPassthrough
-            ? (e) => {
-                const currentY = e.touches[0]?.clientY ?? null;
-                const previousY = pageScrollTouchYRef.current;
-                if (currentY === null || previousY === null) return;
-                e.preventDefault();
-                window.scrollBy({ top: previousY - currentY, behavior: 'auto' });
-                pageScrollTouchYRef.current = currentY;
-              }
-            : undefined
-        }
-        onTouchEnd={pageScrollPassthrough ? () => { pageScrollTouchYRef.current = null; } : undefined}
-        onTouchCancel={pageScrollPassthrough ? () => { pageScrollTouchYRef.current = null; } : undefined}
         style={{
           ...styles.stackBody,
           ...(dim ? styles.stackBodyDim : styles.stackBodyMain),
           ...(compact ? styles.stackBodyCompact : {}),
           ...(narrow ? styles.stackBodyNarrow : {}),
+          ...(pageScrollPassthrough ? styles.stackBodyPageScrollPassthrough : {}),
         }}
       >
         {loading ? <p style={styles.muted}>Загрузка…</p> : null}
@@ -1534,6 +1537,10 @@ const styles: Record<string, CSSProperties> = {
     maxHeight: '392px',
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(255,255,255,0.22) transparent',
+  },
+  stackBodyPageScrollPassthrough: {
+    overscrollBehavior: 'auto',
+    touchAction: 'pan-y',
   },
   /** Центральный leaderboard: полный список + аккуратный тонкий scrollbar. */
   stackBodyMain: {
