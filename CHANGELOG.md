@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.59] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** constrained the embedded rating canvas on `/leaderboard2` to the mobile content column so the leaderboard no longer renders wider than its card after the iframe removal.
+- **Remote versions:** `remote-frontend` raised to `0.1.55`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome mobile metrics at 375px confirmed the embedded rating wrapper and canvas are both `343px` wide, with page width remaining `375px`.
+
+---
+
 ## [0.5.58] - 2026-06-20
 
 ### Remote system

@@ -749,6 +749,22 @@ body.leaderboard2-route #root {
   background: #000;
 }
 
+.leaderboard2__leaderboardFrameWrap .ar-ozio-remote-lb-viewport {
+  min-height: 0;
+  height: 100%;
+  overflow: visible;
+  overscroll-behavior-y: auto;
+}
+
+@media (max-width: 520px) {
+  .leaderboard2 .leaderboard2__leaderboardFrameWrap .ar-ozio-remote-lb-viewport > .ar-ozio-remote-lb-canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    --ar-cqh: calc((100vw - 32px) * 1640 / 2360 / 100) !important;
+  }
+}
+
 .leaderboard2__prize {
   position: relative;
   min-height: 420px;
