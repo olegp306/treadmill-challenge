@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.47] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** fixed the embedded rating block on `/leaderboard2` so the mobile leaderboard is visible instead of being covered by a black overlay, and tightened the iframe height to remove the empty footer area under the table.
+- **Remote Leaderboard landing mobile:** aligned prize/CTA copy with the mobile Figma screen (`PUMA MAGMAX NITRO 2`) and made the FAQ mobile heading/questions fit without hidden horizontal overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.43`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- CDP mobile checks at 375px confirmed document width stays `375/375`.
+
+---
+
 ## [0.5.46] - 2026-06-20
 
 ### Remote system

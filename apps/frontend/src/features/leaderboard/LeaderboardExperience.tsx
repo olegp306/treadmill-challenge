@@ -763,7 +763,7 @@ function LeaderboardStack({
   topSlot?: ReactNode;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
-  const rows = dim ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
+  const rows = dim || narrow ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
 
   return (
     <div
@@ -1274,7 +1274,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: '100%',
   },
   leaderboardRowEmbedNarrow: {
-    minHeight: '474px',
+    minHeight: '0',
     overflow: 'visible',
   },
   arrowBtn: {
@@ -1394,9 +1394,9 @@ const styles: Record<string, CSSProperties> = {
     maxHeight: h(900),
   },
   stackCardNarrow: {
-    height: '474px',
-    minHeight: '474px',
-    maxHeight: '474px',
+    height: 'auto',
+    minHeight: '0',
+    maxHeight: 'none',
     borderRadius: '12px',
   },
   stackDim: {
@@ -1491,6 +1491,7 @@ const styles: Record<string, CSSProperties> = {
     padding: '6px 8px 9px',
     gap: '5px',
     overflowY: 'auto',
+    maxHeight: '392px',
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(255,255,255,0.22) transparent',
   },

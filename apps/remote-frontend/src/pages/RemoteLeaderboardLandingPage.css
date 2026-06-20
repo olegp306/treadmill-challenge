@@ -2210,24 +2210,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__leaderboardFrameWrap,
   .leaderboard2__leaderboardFrame {
-    height: 890px;
-  }
-
-  .leaderboard2__leaderboardFrameWrap {
-    position: relative;
-  }
-
-  .leaderboard2__leaderboardFrameWrap::after {
-    content: '';
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    top: 154px;
-    bottom: 10px;
-    z-index: 2;
-    border-radius: 0 0 14px 14px;
-    background: #000;
-    pointer-events: none;
+    height: 560px;
   }
 
   .leaderboard2__prizeHeader {
@@ -2285,27 +2268,29 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faq h2 {
-    width: 680px;
-    font-size: 62px;
+    width: 100%;
+    font-size: 54px;
     line-height: 0.9;
-    white-space: nowrap;
-    transform: scaleX(0.76);
+    white-space: normal;
+    transform: none;
     transform-origin: left top;
   }
 
   .leaderboard2__faq h2 span {
-    display: inline;
+    display: block;
   }
 
   .leaderboard2__faqList summary {
     grid-template-columns: 34px minmax(0, 1fr) 26px;
     min-height: 58px;
     align-items: center;
-    font-size: 18px;
+    font-size: 15px;
   }
 
   .leaderboard2__faqList summary .leaderboard2__faqQuestion {
-    width: min(292px, 100%);
+    width: 125%;
+    transform: scaleX(0.8);
+    transform-origin: left center;
   }
 
   .leaderboard2__faqList details {
@@ -2732,11 +2717,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__leaderboardFrameWrap {
-    height: 572px;
+    height: 520px;
   }
 
   .leaderboard2__leaderboardFrame {
-    height: 572px;
+    height: 520px;
   }
 
   .leaderboard2__prize {
@@ -2857,16 +2842,16 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faq h2 {
-    width: 470px;
+    width: 100%;
     font-size: 42px;
     line-height: 0.9;
-    white-space: nowrap;
-    transform: scaleX(0.6);
+    white-space: normal;
+    transform: none;
     transform-origin: left top;
   }
 
   .leaderboard2__faq h2 span {
-    display: inline;
+    display: block;
   }
 
   .leaderboard2__faqList summary {

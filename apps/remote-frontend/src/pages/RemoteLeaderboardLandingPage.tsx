@@ -46,14 +46,14 @@ const PRIZES = [
   {
     label: 'Призы месяца:',
     brand: 'PUMA',
-    model: 'DEVIATE NITRO ELITE TRAIL',
+    model: 'MAGMAX NITRO 2',
     text: 'Главный приз для лучших участников месяца в каждой дисциплине.',
     image: '/assets/leaderboard2/shoe-1112.png',
   },
   {
     label: 'Готов попасть в топ-10?',
     brand: 'PUMA',
-    model: 'DEVIATE NITRO',
+    model: 'MAGMAX NITRO 2',
     text: 'Выбирай дисциплину, показывай максимум и следи за своим результатом в рейтинге.',
     image: '/assets/leaderboard2/shoe-1112.png',
   },
@@ -304,8 +304,8 @@ export default function RemoteLeaderboardLandingPage() {
           <br />и забрать свою пару
         </h2>
         <strong>
-          <span>PUMA DEVIATE</span>
-          <span>NITRO?</span>
+          <span>PUMA MAGMAX</span>
+          <span>NITRO 2?</span>
         </strong>
         <p>Выбирай дисциплину, показывай максимум и следи за своим результатом в рейтинге.</p>
         <div className="leaderboard2__finalCtaGeo" aria-hidden>
