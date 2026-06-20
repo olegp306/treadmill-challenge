@@ -2011,7 +2011,7 @@ body.leaderboard2-route #root {
   .leaderboard2__faq,
   .leaderboard2__history,
   .leaderboard2__footer {
-    width: min(calc(100vw - 32px), 343px);
+    width: calc(100vw - 32px);
     margin-left: 16px;
     margin-right: auto;
   }
@@ -2038,8 +2038,8 @@ body.leaderboard2-route #root {
     left: 10px;
     top: 45px;
     width: 350px;
-    font-size: 68px;
-    line-height: 0.84;
+    font-size: 60px;
+    line-height: 0.86;
   }
 
   .leaderboard2__place {
@@ -2047,11 +2047,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__timerCard {
-    min-height: 168px;
+    min-height: 124px;
     margin-top: 13px;
-    padding: 20px 16px 18px;
+    padding: 13px 16px 12px;
     border-radius: 20px;
-    gap: 18px;
+    gap: 10px;
   }
 
   .leaderboard2__timer {
@@ -2066,7 +2066,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__timerValue {
-    font-size: 34px;
+    font-size: 32px;
     letter-spacing: 2px;
   }
 
@@ -2081,8 +2081,8 @@ body.leaderboard2-route #root {
 
   .leaderboard2__participants span {
     display: block;
-    margin-bottom: 8px;
-    font-size: 41px;
+    margin-bottom: 4px;
+    font-size: 36px;
   }
 
   .leaderboard2__intro {
@@ -2104,13 +2104,13 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__stats {
-    height: 260px;
-    margin-top: 104px;
+    height: 198px;
+    margin-top: 58px;
     border-radius: 12px;
   }
 
   .leaderboard2__stats::after {
-    top: 148px;
+    top: 111px;
   }
 
   .leaderboard2__statsWordmark {
@@ -2121,25 +2121,25 @@ body.leaderboard2-route #root {
 
   .leaderboard2__statsShoe {
     width: 100%;
-    height: 260px;
+    height: 198px;
   }
 
   .leaderboard2__statCell {
     left: 18px;
-    top: 70px;
-    grid-template-columns: 72px 1fr;
+    top: 53px;
+    grid-template-columns: 62px 1fr;
   }
 
   .leaderboard2__statCell + .leaderboard2__statCell {
-    top: 166px;
+    top: 125px;
   }
 
   .leaderboard2__statCell strong {
-    font-size: 54px;
+    font-size: 48px;
   }
 
   .leaderboard2__statCell span {
-    font-size: 17px;
+    font-size: 15px;
   }
 
   .leaderboard2__how,
@@ -2323,7 +2323,7 @@ body.leaderboard2-route #root {
     font-size: 72px;
     line-height: 0.82;
     white-space: nowrap;
-    transform: scaleX(0.74);
+    transform: scaleX(0.52);
     transform-origin: left top;
   }
 
@@ -2368,7 +2368,7 @@ body.leaderboard2-route #root {
     width: 420px;
     font-size: 40px;
     line-height: 0.9;
-    transform: scaleX(0.72);
+    transform: scaleX(0.52);
     transform-origin: left top;
   }
 

@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.66] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** aligned the 361-480px mobile layout with the reference viewport by removing the 343px width cap, tightening the hero/timer intro area, and resizing the red stats card.
+- **Remote Leaderboard landing mobile:** fixed the mobile FAQ title so it no longer clips on wider mobile screenshots.
+- **Remote versions:** `remote-frontend` raised to `0.1.62`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright screenshots at 375px and 444px confirmed no horizontal overflow; the 444px mobile page height moved closer to the provided reference screenshot.
+
+---
+
 ## [0.5.65] - 2026-06-20
 
 ### Remote system
