@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.37] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** compacted the lower `/leaderboard2` mobile sections: FAQ heading/questions now fit inside the 320px layout, history cards are shorter, and the footer subscription area is tighter while preserving the no-horizontal-overflow render.
+- **Remote versions:** `remote-frontend` raised to `0.1.33`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.36] - 2026-06-20
 
 ### Remote system
