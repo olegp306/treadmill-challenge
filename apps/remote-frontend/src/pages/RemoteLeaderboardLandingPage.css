@@ -2744,6 +2744,16 @@ body.leaderboard2-route #root {
     padding: 28px 18px 18px;
   }
 
+  .leaderboard2__cornerMark {
+    z-index: 1;
+    opacity: 0.38;
+  }
+
+  .leaderboard2__cornerMark--topLeft,
+  .leaderboard2__cornerMark--topRight {
+    top: 12px;
+  }
+
   .leaderboard2__prizeHeader {
     top: 18px;
     right: 18px;
@@ -2790,6 +2800,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__prizeText {
+    z-index: 3;
     min-height: 0;
   }
 

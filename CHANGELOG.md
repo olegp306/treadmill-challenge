@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.42] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** moved the 320px prize card corner marks behind and above the content so the `Призы месяца` label no longer has decorative marks crossing the text.
+- **Remote versions:** `remote-frontend` raised to `0.1.38`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.41] - 2026-06-20
 
 ### Remote system
