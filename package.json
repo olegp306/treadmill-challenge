@@ -1,6 +1,6 @@
 {
   "name": "treadmill-challenge",
-  "version": "0.5.57",
+  "version": "0.5.58",
   "private": true,
   "description": "Interactive treadmill challenge installation - monorepo",
   "workspaces": [

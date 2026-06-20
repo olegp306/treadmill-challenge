@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.58] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** fixed the `/leaderboard2` mobile scroll trap by embedding the remote leaderboard as a React component instead of an iframe, so swiping over the rating block continues scrolling the landing page.
+- **Remote versions:** `remote-frontend` raised to `0.1.54`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome mobile touch simulation at 375px confirmed swipes over the rating area now move the page, while `/leaderboard` remains reachable.
+
+---
+
 ## [0.5.57] - 2026-06-20
 
 ### Remote system

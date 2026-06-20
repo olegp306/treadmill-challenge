@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { LogoMark } from '@local-fe/ui/components/LogoMark';
+import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
 import './RemoteLeaderboardLandingPage.css';
 
 const TIMER_PARTS = [
@@ -262,12 +263,7 @@ export default function RemoteLeaderboardLandingPage() {
           <p className="leaderboard2__marker">[ 04 ]</p>
         </div>
         <div className="leaderboard2__leaderboardFrameWrap">
-          <iframe
-            className="leaderboard2__leaderboardFrame"
-            src="/leaderboard?embed=1&runTypeId=0&sex=male"
-            title="Remote leaderboard"
-            loading="eager"
-          />
+          <RemoteLeaderboardView embed />
         </div>
       </section>
 
