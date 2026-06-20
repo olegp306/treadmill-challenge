@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.30] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** restored the 320px `/leaderboard2` mobile geometry closer to the Figma prototype: expanded the hero, timer, intro, Amazing Red stats card, and prize card rhythm so the section coordinates align with the mobile reference and the hero title no longer clips.
+- **Remote versions:** `remote-frontend` raised to `0.1.26`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.29] - 2026-06-20
 
 ### Remote system
