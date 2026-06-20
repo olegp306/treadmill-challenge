@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.25] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** softened the mobile `/leaderboard2` footer subscription block so it sits closer to the Figma mobile reference without changing the desktop layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.21`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.24] - 2026-06-20
 
 ### Remote system

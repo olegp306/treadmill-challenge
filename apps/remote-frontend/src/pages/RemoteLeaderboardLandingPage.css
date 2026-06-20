@@ -2383,21 +2383,21 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__subscribe {
-    margin-top: 26px;
+    margin-top: 24px;
   }
 
   .leaderboard2__subscribe label {
-    font-size: 24px;
-    line-height: 0.98;
+    font-size: 22px;
+    line-height: 1;
   }
 
   .leaderboard2__subscribe input {
-    height: 48px;
-    margin-top: 18px;
+    height: 44px;
+    margin-top: 16px;
   }
 
   .leaderboard2__subscribe button {
-    height: 50px;
+    height: 48px;
     margin-top: 10px;
   }
 
