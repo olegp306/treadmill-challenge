@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.35] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the 320px `/leaderboard2` top pass: the hero headline is larger again while staying inside the card, and the Amazing Red stats card typography is scaled closer to the Figma mobile reference without reintroducing horizontal overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.31`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.34] - 2026-06-20
 
 ### Remote system

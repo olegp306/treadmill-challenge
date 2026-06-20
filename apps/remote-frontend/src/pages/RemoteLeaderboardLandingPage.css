@@ -2475,22 +2475,22 @@ body.leaderboard2-route #root {
 
   .leaderboard2__heroTitle {
     left: 10px;
-    top: 36px;
+    top: 34px;
     width: 300px;
-    font-size: 58px;
-    line-height: 0.82;
+    font-size: 68px;
+    line-height: 0.84;
   }
 
   .leaderboard2__heroTitleFirstLine {
     display: block;
-    transform: scaleX(0.62);
+    transform: scaleX(0.58);
     transform-origin: left top;
   }
 
   .leaderboard2__heroTitleSecondLine {
     display: block;
     width: 530px;
-    transform: scaleX(0.44);
+    transform: scaleX(0.5);
     transform-origin: left top;
   }
 
@@ -2586,7 +2586,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__statsWordmark {
     top: 19px;
-    left: 68px;
+    left: 72px;
     font-size: 14px;
   }
 
@@ -2597,23 +2597,23 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__statCell {
-    top: 45px;
-    grid-template-columns: 50px minmax(0, 178px);
-    gap: 12px;
+    top: 44px;
+    grid-template-columns: 54px minmax(0, 186px);
+    gap: 13px;
   }
 
   .leaderboard2__statCell + .leaderboard2__statCell {
-    top: 127px;
+    top: 126px;
   }
 
   .leaderboard2__statCell strong {
-    font-size: 50px;
+    font-size: 54px;
   }
 
   .leaderboard2__statCell span {
-    font-size: 15px;
+    font-size: 16px;
     line-height: 0.9;
-    transform: scaleX(0.9);
+    transform: scaleX(0.92);
     transform-origin: left center;
   }
 
