@@ -2252,45 +2252,42 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__prize {
-    min-height: 520px;
+    min-height: 596px;
   }
 
   .leaderboard2__prizeText {
-    min-height: 0;
+    min-height: 520px;
   }
 
   .leaderboard2__prizeImage {
-    left: 34px;
-    top: 188px;
-    width: 280px;
-    opacity: 0.92;
-    filter: grayscale(1) brightness(0.82) contrast(1.12);
-    transform: rotate(-8deg);
+    left: -12px;
+    top: 224px;
+    width: 405px;
+    opacity: 1;
+    filter: grayscale(1) brightness(1.08) contrast(1.08);
+    transform: rotate(-6deg);
   }
 
   .leaderboard2__prize strong,
   .leaderboard2__prize span {
-    font-size: 46px;
-    line-height: 0.84;
+    font-size: 62px;
+    line-height: 0.82;
   }
 
   .leaderboard2__prize p {
-    margin-bottom: 8px;
-    font-size: 14px;
+    margin-bottom: 10px;
+    font-size: 17px;
   }
 
   .leaderboard2__prize span {
-    max-width: 300px;
-    transform: scaleX(0.78);
+    max-width: 320px;
+    font-size: 63px;
+    transform: scaleX(0.72);
     transform-origin: left center;
   }
 
   .leaderboard2__prize em {
-    display: block;
-    max-width: 245px;
-    margin-top: 18px;
-    font-size: 10px;
-    line-height: 1.25;
+    display: none;
   }
 
   .leaderboard2__finalCta {
