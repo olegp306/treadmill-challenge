@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.40] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the `/leaderboard2` 320px hero title so `Беги на максимум` stays inside the top card and lines up cleanly with the mobile reference without horizontal overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.36`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.39] - 2026-06-20
 
 ### Remote system

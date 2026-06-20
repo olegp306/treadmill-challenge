@@ -2476,9 +2476,9 @@ body.leaderboard2-route #root {
   .leaderboard2__heroTitle {
     left: 10px;
     top: 34px;
-    width: 300px;
-    font-size: 68px;
-    line-height: 0.84;
+    width: 278px;
+    font-size: 67px;
+    line-height: 0.8;
   }
 
   .leaderboard2__heroTitleFirstLine {
@@ -2489,8 +2489,8 @@ body.leaderboard2-route #root {
 
   .leaderboard2__heroTitleSecondLine {
     display: block;
-    width: 530px;
-    transform: scaleX(0.5);
+    width: 540px;
+    transform: scaleX(0.46);
     transform-origin: left top;
   }
 
