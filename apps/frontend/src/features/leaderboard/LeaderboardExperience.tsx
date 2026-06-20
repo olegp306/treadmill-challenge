@@ -684,6 +684,7 @@ export function LeaderboardExperience({
                   error={centerError}
                   compact={isEmbedLayout}
                   narrow={isNarrowEmbedLayout}
+                  pageScrollPassthrough={isEmbedLayout}
                   topSlot={useStackSearch ? searchControls : undefined}
                   emptyHint="Пока нет результатов в этом зачёте."
                 />
@@ -751,6 +752,7 @@ function LeaderboardStack({
   emptyHint,
   compact = false,
   narrow = false,
+  pageScrollPassthrough = false,
   topSlot,
 }: {
   entries: LeaderboardEntry[];
@@ -767,10 +769,12 @@ function LeaderboardStack({
   emptyHint?: string;
   compact?: boolean;
   narrow?: boolean;
+  pageScrollPassthrough?: boolean;
   topSlot?: ReactNode;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
   const rows = dim || narrow ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
+  const pageScrollTouchYRef = useRef<number | null>(null);
 
   return (
     <div
@@ -791,6 +795,35 @@ function LeaderboardStack({
       {topSlot ? <div style={styles.stackTopSlot}>{topSlot}</div> : null}
       <div
         ref={scrollBodyRef as Ref<HTMLDivElement> | undefined}
+        onWheel={
+          pageScrollPassthrough
+            ? (e) => {
+                e.preventDefault();
+                window.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'auto' });
+              }
+            : undefined
+        }
+        onTouchStart={
+          pageScrollPassthrough
+            ? (e) => {
+                pageScrollTouchYRef.current = e.touches[0]?.clientY ?? null;
+              }
+            : undefined
+        }
+        onTouchMove={
+          pageScrollPassthrough
+            ? (e) => {
+                const currentY = e.touches[0]?.clientY ?? null;
+                const previousY = pageScrollTouchYRef.current;
+                if (currentY === null || previousY === null) return;
+                e.preventDefault();
+                window.scrollBy({ top: previousY - currentY, behavior: 'auto' });
+                pageScrollTouchYRef.current = currentY;
+              }
+            : undefined
+        }
+        onTouchEnd={pageScrollPassthrough ? () => { pageScrollTouchYRef.current = null; } : undefined}
+        onTouchCancel={pageScrollPassthrough ? () => { pageScrollTouchYRef.current = null; } : undefined}
         style={{
           ...styles.stackBody,
           ...(dim ? styles.stackBodyDim : styles.stackBodyMain),

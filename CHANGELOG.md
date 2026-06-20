@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.63] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing scroll:** fixed a scroll trap on `/leaderboard2` where the embedded rating list could intercept wheel/touch scrolling and make the landing page feel stuck.
+- **Remote versions:** `remote-frontend` raised to `0.1.59`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright scroll audit at 375px and 1440px confirmed page scrolling works over the hero, embedded rating wrapper, rating rows, prize block, FAQ, and reaches the page bottom without horizontal overflow.
+
+---
+
 ## [0.5.62] - 2026-06-20
 
 ### Remote system
