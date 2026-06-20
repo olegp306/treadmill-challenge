@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.29] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** tightened the 361-480px lower-page rhythm on `/leaderboard2`: reduced the prize card height and pulled the final CTA / FAQ spacing closer to the mobile Figma reference.
+- **Remote versions:** `remote-frontend` raised to `0.1.25`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.28] - 2026-06-20
 
 ### Remote system

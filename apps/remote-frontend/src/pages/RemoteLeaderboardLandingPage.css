@@ -2239,6 +2239,14 @@ body.leaderboard2-route #root {
     display: inline-flex;
   }
 
+  .leaderboard2__prize {
+    min-height: 520px;
+  }
+
+  .leaderboard2__prizeText {
+    min-height: 0;
+  }
+
   .leaderboard2__prizeImage {
     left: 120px;
     top: 160px;
@@ -2266,6 +2274,14 @@ body.leaderboard2-route #root {
     margin-top: 18px;
     font-size: 10px;
     line-height: 1.25;
+  }
+
+  .leaderboard2__finalCta {
+    margin-top: 48px;
+  }
+
+  .leaderboard2__faq {
+    margin-top: 58px;
   }
 
   .leaderboard2__faq h2 {
