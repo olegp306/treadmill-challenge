@@ -2240,12 +2240,32 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__prizeImage {
-    left: 150px;
-    top: 246px;
-    width: 220px;
-    opacity: 0.82;
+    left: 120px;
+    top: 160px;
+    width: 190px;
+    opacity: 0.78;
     filter: sepia(0.38) saturate(1.25) brightness(0.78) contrast(1.08);
     transform: rotate(-9deg);
+  }
+
+  .leaderboard2__prize strong,
+  .leaderboard2__prize span {
+    font-size: 46px;
+    line-height: 0.84;
+  }
+
+  .leaderboard2__prize span {
+    max-width: 300px;
+    transform: scaleX(0.78);
+    transform-origin: left center;
+  }
+
+  .leaderboard2__prize em {
+    display: block;
+    max-width: 245px;
+    margin-top: 18px;
+    font-size: 10px;
+    line-height: 1.25;
   }
 
   .leaderboard2__faq h2 {
@@ -2290,28 +2310,28 @@ body.leaderboard2-route #root {
 
   .leaderboard2__historyHead {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 92px;
-    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) 78px;
+    gap: 10px;
     align-items: start;
   }
 
   .leaderboard2__historyHead h2 {
-    width: 310px;
-    font-size: 44px;
+    width: 290px;
+    font-size: 40px;
     line-height: 0.9;
-    transform: scaleX(0.74);
+    transform: scaleX(0.72);
     transform-origin: left top;
   }
 
   .leaderboard2__historyHead span {
-    width: 92px;
-    min-height: 62px;
+    width: 78px;
+    min-height: 56px;
     margin-top: 0;
-    padding: 0 12px;
+    padding: 0 10px;
     justify-content: center;
     gap: 7px;
     border-radius: 12px;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.05;
     text-align: center;
   }

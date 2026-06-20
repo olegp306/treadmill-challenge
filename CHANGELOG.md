@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.28] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the 361-480px `/leaderboard2` prize and history sections: reduced the prize shoe/title balance so the description is visible, and tightened the history header/date layout for the narrower mobile column.
+- **Remote versions:** `remote-frontend` raised to `0.1.24`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.27] - 2026-06-20
 
 ### Remote system
