@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.39] - 2026-06-20
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the `/leaderboard2` prize card on 320px mobile: the shoe artwork now stays inside the card bounds and sits closer to the Figma mobile composition.
+- **Remote versions:** `remote-frontend` raised to `0.1.35`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+
+---
+
 ## [0.5.38] - 2026-06-20
 
 ### Remote system

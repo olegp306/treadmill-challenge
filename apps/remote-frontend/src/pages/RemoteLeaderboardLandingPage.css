@@ -2767,9 +2767,9 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__prizeImage {
-    left: 28px;
-    top: 178px;
-    width: 250px;
+    left: 50px;
+    top: 182px;
+    width: 218px;
     opacity: 0.78;
     transform: rotate(10deg);
   }
