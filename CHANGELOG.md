@@ -11,7 +11,7 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ### Remote system
 
-- **Remote Leaderboard landing mobile:** refined the 361-480px mobile Figma pass for `/leaderboard2`: the run-mode card now has the larger reference-like title/card rhythm, the timer participant caption no longer clips, and the prize shoe sits closer to the supplied mobile comparison.
+- **Remote Leaderboard landing mobile:** refined the 361-480px mobile Figma pass for `/leaderboard2`: the run-mode card now has the larger reference-like title/card rhythm, the timer participant caption no longer clips, the FAQ section has cleaner mobile spacing, and the prize shoe sits closer to the supplied mobile comparison.
 - **Remote Leaderboard landing scroll:** kept page scrolling active over the embedded rating block and made the mobile footer visible instead of clipping its subscription content.
 - **Remote versions:** `remote-frontend` raised to `0.1.70`.
 

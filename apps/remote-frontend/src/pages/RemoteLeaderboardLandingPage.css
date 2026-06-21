@@ -2359,7 +2359,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faq {
-    margin-top: 58px;
+    margin-top: 92px;
+  }
+
+  .leaderboard2__faqMarker {
+    display: none;
   }
 
   .leaderboard2__faq h2 {
@@ -2378,7 +2382,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faqList summary {
-    grid-template-columns: 52px minmax(0, 1fr) 26px;
+    grid-template-columns: 52px minmax(0, 1fr);
     min-height: 58px;
     align-items: center;
     font-size: 18px;
@@ -2395,7 +2399,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faqList details[open] summary::after {
-    opacity: 0;
+    display: none;
+  }
+
+  .leaderboard2__faqList summary::after {
+    display: none;
   }
 
   .leaderboard2__faqList p {
@@ -2987,8 +2995,12 @@ body.leaderboard2-route #root {
     display: inline;
   }
 
+  .leaderboard2__faqMarker {
+    display: none;
+  }
+
   .leaderboard2__faqList summary {
-    grid-template-columns: 40px minmax(0, 1fr) 20px;
+    grid-template-columns: 40px minmax(0, 1fr);
     gap: 8px;
     font-size: 14px;
     line-height: 1.04;
@@ -3002,7 +3014,11 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faqList details[open] summary::after {
-    opacity: 0;
+    display: none;
+  }
+
+  .leaderboard2__faqList summary::after {
+    display: none;
   }
 
   .leaderboard2__historyHead h2 {
