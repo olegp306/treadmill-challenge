@@ -1,5 +1,4 @@
-import type { TouchEvent, WheelEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LogoMark } from '@local-fe/ui/components/LogoMark';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
 import './RemoteLeaderboardLandingPage.css';
@@ -50,14 +49,14 @@ const PRIZES = [
     brand: 'PUMA',
     model: 'DEVIATE NITRO ELITE TRAIL',
     text: 'Главный приз для лучших участников месяца в каждой дисциплине.',
-    image: '/assets/leaderboard2/shoe-1112.png',
+    image: '/assets/leaderboard2/shoe-1111.png',
   },
   {
     label: 'Готов попасть в топ-10?',
     brand: 'PUMA',
     model: 'DEVIATE NITRO',
     text: 'Выбирай дисциплину, показывай максимум и следи за своим результатом в рейтинге.',
-    image: '/assets/leaderboard2/shoe-1112.png',
+    image: '/assets/leaderboard2/shoe-1111.png',
   },
 ];
 
@@ -105,33 +104,8 @@ function CarouselButton({
 export default function RemoteLeaderboardLandingPage() {
   const [activeDiscipline, setActiveDiscipline] = useState(0);
   const [activePrize, setActivePrize] = useState(0);
-  const ratingTouchYRef = useRef<number | null>(null);
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
-
-  const handleRatingWheel = (e: WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    window.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'auto' });
-  };
-
-  const handleRatingTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    ratingTouchYRef.current = e.touches[0]?.clientY ?? null;
-  };
-
-  const handleRatingTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    const currentY = e.touches[0]?.clientY ?? null;
-    const previousY = ratingTouchYRef.current;
-    if (currentY === null || previousY === null) return;
-    e.preventDefault();
-    e.stopPropagation();
-    window.scrollBy({ top: previousY - currentY, behavior: 'auto' });
-    ratingTouchYRef.current = currentY;
-  };
-
-  const handleRatingTouchEnd = () => {
-    ratingTouchYRef.current = null;
-  };
 
   useEffect(() => {
     document.body.classList.add('leaderboard2-route');
@@ -290,13 +264,8 @@ export default function RemoteLeaderboardLandingPage() {
         </div>
         <div
           className="leaderboard2__leaderboardFrameWrap"
-          onWheelCapture={handleRatingWheel}
-          onTouchStartCapture={handleRatingTouchStart}
-          onTouchMoveCapture={handleRatingTouchMove}
-          onTouchEndCapture={handleRatingTouchEnd}
-          onTouchCancelCapture={handleRatingTouchEnd}
         >
-          <RemoteLeaderboardView embed hideEmbedBrand embedSearchPlacement="above-tabs" />
+          <RemoteLeaderboardView embed embedSearchPlacement="above-tabs" />
         </div>
       </section>
 

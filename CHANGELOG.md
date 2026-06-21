@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.74] - 2026-06-21
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the 361-480px mobile Figma pass for `/leaderboard2`: the run-mode card now has the larger reference-like title/card rhythm, the timer participant caption no longer clips, and the prize shoe sits closer to the supplied mobile comparison.
+- **Remote Leaderboard landing scroll:** kept page scrolling active over the embedded rating block and made the mobile footer visible instead of clipping its subscription content.
+- **Remote versions:** `remote-frontend` raised to `0.1.70`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile checks at 320px, 375px, and 444px confirmed no horizontal overflow, full reach to page bottom, and touch scrolling over the embedded rating block.
+
+---
+
 ## [0.5.73] - 2026-06-21
 
 ### Remote system

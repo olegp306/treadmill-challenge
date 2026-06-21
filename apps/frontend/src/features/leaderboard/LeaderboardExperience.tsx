@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode, Ref, RefObject, TouchEvent, WheelEvent } from 'react';
+import type { CSSProperties, ReactNode, Ref, RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Gender, RunTypeId } from '@treadmill-challenge/shared';
@@ -465,7 +465,7 @@ export function LeaderboardExperience({
             e.preventDefault();
             triggerNameSearch();
           }}
-          placeholder={isNarrowEmbedLayout ? 'поиск участника' : isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
+          placeholder={isNarrowEmbedLayout ? 'Поиск' : isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
           style={{
             ...styles.searchInput,
             ...(isNarrowEmbedLayout ? styles.searchInputEmbedNarrow : {}),
@@ -774,41 +774,9 @@ function LeaderboardStack({
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
   const rows = dim || narrow ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
-  const pageScrollTouchYRef = useRef<number | null>(null);
-  const handlePageScrollWheel = pageScrollPassthrough
-    ? (e: WheelEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        window.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: 'auto' });
-      }
-    : undefined;
-  const handlePageScrollTouchStart = pageScrollPassthrough
-    ? (e: TouchEvent<HTMLDivElement>) => {
-        pageScrollTouchYRef.current = e.touches[0]?.clientY ?? null;
-      }
-    : undefined;
-  const handlePageScrollTouchMove = pageScrollPassthrough
-    ? (e: TouchEvent<HTMLDivElement>) => {
-        const currentY = e.touches[0]?.clientY ?? null;
-        const previousY = pageScrollTouchYRef.current;
-        if (currentY === null || previousY === null) return;
-        e.preventDefault();
-        window.scrollBy({ top: previousY - currentY, behavior: 'auto' });
-        pageScrollTouchYRef.current = currentY;
-      }
-    : undefined;
-  const handlePageScrollTouchEnd = pageScrollPassthrough
-    ? () => {
-        pageScrollTouchYRef.current = null;
-      }
-    : undefined;
 
   return (
     <div
-      onWheelCapture={handlePageScrollWheel}
-      onTouchStartCapture={handlePageScrollTouchStart}
-      onTouchMoveCapture={handlePageScrollTouchMove}
-      onTouchEndCapture={handlePageScrollTouchEnd}
-      onTouchCancelCapture={handlePageScrollTouchEnd}
       style={{
         ...styles.stackCard,
         ...(dim ? styles.stackDim : {}),
@@ -831,6 +799,7 @@ function LeaderboardStack({
           ...(dim ? styles.stackBodyDim : styles.stackBodyMain),
           ...(compact ? styles.stackBodyCompact : {}),
           ...(narrow ? styles.stackBodyNarrow : {}),
+          ...(narrow && pageScrollPassthrough ? styles.stackBodyNarrowShowcase : {}),
           ...(pageScrollPassthrough ? styles.stackBodyPageScrollPassthrough : {}),
         }}
       >
@@ -1134,10 +1103,10 @@ const styles: Record<string, CSSProperties> = {
     flex: '1 1 100%',
   },
   searchBarEmbedNarrow: {
-    minHeight: '34px',
-    padding: '7px 9px',
+    minHeight: '38px',
+    padding: '8px 10px',
     borderRadius: '8px',
-    gap: '7px',
+    gap: '8px',
   },
   searchBarEmbedFocused: {
     minWidth: 0,
@@ -1170,9 +1139,9 @@ const styles: Record<string, CSSProperties> = {
     fontSynthesis: 'none',
   },
   searchInputEmbedNarrow: {
-    fontFamily: '"Proxima Nova", Arial, sans-serif',
-    fontSize: '11px',
-    fontWeight: 400,
+    fontFamily: '"Druk Wide Cyr", "Oswald", Arial, sans-serif',
+    fontSize: '14px',
+    fontWeight: 500,
     letterSpacing: '0',
     textTransform: 'none',
   },
@@ -1264,6 +1233,7 @@ const styles: Record<string, CSSProperties> = {
     minHeight: h(98),
   },
   genderTabsEmbedNarrow: {
+    marginTop: '42px',
     minHeight: '42px',
     borderRadius: '13px',
     padding: '4px',
@@ -1488,10 +1458,10 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '10px',
-    background: 'linear-gradient(180deg, #5f0b18 0%, #37050d 100%)',
-    border: '1px solid rgba(235, 30, 55, 0.72)',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-    fontSize: '9px',
+    background: ui.color.red,
+    border: '1px solid rgba(255,255,255,0.08)',
+    boxShadow: 'none',
+    fontSize: '10px',
     padding: '9px 12px',
     borderRadius: '10px',
     textAlign: 'left',
@@ -1538,7 +1508,11 @@ const styles: Record<string, CSSProperties> = {
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(255,255,255,0.22) transparent',
   },
+  stackBodyNarrowShowcase: {
+    maxHeight: '38px',
+  },
   stackBodyPageScrollPassthrough: {
+    overflowY: 'hidden',
     overscrollBehavior: 'auto',
     touchAction: 'pan-y',
   },
