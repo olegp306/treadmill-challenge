@@ -27,10 +27,14 @@ export function RemoteLeaderboardView({
   embed = false,
   hideEmbedBrand = false,
   embedSearchPlacement = 'above-tabs',
+  embedSearchPlaceholder,
+  onEntryCountChange,
 }: {
   embed?: boolean;
   hideEmbedBrand?: boolean;
-  embedSearchPlacement?: 'above-tabs' | 'stack-top';
+  embedSearchPlacement?: 'above-tabs' | 'below-tabs' | 'stack-top';
+  embedSearchPlaceholder?: string;
+  onEntryCountChange?: (count: number) => void;
 }) {
   const [backupUnavailableMessage, setBackupUnavailableMessage] = useState<string | null>(null);
 
@@ -44,15 +48,19 @@ export function RemoteLeaderboardView({
     }
     if (data.empty) {
       setBackupUnavailableMessage(data.message ?? 'Данные пока недоступны');
+      onEntryCountChange?.(0);
       return CAROUSEL_ORDER.map(() => ({ loading: false, error: null, entries: [] }));
     }
     setBackupUnavailableMessage(null);
+    onEntryCountChange?.(
+      data.scopes.reduce((sum, scope) => sum + scope.leaderboard.length, 0)
+    );
     return data.scopes.map((s) => ({
       loading: false,
       error: null,
       entries: s.leaderboard,
     }));
-  }, []);
+  }, [onEntryCountChange]);
 
   return (
     <LeaderboardExperience
@@ -65,6 +73,7 @@ export function RemoteLeaderboardView({
       layoutMode={embed ? 'embed' : 'desktop'}
       hideEmbedBrand={hideEmbedBrand}
       embedSearchPlacement={embedSearchPlacement}
+      embedSearchPlaceholder={embedSearchPlaceholder}
     />
   );
 }

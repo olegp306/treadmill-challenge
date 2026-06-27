@@ -1,14 +1,55 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { LogoMark } from '@local-fe/ui/components/LogoMark';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
 import './RemoteLeaderboardLandingPage.css';
 
-const TIMER_PARTS = [
-  { value: '06', label: 'Дней' },
-  { value: '14', label: 'Часов' },
-  { value: '23', label: 'Мин' },
-  { value: '12', label: 'Сек' },
+type CountdownState = {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+};
+
+const COUNTDOWN_LABELS: Array<{ key: keyof CountdownState; label: string }> = [
+  { key: 'days', label: 'Дней' },
+  { key: 'hours', label: 'Часов' },
+  { key: 'minutes', label: 'Мин' },
+  { key: 'seconds', label: 'Сек' },
 ];
+
+function getMonthFinishAt(now: Date): Date {
+  const target = new Date(now.getFullYear(), now.getMonth() + 1, 0, 22, 0, 0, 0);
+  if (now.getTime() < target.getTime()) return target;
+  return new Date(now.getFullYear(), now.getMonth() + 2, 0, 22, 0, 0, 0);
+}
+
+function getCountdownState(now = new Date()): CountdownState {
+  const msLeft = Math.max(0, getMonthFinishAt(now).getTime() - now.getTime());
+  const totalSeconds = Math.floor(msLeft / 1000);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+  return { days, hours, minutes, seconds };
+}
+
+function formatCountdownPart(value: number): string {
+  return String(Math.max(0, value)).padStart(2, '0');
+}
+
+function formatParticipantCount(value: number): string {
+  return new Intl.NumberFormat('ru-RU').format(Math.max(0, value));
+}
+
+function getParticipantNoun(value: number): string {
+  const abs = Math.abs(value);
+  const lastTwo = abs % 100;
+  const last = abs % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) return 'человек';
+  if (last === 1) return 'человек';
+  if (last >= 2 && last <= 4) return 'человека';
+  return 'человек';
+}
 
 const STEPS = [
   {
@@ -23,7 +64,7 @@ const STEPS = [
   },
   {
     number: '03',
-    title: 'Следи за рейтингом',
+    title: 'Следи за позицией',
     text: 'Возвращайся в лидерборд и смотри, как меняется твое место в рейтинге!',
   },
 ];
@@ -31,15 +72,21 @@ const STEPS = [
 const DISCIPLINES = [
   {
     title: 'Максимум за 5 минут',
-    text: 'Пробеги максимальное расстояние за 5 минут. Максимум мощности на короткое время.',
+    titleLines: ['Максимум', 'за 5 минут'],
+    text: 'Пробеги максимальное расстояние за 5 минут.',
+    image: '/assets/leaderboard2/mode-stopwatch.png',
   },
   {
     title: 'Золотой километр',
+    titleLines: ['Золотой', 'километр'],
     text: 'Один километр на время: короткая дистанция, где важна каждая секунда.',
+    image: '/assets/leaderboard2/shoe-1112.png',
   },
   {
     title: 'Стайер-спринт на 5 км',
+    titleLines: ['Стайер-спринт', 'на 5 км'],
     text: 'Пять километров на выносливость и стабильный темп до финиша.',
+    image: '/assets/leaderboard2/hero-figma.png',
   },
 ];
 
@@ -104,8 +151,18 @@ function CarouselButton({
 export default function RemoteLeaderboardLandingPage() {
   const [activeDiscipline, setActiveDiscipline] = useState(0);
   const [activePrize, setActivePrize] = useState(0);
+  const [countdown, setCountdown] = useState<CountdownState>(() => getCountdownState());
+  const [participantCount, setParticipantCount] = useState(0);
+  const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
+  const handleEntryCountChange = useCallback((count: number) => {
+    setParticipantCount(count);
+  }, []);
+  const handleJoinPopupClick = useCallback((event: { preventDefault: () => void }) => {
+    event.preventDefault();
+    setIsJoinPopupOpen(true);
+  }, []);
 
   useEffect(() => {
     document.body.classList.add('leaderboard2-route');
@@ -117,6 +174,27 @@ export default function RemoteLeaderboardLandingPage() {
     }
     return () => document.body.classList.remove('leaderboard2-route');
   }, []);
+
+  useEffect(() => {
+    const updateCountdown = () => setCountdown(getCountdownState());
+    updateCountdown();
+    const timer = window.setInterval(updateCountdown, 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isJoinPopupOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsJoinPopupOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isJoinPopupOpen]);
 
   return (
     <main className="leaderboard2">
@@ -147,18 +225,18 @@ export default function RemoteLeaderboardLandingPage() {
 
       <section className="leaderboard2__timerCard" aria-label="До обновления итогов">
         <div className="leaderboard2__timer">
-          {TIMER_PARTS.map((part, index) => (
+          {COUNTDOWN_LABELS.map((part, index) => (
             <div className="leaderboard2__timerPart" key={part.label}>
               <div className="leaderboard2__timerValue">
-                {part.value}
-                {index < TIMER_PARTS.length - 1 ? <span>:</span> : null}
+                {formatCountdownPart(countdown[part.key])}
+                {index < COUNTDOWN_LABELS.length - 1 ? <span>:</span> : null}
               </div>
               <div className="leaderboard2__timerLabel">{part.label}</div>
             </div>
           ))}
         </div>
         <p className="leaderboard2__participants">
-          <span>1 284</span> человека уже участвуют
+          <span>{formatParticipantCount(participantCount)}</span> {getParticipantNoun(participantCount)} уже {participantCount === 1 ? 'участвует' : 'участвуют'}
         </p>
       </section>
 
@@ -181,7 +259,7 @@ export default function RemoteLeaderboardLandingPage() {
           </h2>
           <div className="leaderboard2__actions">
             <a href="#rating">Смотреть рейтинг</a>
-            <a href="#rating">Принять вызов</a>
+            <a href="#join" onClick={handleJoinPopupClick}>Принять вызов</a>
           </div>
         </div>
       </section>
@@ -227,9 +305,23 @@ export default function RemoteLeaderboardLandingPage() {
 
       <section className="leaderboard2__disciplines" id="disciplines" aria-labelledby="leaderboard2-disciplines-title">
         <h2 id="leaderboard2-disciplines-title">Режимы забега</h2>
-        <div className="leaderboard2__modeCard">
+        <div
+          className="leaderboard2__modeCard"
+          style={{ '--leaderboard2-mode-image': `url(${discipline.image})` } as CSSProperties}
+        >
+          <img className="leaderboard2__modeGlobes" src="/assets/leaderboard2/mode-globes.svg" alt="" aria-hidden />
+          <img
+            className="leaderboard2__modeMobileStrip"
+            src="/assets/leaderboard2/mode-mobile-strip.svg"
+            alt=""
+            aria-hidden
+          />
           <div className="leaderboard2__modeText">
-            <strong>{discipline.title}</strong>
+            <strong>
+              {discipline.titleLines.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </strong>
             <p>
               <span className="leaderboard2__modeFullText">{discipline.text}</span>
               <span className="leaderboard2__modeShortText">
@@ -251,7 +343,7 @@ export default function RemoteLeaderboardLandingPage() {
               onClick={() => setActiveDiscipline((current) => loopIndex(current, 1, DISCIPLINES.length))}
             />
           </div>
-          <a className="leaderboard2__modeCta" href="#rating">
+          <a className="leaderboard2__modeCta" href="#join" onClick={handleJoinPopupClick}>
             Принять вызов
           </a>
         </div>
@@ -265,7 +357,13 @@ export default function RemoteLeaderboardLandingPage() {
         <div
           className="leaderboard2__leaderboardFrameWrap"
         >
-          <RemoteLeaderboardView embed embedSearchPlacement="above-tabs" />
+          <RemoteLeaderboardView
+            embed
+            hideEmbedBrand
+            embedSearchPlacement="below-tabs"
+            embedSearchPlaceholder="поиск участника"
+            onEntryCountChange={handleEntryCountChange}
+          />
         </div>
       </section>
 
@@ -313,7 +411,7 @@ export default function RemoteLeaderboardLandingPage() {
           <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomLeft" />
           <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomRight" />
         </div>
-        <a href="#rating">Принять вызов</a>
+        <a href="#join" onClick={handleJoinPopupClick}>Принять вызов</a>
       </section>
 
       <section className="leaderboard2__faq" id="faq" aria-labelledby="leaderboard2-faq-title">
@@ -381,6 +479,57 @@ export default function RemoteLeaderboardLandingPage() {
         </p>
         <p className="leaderboard2__copyright">© Inventive Retail Group, 2026</p>
       </footer>
+
+      {isJoinPopupOpen ? (
+        <div
+          className="leaderboard2__joinOverlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setIsJoinPopupOpen(false);
+          }}
+        >
+          <section
+            className="leaderboard2__joinPopup"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="leaderboard2-join-title"
+          >
+            <button
+              className="leaderboard2__joinClose"
+              type="button"
+              aria-label="Закрыть"
+              onClick={() => setIsJoinPopupOpen(false)}
+            >
+              <span aria-hidden />
+            </button>
+            <div className="leaderboard2__joinContent">
+              <p id="leaderboard2-join-title" className="leaderboard2__joinEyebrow">
+                Покажи свою
+                <br />
+                скорость
+              </p>
+              <div className="leaderboard2__joinTitle">
+                <span>в ТЦ «Авиапарк»</span>
+                <strong>3 этаж</strong>
+              </div>
+              <div className="leaderboard2__joinMeta">
+                <p>Москва, Ходынский бул., 4</p>
+                <p>+7 (495) 287-09-20</p>
+              </div>
+              <a
+                className="leaderboard2__joinRoute"
+                href="https://yandex.ru/maps/?text=Москва,%20Ходынский%20бул.,%204,%20Авиапарк"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Проложить маршрут
+                <span aria-hidden />
+              </a>
+            </div>
+            <img className="leaderboard2__joinMap" src="/assets/leaderboard2/popup-map.png" alt="Карта проезда к ТЦ Авиапарк" />
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.75] - 2026-06-27
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the `/leaderboard2` mobile timer and run-mode card: the top countdown row is 15% narrower without changing height, the run-mode background is more muted, the Figma strip replaces mobile globes, and the mode arrows are wider and positioned below the description.
+- **Remote Leaderboard landing assets:** added the mobile run-mode Figma strip and run-mode visual assets used by the refreshed mobile/desktop landing card.
+- **Remote versions:** `remote-frontend` raised to `0.1.71`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile and desktop checks confirmed the mobile-only timer/card changes do not affect the desktop run-mode card.
+
+---
+
 ## [0.5.74] - 2026-06-21
 
 ### Remote system

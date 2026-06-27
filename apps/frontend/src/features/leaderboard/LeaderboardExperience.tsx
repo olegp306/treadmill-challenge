@@ -85,8 +85,10 @@ export type LeaderboardExperienceProps = {
   layoutMode?: 'kiosk' | 'desktop' | 'embed';
   /** Landing/mobile embed already has page branding above the rating block. */
   hideEmbedBrand?: boolean;
-  /** Landing/mobile embed places search below the run selector inside the stack. */
-  embedSearchPlacement?: 'above-tabs' | 'stack-top';
+  /** Landing/mobile embed places search around the gender tabs or inside the stack. */
+  embedSearchPlacement?: 'above-tabs' | 'below-tabs' | 'stack-top';
+  /** Optional placeholder copy for embedded contexts with custom design requirements. */
+  embedSearchPlaceholder?: string;
 };
 
 type NameSearchMatch = { runTypeId: RunTypeId; sex: Gender; participantId: string; runId: string };
@@ -126,6 +128,7 @@ export function LeaderboardExperience({
   layoutMode = 'kiosk',
   hideEmbedBrand = false,
   embedSearchPlacement = 'above-tabs',
+  embedSearchPlaceholder,
 }: LeaderboardExperienceProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -415,9 +418,10 @@ export function LeaderboardExperience({
   const isRemoteLikeLayout = layoutMode === 'desktop' || isEmbedLayout;
   const isNarrowEmbedLayout = isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= 520;
   const useStackSearch = isNarrowEmbedLayout && embedSearchPlacement === 'stack-top';
+  const useBelowTabsSearch = isEmbedLayout && embedSearchPlacement === 'below-tabs';
   const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
   const canSubmitNameSearch = searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH;
-  const showSearchFindButton = canSubmitNameSearch;
+  const showSearchFindButton = canSubmitNameSearch || useBelowTabsSearch;
   const showSearchSwitchButtons = nameSearchMatches.length > 1;
   const canGoSearchUp = showSearchSwitchButtons && nameSearchMatchIndex > 0;
   const canGoSearchDown = showSearchSwitchButtons && nameSearchMatchIndex < nameSearchMatches.length - 1;
@@ -465,9 +469,18 @@ export function LeaderboardExperience({
             e.preventDefault();
             triggerNameSearch();
           }}
-          placeholder={isNarrowEmbedLayout ? 'Поиск' : isSearchFocused ? 'Введите имя и фамилию полностью' : 'Поиск'}
+          placeholder={
+            embedSearchPlaceholder && isEmbedLayout
+              ? embedSearchPlaceholder
+              : isNarrowEmbedLayout
+                ? 'Поиск'
+                : isSearchFocused
+                  ? 'Введите имя и фамилию полностью'
+                  : 'Поиск'
+          }
           style={{
             ...styles.searchInput,
+            ...(isEmbedLayout ? styles.searchInputEmbed : {}),
             ...(isNarrowEmbedLayout ? styles.searchInputEmbedNarrow : {}),
             ...(showSearchSwitchButtons ? styles.searchInputWithSwitchButtons : {}),
             ...(showSearchSwitchButtons && isNarrowEmbedLayout ? styles.searchInputWithSwitchButtonsNarrow : {}),
@@ -533,6 +546,7 @@ export function LeaderboardExperience({
           type="button"
           style={{
             ...styles.searchFindBtn,
+            ...(isEmbedLayout ? styles.searchFindBtnEmbed : {}),
             ...(isNarrowEmbedLayout ? styles.searchFindBtnEmbedNarrow : {}),
             ...(showSearchFindButton ? styles.searchFindBtnVisible : styles.searchFindBtnHidden),
             ...(searchFindFeedbackActive ? styles.searchFindBtnFeedback : {}),
@@ -557,7 +571,7 @@ export function LeaderboardExperience({
       <ScreenContainer style={{ ...styles.page, ...(isEmbedLayout ? styles.pageEmbed : {}) }}>
         <Sheet style={{ ...styles.sheet, ...(isEmbedLayout ? styles.sheetEmbed : {}) }}>
           <div style={{ ...styles.sheetInner, ...(isEmbedLayout ? styles.sheetInnerEmbed : {}) }}>
-            {!isNarrowEmbedLayout ? (
+            {!isNarrowEmbedLayout && !(isEmbedLayout && hideEmbedBrand) ? (
               <HeaderChrome
                 style={{ ...styles.headerRow, ...(isEmbedLayout ? styles.headerRowEmbed : {}) }}
                 logoStyle={styles.logoMark}
@@ -577,8 +591,8 @@ export function LeaderboardExperience({
               </div>
             ) : null}
 
-            {isEmbedLayout && !isNarrowEmbedLayout ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
-            {isNarrowEmbedLayout && !useStackSearch ? <div style={styles.embedSearchWrapNarrow}>{searchControls}</div> : null}
+            {isEmbedLayout && !isNarrowEmbedLayout && !useBelowTabsSearch ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
+            {isNarrowEmbedLayout && !useStackSearch && !useBelowTabsSearch ? <div style={styles.embedSearchWrapNarrow}>{searchControls}</div> : null}
 
             <div style={{ ...styles.genderTabs, ...(isEmbedLayout ? styles.genderTabsEmbed : {}), ...(isNarrowEmbedLayout ? styles.genderTabsEmbedNarrow : {}) }}>
               <button
@@ -606,6 +620,9 @@ export function LeaderboardExperience({
                 Мужчины
               </button>
             </div>
+
+            {isEmbedLayout && !isNarrowEmbedLayout && useBelowTabsSearch ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
+            {isNarrowEmbedLayout && useBelowTabsSearch ? <div style={styles.embedSearchWrapNarrow}>{searchControls}</div> : null}
 
             <div
               style={{
@@ -921,7 +938,7 @@ const styles: Record<string, CSSProperties> = {
     boxSizing: 'border-box',
   },
   sheetInnerEmbed: {
-    gap: h(16),
+    gap: '30px',
     padding: `${h(30)} ${w(28)} ${h(30)}`,
   },
   headerRow: {
@@ -972,13 +989,16 @@ const styles: Record<string, CSSProperties> = {
   searchRowEmbed: {
     width: '100%',
     maxWidth: '100%',
-    flexWrap: 'wrap',
-    gap: `${h(12)} ${w(14)}`,
+    height: '88px',
+    alignItems: 'stretch',
+    flexWrap: 'nowrap',
+    gap: '16px',
   },
   searchRowEmbedNarrow: {
     display: 'grid',
     gridTemplateColumns: '1fr 82px',
     alignItems: 'stretch',
+    height: '38px',
     gap: '6px',
   },
   searchRowEmbedNarrowIdle: {
@@ -1020,10 +1040,12 @@ const styles: Record<string, CSSProperties> = {
     width: w(230),
   },
   searchFindBtnSlotEmbed: {
-    width: 'auto',
+    width: '259px',
+    alignItems: 'stretch',
   },
   searchFindBtnSlotEmbedNarrow: {
     width: '82px',
+    height: '38px',
     alignItems: 'stretch',
   },
   searchFindBtnSlotVisible: {
@@ -1052,9 +1074,18 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     transition: 'opacity 220ms ease, transform 220ms ease',
   },
+  searchFindBtnEmbed: {
+    width: '100%',
+    minHeight: '88px',
+    padding: '20px',
+    borderRadius: '24px',
+    fontSize: '24px',
+    lineHeight: 1,
+  },
   searchFindBtnEmbedNarrow: {
     width: '100%',
-    minHeight: '34px',
+    height: '38px',
+    minHeight: '38px',
     padding: '9px 10px',
     borderRadius: '8px',
     fontSize: '9px',
@@ -1099,8 +1130,13 @@ const styles: Record<string, CSSProperties> = {
   },
   searchBarEmbed: {
     minWidth: 0,
-    width: '100%',
-    flex: '1 1 100%',
+    width: 'auto',
+    flex: '1 1 auto',
+    height: '88px',
+    minHeight: '88px',
+    padding: '20px',
+    borderRadius: '24px',
+    gap: '16px',
   },
   searchBarEmbedNarrow: {
     minHeight: '38px',
@@ -1137,6 +1173,12 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 500,
     letterSpacing: '0.02em',
     fontSynthesis: 'none',
+  },
+  searchInputEmbed: {
+    fontSize: '24px',
+    letterSpacing: '1.2px',
+    textTransform: 'uppercase',
+    color: '#fff',
   },
   searchInputEmbedNarrow: {
     fontFamily: '"Druk Wide Cyr", "Oswald", Arial, sans-serif',
@@ -1230,10 +1272,15 @@ const styles: Record<string, CSSProperties> = {
   genderTabsEmbed: {
     width: '100%',
     maxWidth: '100%',
-    minHeight: h(98),
+    height: '80px',
+    minHeight: '80px',
+    borderRadius: '27px',
+    padding: '9px',
+    gap: 0,
   },
   genderTabsEmbedNarrow: {
     marginTop: '42px',
+    height: '42px',
     minHeight: '42px',
     borderRadius: '13px',
     padding: '4px',
@@ -1252,9 +1299,10 @@ const styles: Record<string, CSSProperties> = {
     fontSynthesis: 'none',
   },
   genderTabEmbed: {
-    fontSize: 'clamp(7px, 2vw, 11px)',
-    lineHeight: 1,
-    letterSpacing: '0.01em',
+    borderRadius: '24px',
+    fontSize: '24px',
+    lineHeight: 1.3,
+    letterSpacing: '0',
   },
   genderTabEmbedNarrow: {
     borderRadius: '9px',
@@ -1449,7 +1497,7 @@ const styles: Record<string, CSSProperties> = {
     padding: '7px 8px 6px',
   },
   stackHeaderLabelCompact: {
-    fontSize: 'clamp(9px, 2.8vw, 15px)',
+    fontSize: '20px',
     padding: 'clamp(7px, 2vw, 12px) clamp(8px, 2.4vw, 14px)',
     borderRadius: 'clamp(8px, 2.4vw, 16px)',
   },
@@ -1589,7 +1637,7 @@ const styles: Record<string, CSSProperties> = {
   },
   lbRankCompact: {
     minWidth: 'clamp(14px, 4vw, 24px)',
-    fontSize: 'clamp(8px, 2.3vw, 12px)',
+    fontSize: '20px',
   },
   lbRankNarrow: {
     minWidth: '14px',
@@ -1612,7 +1660,7 @@ const styles: Record<string, CSSProperties> = {
     fontSynthesis: 'none',
   },
   lbNameCompact: {
-    fontSize: 'clamp(8px, 2.3vw, 12px)',
+    fontSize: '20px',
     letterSpacing: '0.015em',
   },
   lbNameNarrow: {
@@ -1637,7 +1685,7 @@ const styles: Record<string, CSSProperties> = {
     flexShrink: 0,
   },
   lbResultCompact: {
-    fontSize: 'clamp(8px, 2.3vw, 12px)',
+    fontSize: '20px',
     letterSpacing: '0.04em',
     maxWidth: 'clamp(44px, 18vw, 96px)',
     overflow: 'hidden',
