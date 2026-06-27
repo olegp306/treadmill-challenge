@@ -808,7 +808,7 @@ function LeaderboardStack({
           {narrow ? <span style={styles.stackHeaderChevronNarrow} aria-hidden /> : null}
         </p>
       </div>
-      {topSlot ? <div style={styles.stackTopSlot}>{topSlot}</div> : null}
+      {topSlot ? <div style={{ ...styles.stackTopSlot, ...(narrow ? styles.stackTopSlotNarrow : {}) }}>{topSlot}</div> : null}
       <div
         ref={scrollBodyRef as Ref<HTMLDivElement> | undefined}
         style={{
@@ -996,10 +996,10 @@ const styles: Record<string, CSSProperties> = {
   },
   searchRowEmbedNarrow: {
     display: 'grid',
-    gridTemplateColumns: '1fr 82px',
+    gridTemplateColumns: 'minmax(0, 1fr) 92px',
     alignItems: 'stretch',
-    height: '38px',
-    gap: '6px',
+    height: '56px',
+    gap: '8px',
   },
   searchRowEmbedNarrowIdle: {
     gridTemplateColumns: '1fr',
@@ -1044,8 +1044,8 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'stretch',
   },
   searchFindBtnSlotEmbedNarrow: {
-    width: '82px',
-    height: '38px',
+    width: '92px',
+    height: '56px',
     alignItems: 'stretch',
   },
   searchFindBtnSlotVisible: {
@@ -1084,11 +1084,11 @@ const styles: Record<string, CSSProperties> = {
   },
   searchFindBtnEmbedNarrow: {
     width: '100%',
-    height: '38px',
-    minHeight: '38px',
-    padding: '9px 10px',
-    borderRadius: '8px',
-    fontSize: '9px',
+    height: '56px',
+    minHeight: '56px',
+    padding: '12px 10px',
+    borderRadius: '14px',
+    fontSize: '12px',
   },
   searchFindBtnText: {
     display: 'inline-block',
@@ -1139,9 +1139,10 @@ const styles: Record<string, CSSProperties> = {
     gap: '16px',
   },
   searchBarEmbedNarrow: {
-    minHeight: '38px',
-    padding: '8px 10px',
-    borderRadius: '8px',
+    height: '56px',
+    minHeight: '56px',
+    padding: '12px 14px',
+    borderRadius: '14px',
     gap: '8px',
   },
   searchBarEmbedFocused: {
@@ -1182,10 +1183,10 @@ const styles: Record<string, CSSProperties> = {
   },
   searchInputEmbedNarrow: {
     fontFamily: '"Druk Wide Cyr", "Oswald", Arial, sans-serif',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: 500,
-    letterSpacing: '0',
-    textTransform: 'none',
+    letterSpacing: '0.65px',
+    textTransform: 'uppercase',
   },
   searchInputWithSwitchButtons: {
     paddingRight: w(188),
@@ -1279,11 +1280,11 @@ const styles: Record<string, CSSProperties> = {
     gap: 0,
   },
   genderTabsEmbedNarrow: {
-    marginTop: '42px',
-    height: '42px',
-    minHeight: '42px',
-    borderRadius: '13px',
-    padding: '4px',
+    marginTop: '0',
+    height: '64px',
+    minHeight: '64px',
+    borderRadius: '22px',
+    padding: '7px',
     gap: '4px',
   },
   genderTab: {
@@ -1305,9 +1306,9 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0',
   },
   genderTabEmbedNarrow: {
-    borderRadius: '9px',
-    fontSize: '10px',
-    lineHeight: 1,
+    borderRadius: '19px',
+    fontSize: '15px',
+    lineHeight: 1.3,
   },
   genderTabActive: {
     background: '#fff',
@@ -1458,7 +1459,7 @@ const styles: Record<string, CSSProperties> = {
     height: 'auto',
     minHeight: '0',
     maxHeight: 'none',
-    borderRadius: '12px',
+    borderRadius: '18px',
   },
   stackDim: {
     opacity: 0.9,
@@ -1494,7 +1495,7 @@ const styles: Record<string, CSSProperties> = {
     lineHeight: 1.15,
   },
   stackHeaderBarNarrow: {
-    padding: '7px 8px 6px',
+    padding: '10px 12px 8px',
   },
   stackHeaderLabelCompact: {
     fontSize: '20px',
@@ -1509,10 +1510,11 @@ const styles: Record<string, CSSProperties> = {
     background: ui.color.red,
     border: '1px solid rgba(255,255,255,0.08)',
     boxShadow: 'none',
-    fontSize: '10px',
-    padding: '9px 12px',
-    borderRadius: '10px',
+    fontSize: '14px',
+    padding: '11px 14px',
+    borderRadius: '14px',
     textAlign: 'left',
+    lineHeight: 1.15,
   },
   stackHeaderTextNarrow: {
     minWidth: 0,
@@ -1521,8 +1523,8 @@ const styles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
   },
   stackHeaderChevronNarrow: {
-    width: '8px',
-    height: '8px',
+    width: '10px',
+    height: '10px',
     borderRight: '2px solid rgba(255,255,255,0.9)',
     borderBottom: '2px solid rgba(255,255,255,0.9)',
     transform: 'rotate(45deg) translateY(-2px)',
@@ -1531,6 +1533,9 @@ const styles: Record<string, CSSProperties> = {
   stackTopSlot: {
     padding: '0 8px 8px',
     flexShrink: 0,
+  },
+  stackTopSlotNarrow: {
+    padding: '0 12px 18px',
   },
   stackBody: {
     flex: 1,
@@ -1549,15 +1554,15 @@ const styles: Record<string, CSSProperties> = {
     gap: h(10),
   },
   stackBodyNarrow: {
-    padding: '6px 8px 9px',
-    gap: '5px',
+    padding: '8px 12px 12px',
+    gap: '8px',
     overflowY: 'auto',
-    maxHeight: '392px',
+    maxHeight: 'none',
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(255,255,255,0.22) transparent',
   },
   stackBodyNarrowShowcase: {
-    maxHeight: '38px',
+    maxHeight: 'none',
   },
   stackBodyPageScrollPassthrough: {
     overflowY: 'hidden',
@@ -1600,9 +1605,9 @@ const styles: Record<string, CSSProperties> = {
   lbRowNarrow: {
     gridTemplateColumns: 'minmax(0, 1fr) auto',
     alignItems: 'center',
-    minHeight: '31px',
+    minHeight: '40px',
     gap: '8px',
-    padding: '5px 8px',
+    padding: '8px 10px',
   },
   lbRowTop: {
     background: 'rgba(255,255,255,0.11)',
@@ -1640,8 +1645,8 @@ const styles: Record<string, CSSProperties> = {
     fontSize: '20px',
   },
   lbRankNarrow: {
-    minWidth: '14px',
-    fontSize: '8px',
+    minWidth: '18px',
+    fontSize: '12px',
   },
   lbNameBack: {
     fontSize: w(20),
@@ -1664,9 +1669,9 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.015em',
   },
   lbNameNarrow: {
-    fontSize: '9px',
+    fontSize: '12px',
     lineHeight: 1.08,
-    whiteSpace: 'normal',
+    whiteSpace: 'nowrap',
   },
   lbNameHighlight: {
     color: ui.color.red,
@@ -1695,8 +1700,8 @@ const styles: Record<string, CSSProperties> = {
   lbResultNarrow: {
     justifySelf: 'end',
     marginLeft: 0,
-    maxWidth: '66px',
-    fontSize: '9px',
+    maxWidth: '84px',
+    fontSize: '12px',
     letterSpacing: '0.02em',
   },
   muted: {

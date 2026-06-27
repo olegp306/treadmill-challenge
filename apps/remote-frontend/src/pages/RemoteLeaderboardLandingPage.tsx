@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { LogoMark } from '@local-fe/ui/components/LogoMark';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
 import './RemoteLeaderboardLandingPage.css';
@@ -206,7 +206,19 @@ export default function RemoteLeaderboardLandingPage() {
         <div className="leaderboard2__heroMedia" aria-hidden />
         <div className="leaderboard2__heroBracket leaderboard2__heroBracket--left" aria-hidden />
         <div className="leaderboard2__heroBracket leaderboard2__heroBracket--right" aria-hidden />
-        <img className="leaderboard2__heroCenterMarker" src="/assets/leaderboard2/center-marker.png" alt="" aria-hidden />
+        <svg className="leaderboard2__heroCenterMarker" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <g fill="none" stroke="currentColor" strokeLinecap="square" strokeWidth="0.8">
+            <path d="M1 4V1h3" />
+            <path d="M16 1h3v3" />
+            <path d="M19 16v3h-3" />
+            <path d="M4 19H1v-3" />
+          </g>
+          <g fill="none" stroke="currentColor" strokeWidth="0.7">
+            <circle cx="10" cy="10" r="5.35" />
+            <path d="M4.65 10h10.7M10 4.65v10.7M6.15 7.25h7.7M6.15 12.75h7.7" />
+            <path d="M8.45 4.95C7.05 6.6 6.35 8.28 6.35 10s.7 3.4 2.1 5.05M11.55 4.95c1.4 1.65 2.1 3.33 2.1 5.05s-.7 3.4-2.1 5.05" />
+          </g>
+        </svg>
         <div className="leaderboard2__place leaderboard2__place--city">
           <span>Москва</span>
         </div>
@@ -225,15 +237,19 @@ export default function RemoteLeaderboardLandingPage() {
 
       <section className="leaderboard2__timerCard" aria-label="До обновления итогов">
         <div className="leaderboard2__timer">
-          {COUNTDOWN_LABELS.map((part, index) => (
-            <div className="leaderboard2__timerPart" key={part.label}>
-              <div className="leaderboard2__timerValue">
-                {formatCountdownPart(countdown[part.key])}
-                {index < COUNTDOWN_LABELS.length - 1 ? <span>:</span> : null}
-              </div>
-              <div className="leaderboard2__timerLabel">{part.label}</div>
-            </div>
-          ))}
+          <div className="leaderboard2__timerValues">
+            {COUNTDOWN_LABELS.map((part, index) => (
+              <Fragment key={part.label}>
+                <span className="leaderboard2__timerValue">{formatCountdownPart(countdown[part.key])}</span>
+                {index < COUNTDOWN_LABELS.length - 1 ? <span className="leaderboard2__timerSeparator">:</span> : null}
+              </Fragment>
+            ))}
+          </div>
+          <div className="leaderboard2__timerLabels">
+            {COUNTDOWN_LABELS.map((part) => (
+              <span className="leaderboard2__timerLabel" key={part.label}>{part.label}</span>
+            ))}
+          </div>
         </div>
         <p className="leaderboard2__participants">
           <span>{formatParticipantCount(participantCount)}</span> {getParticipantNoun(participantCount)} уже {participantCount === 1 ? 'участвует' : 'участвуют'}
@@ -272,11 +288,11 @@ export default function RemoteLeaderboardLandingPage() {
           <span>RED</span>
         </div>
         <img className="leaderboard2__statsShoe" src="/assets/leaderboard2/stats-layer-figma.png" alt="" />
-        <div className="leaderboard2__statCell">
+        <div className="leaderboard2__statCell leaderboard2__statCell--modes">
           <strong>3</strong>
           <span>Беговых режима</span>
         </div>
-        <div className="leaderboard2__statCell">
+        <div className="leaderboard2__statCell leaderboard2__statCell--winners">
           <strong>6</strong>
           <span>Победителей каждый месяц</span>
         </div>
@@ -351,8 +367,11 @@ export default function RemoteLeaderboardLandingPage() {
 
       <section className="leaderboard2__rating" id="rating" aria-labelledby="leaderboard2-rating-title">
         <div className="leaderboard2__sectionHead leaderboard2__sectionHead--rating">
-          <h2 id="leaderboard2-rating-title">Рейтинг участников</h2>
           <p className="leaderboard2__marker">[ 04 ]</p>
+          <h2 id="leaderboard2-rating-title">
+            <span>Рейтинг</span>
+            <span>участников</span>
+          </h2>
         </div>
         <div
           className="leaderboard2__leaderboardFrameWrap"
@@ -360,14 +379,14 @@ export default function RemoteLeaderboardLandingPage() {
           <RemoteLeaderboardView
             embed
             hideEmbedBrand
-            embedSearchPlacement="below-tabs"
+            embedSearchPlacement="stack-top"
             embedSearchPlaceholder="поиск участника"
             onEntryCountChange={handleEntryCountChange}
           />
         </div>
       </section>
 
-      <section className="leaderboard2__prize" id="prizes" aria-label="Призы месяца">
+    <section className="leaderboard2__prize" id="prizes" aria-label="Призы месяца">
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--topLeft" aria-hidden />
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--topRight" aria-hidden />
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--bottomLeft" aria-hidden />
@@ -388,7 +407,14 @@ export default function RemoteLeaderboardLandingPage() {
         <div className="leaderboard2__prizeText">
           <p>{prize.label}</p>
           <strong>{prize.brand}</strong>
-          <span>{prize.model}</span>
+          <span className="leaderboard2__prizeModel leaderboard2__prizeModel--desktop">{prize.model}</span>
+          <span className="leaderboard2__prizeModel leaderboard2__prizeModel--mobile">
+            <Fragment>
+              MAGMAX
+              <br />
+              NITRO 2
+            </Fragment>
+          </span>
           <em>{prize.text}</em>
         </div>
       </section>

@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.76] - 2026-06-27
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the `/leaderboard2` mobile rating block: the section now uses the three-line mobile heading rhythm (`[ 04 ]`, `Рейтинг`, `участников`), the gender switcher, run selector and search field follow the mobile order, and the search field no longer overlaps the first leaderboard row.
+- **Remote Leaderboard landing scroll:** rechecked page scrolling on mobile and desktop so the embedded rating block does not create horizontal overflow or trap the page scroll.
+- **Remote versions:** `remote-frontend` raised to `0.1.72`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile and desktop checks confirmed `/leaderboard2` has no horizontal overflow and remains scrollable through the rating section.
+
+---
+
 ## [0.5.75] - 2026-06-27
 
 ### Remote system
