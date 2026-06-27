@@ -257,7 +257,7 @@ export default function RemoteLeaderboardLandingPage() {
       </section>
 
       <section className="leaderboard2__intro" aria-labelledby="leaderboard2-intro-title">
-        <p className="leaderboard2__marker">( 01 )</p>
+        <p className="leaderboard2__marker">[ 0 1 ]</p>
         <div className="leaderboard2__introContent">
           <h2 id="leaderboard2-intro-title" className="leaderboard2__introTitle">
             <span className="leaderboard2__introDesktop">
@@ -270,7 +270,9 @@ export default function RemoteLeaderboardLandingPage() {
               новых кроссовок.
             </span>
             <span className="leaderboard2__introMobile">
-              Каждый месяц лучшие атлеты в каждой дисциплине выигрывают новые кроссовки.
+              Каждый месяц лучшие атлеты
+              <br />
+              в каждой дисциплине выигрывают новые кроссовки.
             </span>
           </h2>
           <div className="leaderboard2__actions">
@@ -381,6 +383,7 @@ export default function RemoteLeaderboardLandingPage() {
             hideEmbedBrand
             embedSearchPlacement="stack-top"
             embedSearchPlaceholder="поиск участника"
+            hideEmbedSearchOnNarrow
             onEntryCountChange={handleEntryCountChange}
           />
         </div>
@@ -422,12 +425,12 @@ export default function RemoteLeaderboardLandingPage() {
       <section className="leaderboard2__finalCta" id="final-cta">
         <h2>
           Готов попасть
-          <br />в топ-10
-          <br />и забрать свою пару
+          <br />в топ-10 и забрать
+          <br />свою пару
         </h2>
         <strong>
-          <span>DEVIATE</span>
-          <span>NITRO?</span>
+          <span>PUMA MagMax</span>
+          <span>NITRO 2?</span>
         </strong>
         <p>Выбирай дисциплину, показывай максимум и следи за своим результатом в рейтинге.</p>
         <div className="leaderboard2__finalCtaGeo" aria-hidden>

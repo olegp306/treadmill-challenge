@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.77] - 2026-06-27
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** completed the next `/leaderboard2` mobile Figma pass through the rating, prize and CTA area: the embedded rating hides the mobile-only search field where the landing mockup does not show it, the prize card keeps the 343px Figma geometry, and the Puma CTA now matches the mobile card height, spacing, typography and call-to-action placement more closely.
+- **Remote Leaderboard landing scroll:** rechecked mobile and desktop rendering after the pass; both stay vertically scrollable without horizontal overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.73`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile and desktop checks confirmed `/leaderboard2` has no horizontal overflow at the 70% checkpoint.
+
+---
+
 ## [0.5.76] - 2026-06-27
 
 ### Remote system

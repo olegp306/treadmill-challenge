@@ -28,12 +28,14 @@ export function RemoteLeaderboardView({
   hideEmbedBrand = false,
   embedSearchPlacement = 'above-tabs',
   embedSearchPlaceholder,
+  hideEmbedSearchOnNarrow = false,
   onEntryCountChange,
 }: {
   embed?: boolean;
   hideEmbedBrand?: boolean;
   embedSearchPlacement?: 'above-tabs' | 'below-tabs' | 'stack-top';
   embedSearchPlaceholder?: string;
+  hideEmbedSearchOnNarrow?: boolean;
   onEntryCountChange?: (count: number) => void;
 }) {
   const [backupUnavailableMessage, setBackupUnavailableMessage] = useState<string | null>(null);
@@ -74,6 +76,7 @@ export function RemoteLeaderboardView({
       hideEmbedBrand={hideEmbedBrand}
       embedSearchPlacement={embedSearchPlacement}
       embedSearchPlaceholder={embedSearchPlaceholder}
+      hideEmbedSearchOnNarrow={hideEmbedSearchOnNarrow}
     />
   );
 }

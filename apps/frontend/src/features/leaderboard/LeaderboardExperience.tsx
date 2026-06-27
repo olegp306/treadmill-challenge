@@ -87,6 +87,8 @@ export type LeaderboardExperienceProps = {
   hideEmbedBrand?: boolean;
   /** Landing/mobile embed places search around the gender tabs or inside the stack. */
   embedSearchPlacement?: 'above-tabs' | 'below-tabs' | 'stack-top';
+  /** Hide search only for narrow embedded landing layouts that match the mobile Figma composition. */
+  hideEmbedSearchOnNarrow?: boolean;
   /** Optional placeholder copy for embedded contexts with custom design requirements. */
   embedSearchPlaceholder?: string;
 };
@@ -128,6 +130,7 @@ export function LeaderboardExperience({
   layoutMode = 'kiosk',
   hideEmbedBrand = false,
   embedSearchPlacement = 'above-tabs',
+  hideEmbedSearchOnNarrow = false,
   embedSearchPlaceholder,
 }: LeaderboardExperienceProps) {
   const navigate = useNavigate();
@@ -417,8 +420,9 @@ export function LeaderboardExperience({
   const isEmbedLayout = layoutMode === 'embed';
   const isRemoteLikeLayout = layoutMode === 'desktop' || isEmbedLayout;
   const isNarrowEmbedLayout = isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= 520;
-  const useStackSearch = isNarrowEmbedLayout && embedSearchPlacement === 'stack-top';
-  const useBelowTabsSearch = isEmbedLayout && embedSearchPlacement === 'below-tabs';
+  const hideSearchControls = isNarrowEmbedLayout && hideEmbedSearchOnNarrow;
+  const useStackSearch = !hideSearchControls && isNarrowEmbedLayout && embedSearchPlacement === 'stack-top';
+  const useBelowTabsSearch = !hideSearchControls && isEmbedLayout && embedSearchPlacement === 'below-tabs';
   const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
   const canSubmitNameSearch = searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH;
   const showSearchFindButton = canSubmitNameSearch || useBelowTabsSearch;
@@ -578,7 +582,7 @@ export function LeaderboardExperience({
                 right={
                   isEmbedLayout ? undefined :
                   <div style={styles.headerRight}>
-                    {searchControls}
+                    {!hideSearchControls ? searchControls : null}
                   </div>
                 }
               />
@@ -592,7 +596,7 @@ export function LeaderboardExperience({
             ) : null}
 
             {isEmbedLayout && !isNarrowEmbedLayout && !useBelowTabsSearch ? <div style={styles.embedSearchWrap}>{searchControls}</div> : null}
-            {isNarrowEmbedLayout && !useStackSearch && !useBelowTabsSearch ? <div style={styles.embedSearchWrapNarrow}>{searchControls}</div> : null}
+            {isNarrowEmbedLayout && !hideSearchControls && !useStackSearch && !useBelowTabsSearch ? <div style={styles.embedSearchWrapNarrow}>{searchControls}</div> : null}
 
             <div style={{ ...styles.genderTabs, ...(isEmbedLayout ? styles.genderTabsEmbed : {}), ...(isNarrowEmbedLayout ? styles.genderTabsEmbedNarrow : {}) }}>
               <button

@@ -3261,42 +3261,68 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__finalCta strong {
-    width: 380px;
-    font-size: 42px;
-    transform: scaleX(0.66);
+    width: 311px;
+    margin-top: 0;
+    font-family: var(--lb2-condensed);
+    font-size: 79px;
+    font-weight: 500;
+    line-height: 1;
+    transform: none;
   }
 
   .leaderboard2__finalCta {
-    min-height: 382px;
-    padding: 24px 18px 18px;
+    width: min(343px, calc(100vw - 32px));
+    height: 410px;
+    min-height: 410px;
+    margin-top: 20px;
+    padding: 16px;
+    display: block;
+    overflow: hidden;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.54), rgba(19, 19, 19, 0.34)),
+      url('/assets/leaderboard2/hero-figma.png') center bottom / cover no-repeat;
   }
 
   .leaderboard2__finalCta h2 {
-    font-size: 27px;
-    line-height: 0.92;
+    width: 311px;
+    font-size: 21px;
+    line-height: 1.2;
   }
 
   .leaderboard2__finalCta p {
-    margin-top: 18px;
-    font-size: 11px;
-    line-height: 1.28;
+    width: 311px;
+    margin-top: 20px;
+    font-size: 16px;
+    line-height: 1.3;
+    letter-spacing: -0.48px;
   }
 
   .leaderboard2__finalCta a {
-    min-height: 42px;
-    margin-top: 18px;
-    border-radius: 9px;
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: auto;
+    min-height: 48px;
+    margin-top: 0;
+    border-radius: 14px;
+    font-size: 16px;
   }
 
   .leaderboard2__finalCtaGeo {
-    display: none;
-    left: 24px;
-    right: 24px;
+    display: block;
+    left: 16px;
+    right: 16px;
+    top: 293px;
+    height: 33px;
   }
 
   .leaderboard2__finalCtaGeoText {
-    font-size: 9px;
-    letter-spacing: 2.8px;
+    left: 18px;
+    right: 18px;
+    bottom: 7px;
+    font-size: 12.981px;
+    letter-spacing: 3.6346px;
   }
 
   .leaderboard2__faq h2 {
@@ -3880,7 +3906,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__rating {
-    margin-top: 84px;
+    margin-top: 59px;
   }
 
   .leaderboard2__timerCard {
@@ -3963,20 +3989,26 @@ body.leaderboard2-route #root {
 
   .leaderboard2__intro .leaderboard2__marker {
     margin: 0;
+    font-family: var(--lb2-proxima);
     font-size: 15px;
+    font-weight: 400;
     line-height: 1.2;
     letter-spacing: -0.75px;
   }
 
   .leaderboard2__introTitle {
     margin: 0;
-    width: 470px;
+    width: 620px;
     max-width: none;
     font-size: 27px !important;
     line-height: 1.1 !important;
     letter-spacing: 0;
     transform: scaleX(0.73);
     transform-origin: left top;
+  }
+
+  .leaderboard2__intro h2.leaderboard2__introTitle {
+    margin: 0;
   }
 
   .leaderboard2__introMobile {
@@ -3988,6 +4020,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__actions {
+    margin: 0;
     height: 130px;
     display: flex;
     flex-direction: column;
@@ -4009,7 +4042,7 @@ body.leaderboard2-route #root {
     position: relative;
     height: 256px;
     min-height: 256px;
-    margin-top: 82px;
+    margin-top: 118px;
     padding: 0;
     border-radius: 20px;
     overflow: hidden;
@@ -4083,12 +4116,16 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__statCell span {
-    width: 296px;
+    width: 201px;
     font-size: 20px;
     line-height: 1.2;
     text-align: left;
-    transform: scaleX(0.82);
+    transform: none;
     transform-origin: left center;
+  }
+
+  .leaderboard2__statCell--winners span {
+    width: 242px;
   }
 
   .leaderboard2__how {
@@ -4306,20 +4343,20 @@ body.leaderboard2-route #root {
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 4px;
-    min-height: 118px;
-    margin-bottom: 24px;
+    gap: 13px;
+    min-height: 113px;
+    margin-bottom: 11px;
   }
 
   .leaderboard2__sectionHead--rating h2 {
     order: 2;
-    width: 760px;
-    max-width: none;
+    width: 342px;
+    max-width: 100%;
     margin: 0;
-    font-size: 48px;
-    line-height: 0.9;
+    font-size: 32px;
+    line-height: 1.2;
     white-space: normal;
-    transform: scaleX(0.45);
+    transform: none;
     transform-origin: left top;
     z-index: 1;
   }
@@ -4335,16 +4372,16 @@ body.leaderboard2-route #root {
     flex: 0 0 auto;
     margin: 0;
     font-family: var(--lb2-proxima);
-    font-size: 24px;
+    font-size: 15px;
     font-weight: 600;
     line-height: 1.2;
-    letter-spacing: -1.2px;
+    letter-spacing: -0.75px;
     color: var(--lb2-red);
   }
 
   .leaderboard2__leaderboardFrameWrap,
   .leaderboard2__leaderboardFrame {
-    height: 760px;
+    height: 682px;
     border-radius: 20px;
   }
 
@@ -4363,7 +4400,7 @@ body.leaderboard2-route #root {
     width: min(343px, calc(100vw - 32px));
     height: 597px;
     min-height: 597px;
-    margin-top: 64px;
+    margin-top: 56px;
     padding: 0;
     border-radius: 20px;
     background: #131313;
@@ -4494,6 +4531,76 @@ body.leaderboard2-route #root {
 
   .leaderboard2__prize em {
     display: none;
+  }
+
+  .leaderboard2__finalCta {
+    width: min(343px, calc(100vw - 32px));
+    height: 410px;
+    min-height: 410px;
+    margin-top: 20px;
+    padding: 16px;
+    display: block;
+    overflow: hidden;
+    border-radius: 20px;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.54), rgba(19, 19, 19, 0.34)),
+      url('/assets/leaderboard2/hero-figma.png') center bottom / cover no-repeat;
+  }
+
+  .leaderboard2__finalCta h2 {
+    width: 420px;
+    margin: 0;
+    font-size: 21px;
+    line-height: 1.2;
+    transform: scaleX(0.74);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__finalCta strong {
+    width: 470px;
+    margin-top: 0;
+    font-family: var(--lb2-condensed);
+    font-size: 79px;
+    font-weight: 500;
+    line-height: 1;
+    transform: scaleX(0.5);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__finalCta p {
+    width: 311px;
+    margin-top: 20px;
+    font-size: 16px;
+    line-height: 1.3;
+    letter-spacing: -0.48px;
+  }
+
+  .leaderboard2__finalCtaGeo {
+    display: block;
+    left: 16px;
+    right: 16px;
+    top: 293px;
+    height: 33px;
+  }
+
+  .leaderboard2__finalCtaGeoText {
+    left: 18px;
+    right: 18px;
+    bottom: 7px;
+    font-size: 12.981px;
+    letter-spacing: 3.6346px;
+  }
+
+  .leaderboard2__finalCta a {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: auto;
+    min-height: 48px;
+    margin-top: 0;
+    border-radius: 14px;
+    font-size: 16px;
   }
 
   .leaderboard2__faq {
