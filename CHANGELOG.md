@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.80] - 2026-06-27
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** completed the 100% mobile checkpoint for `/leaderboard2` against the supplied Figma mobile frame, including section geometry from hero through copyright and the final scroll/overflow audit.
+- **Remote versions:** `remote-frontend` raised to `0.1.76`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright final mobile geometry audit confirmed the main mobile sections align to the Figma frame positions and desktop/mobile views have no horizontal overflow.
+
+---
+
 ## [0.5.79] - 2026-06-27
 
 ### Remote system
