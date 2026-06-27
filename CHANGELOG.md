@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.79] - 2026-06-27
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** polished the Puma CTA product heading so `PUMA MAGMAX` fits the mobile card without clipping while keeping the Figma-sized card and mobile scroll behavior.
+- **Remote versions:** `remote-frontend` raised to `0.1.75`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile and desktop smoke checks confirmed no horizontal overflow after the CTA typography polish.
+
+---
+
 ## [0.5.78] - 2026-06-27
 
 ### Remote system

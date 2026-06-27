@@ -3998,7 +3998,7 @@ body.leaderboard2-route #root {
 
   .leaderboard2__introTitle {
     margin: 0;
-    width: 620px;
+    width: 760px;
     max-width: none;
     font-size: 27px !important;
     line-height: 1.1 !important;
@@ -4563,7 +4563,7 @@ body.leaderboard2-route #root {
     font-size: 79px;
     font-weight: 500;
     line-height: 1;
-    transform: scaleX(0.5);
+    transform: scaleX(0.41);
     transform-origin: left top;
   }
 
