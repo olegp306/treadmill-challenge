@@ -444,7 +444,7 @@ export default function RemoteLeaderboardLandingPage() {
       </section>
 
       <section className="leaderboard2__faq" id="faq" aria-labelledby="leaderboard2-faq-title">
-        <p className="leaderboard2__marker leaderboard2__faqMarker">[ 05 ]</p>
+        <p className="leaderboard2__marker leaderboard2__faqMarker">[ 0 5 ]</p>
         <h2 id="leaderboard2-faq-title">
           <span>Частые</span>
           {' '}

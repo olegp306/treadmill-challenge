@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.78] - 2026-06-27
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** refined the lower `/leaderboard2` mobile Figma pass: FAQ, history of runs, footer and copyright now use the mobile frame geometry, spacing and typography closer to the supplied Figma nodes.
+- **Remote Leaderboard landing layout:** restored the Figma vertical rhythm from intro through footer so the mobile sections line up at the intended y-positions without horizontal overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.74`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile and desktop checks confirmed no horizontal overflow; mobile screenshot verified the FAQ/history/footer/copyright pass.
+
+---
+
 ## [0.5.77] - 2026-06-27
 
 ### Remote system
