@@ -1034,6 +1034,16 @@ body.leaderboard2-route #root {
   display: none;
 }
 
+.leaderboard2__finalCtaGeoDesktop {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.leaderboard2__finalCtaGeoGroup {
+  display: none;
+}
+
 .leaderboard2__finalCta a {
   grid-column: 1 / -1;
   min-height: 74px;
@@ -4844,5 +4854,94 @@ body.leaderboard2-route #root {
     font-size: 12px;
     line-height: 1.2;
     color: rgba(255, 255, 255, 0.5);
+  }
+
+  .leaderboard2__finalCta .leaderboard2__finalCtaText {
+    position: absolute;
+    left: 16px;
+    top: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 311px;
+    margin: 0;
+    color: #fff;
+    font-family: var(--lb2-proxima);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.3;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .leaderboard2__finalCta {
+    height: 499px;
+    min-height: 499px;
+  }
+
+  .leaderboard2__finalCtaText span {
+    display: block;
+  }
+
+  .leaderboard2__finalCtaGeo {
+    left: 16px;
+    right: 16px;
+    top: 383px;
+    height: 33px;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 15px;
+  }
+
+  .leaderboard2__finalCtaGeoDesktop {
+    display: none;
+  }
+
+  .leaderboard2__finalCtaGeoGroup {
+    position: relative;
+    display: block;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 33px;
+  }
+
+  .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoText {
+    left: 8px;
+    right: 8px;
+    bottom: 7px;
+    font-family: var(--lb2-proxima);
+    font-size: 12.981px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 2.6px;
+    text-align: center;
+  }
+
+  .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoCorner {
+    width: 8px;
+    height: 8px;
+    border-color: var(--lb2-red);
+    opacity: 0.92;
+  }
+
+  .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoCorner--topLeft {
+    top: 0;
+    left: 0;
+  }
+
+  .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoCorner--topRight {
+    top: 0;
+    right: 0;
+  }
+
+  .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoCorner--bottomLeft {
+    bottom: 0;
+    left: 0;
+  }
+
+  .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoCorner--bottomRight {
+    right: 0;
+    bottom: 0;
   }
 }

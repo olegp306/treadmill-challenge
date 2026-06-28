@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.86] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing mobile CTA:** aligned the final “ready for top-10” card with the mobile design: Proxima Nova 16px/130% three-line helper text, two separate bracketed coordinate groups, and the requested spacing before the final CTA button.
+- **Remote versions:** `remote-frontend` raised to `0.1.82`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile check verified the three text lines, typography, two coordinate groups on one row, 40px text-to-coordinates spacing, 20px coordinates-to-button spacing, and no horizontal overflow.
+
+---
+
 ## [0.5.85] - 2026-06-28
 
 ### Remote system
