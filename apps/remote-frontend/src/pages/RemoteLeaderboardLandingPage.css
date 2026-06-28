@@ -764,7 +764,7 @@ body.leaderboard2-route #root {
   letter-spacing: -3.6px;
   text-transform: uppercase;
   white-space: nowrap;
-  transform: scaleX(0.5);
+  transform: scaleX(0.45);
   transform-origin: left top;
 }
 

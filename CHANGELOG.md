@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.89] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing desktop:** made the race mode title in the desktop “Режимы забега” card 10% narrower while preserving the same font size, height, and mobile layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.84`.
+
+### Verification
+
+- Chrome/Playwright desktop element check verified the title uses `scaleX(0.45)` with unchanged `180px` font size and `162px` line-height.
+- Chrome/Playwright mobile check verified the mobile title keeps its separate `scaleX(0.38)` rule and no horizontal overflow appears.
+
+---
+
 ## [0.5.88] - 2026-06-28
 
 ### Remote system
