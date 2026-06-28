@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.82] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing mobile copy:** updated the mobile intro text on `/leaderboard2` to the new line-by-line wording about monthly winners receiving a pair of new sneakers.
+- **Remote versions:** `remote-frontend` raised to `0.1.78`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile check verified the new copy renders with the requested line breaks and no horizontal overflow.
+
+---
+
 ## [0.5.81] - 2026-06-28
 
 ### Remote system

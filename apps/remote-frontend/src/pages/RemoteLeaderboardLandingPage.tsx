@@ -270,9 +270,19 @@ export default function RemoteLeaderboardLandingPage() {
               новых кроссовок.
             </span>
             <span className="leaderboard2__introMobile">
-              Каждый месяц лучшие атлеты
+              Каждый месяц
               <br />
-              в каждой дисциплине выигрывают новые кроссовки.
+              лучшие мужчины
+              <br />
+              и женщины
+              <br />
+              в каждой
+              <br />
+              дисциплине
+              <br />
+              получают пару
+              <br />
+              новых кроссовок.
             </span>
           </h2>
           <div className="leaderboard2__actions">
