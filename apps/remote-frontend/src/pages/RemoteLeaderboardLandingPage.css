@@ -51,7 +51,9 @@ body.leaderboard2-route #root {
     radial-gradient(circle at 50% 98%, rgba(230, 35, 58, 0.22), transparent 18%),
     var(--lb2-bg);
   color: #fff;
-  overflow-x: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
+  touch-action: pan-y;
   font-family: var(--lb2-wide);
   font-weight: 500;
   font-synthesis: none;
@@ -806,6 +808,7 @@ body.leaderboard2-route #root {
   overflow: hidden;
   background: #000;
   touch-action: pan-y;
+  overscroll-behavior-y: auto;
 }
 
 .leaderboard2__leaderboardFrame {
@@ -821,6 +824,7 @@ body.leaderboard2-route #root {
   height: 100%;
   width: 100%;
   overflow: visible;
+  touch-action: pan-y;
   overscroll-behavior-y: auto;
 }
 
@@ -835,6 +839,8 @@ body.leaderboard2-route #root {
     height: 100% !important;
     min-height: 0 !important;
     overflow: hidden;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: auto !important;
   }
 
   .leaderboard2 .leaderboard2__leaderboardFrameWrap .ar-ozio-remote-lb-viewport > .ar-ozio-remote-lb-canvas {
@@ -843,6 +849,8 @@ body.leaderboard2-route #root {
     height: 100% !important;
     min-height: 100% !important;
     margin: 0 !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: auto !important;
     --ar-cqh: calc((100vw - 32px) * 1640 / 2360 / 100) !important;
   }
 }
@@ -4390,6 +4398,8 @@ body.leaderboard2-route #root {
     height: 100% !important;
     min-height: 100% !important;
     overflow: hidden !important;
+    touch-action: pan-y !important;
+    overscroll-behavior-y: auto !important;
   }
 
   .leaderboard2 .leaderboard2__leaderboardFrameWrap .ar-ozio-remote-lb-viewport > .ar-ozio-remote-lb-canvas {

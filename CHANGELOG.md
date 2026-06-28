@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.81] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing mobile scroll:** fixed unstable touch scrolling on `/leaderboard2` around the first hero screen, embedded rating area and Puma prize/CTA cards by removing the nested page scroll container and forcing vertical pan passthrough on the embedded leaderboard frame.
+- **Remote versions:** `remote-frontend` raised to `0.1.77`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile touch checks verified vertical swipes from the hero, rating, Puma prize and CTA areas change the page scroll position; mobile and desktop smoke checks confirmed no horizontal overflow.
+
+---
+
 ## [0.5.80] - 2026-06-27
 
 ### Remote system
