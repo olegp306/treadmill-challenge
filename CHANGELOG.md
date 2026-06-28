@@ -7,6 +7,22 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.90] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** fixed the mobile “Беги на максимум” hero title so both lines fit inside the hero card without clipping or overlapping the location labels.
+- **Desktop safety:** kept the desktop hero typography unchanged while applying the fix only inside the narrow mobile breakpoint.
+- **Remote versions:** `remote-frontend` raised to `0.1.85`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile check verified no horizontal overflow, both hero title lines stay inside the card, and location labels do not overlap the title.
+- Chrome/Playwright desktop check verified the desktop hero transform remained unchanged.
+
+---
+
 ## [0.5.89] - 2026-06-28
 
 ### Remote system

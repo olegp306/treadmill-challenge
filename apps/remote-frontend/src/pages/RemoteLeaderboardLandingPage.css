@@ -3927,22 +3927,34 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__heroTitle {
-    left: 12px;
+    left: 28px;
     top: 32px;
-    width: 640px;
+    width: calc(100% - 56px);
     font-size: 82px;
-    line-height: 1;
-    white-space: nowrap;
-    transform: scaleX(0.42);
+    line-height: 0.84;
+    white-space: normal;
+    transform: none;
     transform-origin: left top;
   }
 
   .leaderboard2__heroTitleFirstLine,
   .leaderboard2__heroTitleSecondLine {
-    display: inline;
-    width: auto;
+    display: block;
+    width: max-content;
     white-space: nowrap;
-    transform: none;
+    transform-origin: left top;
+  }
+
+  .leaderboard2__heroTitle > br {
+    display: none;
+  }
+
+  .leaderboard2__heroTitleFirstLine {
+    transform: scaleX(0.9);
+  }
+
+  .leaderboard2__heroTitleSecondLine {
+    transform: scaleX(0.3);
   }
 
   .leaderboard2__heroMobileBreak {
