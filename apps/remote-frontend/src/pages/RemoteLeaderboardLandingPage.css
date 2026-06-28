@@ -163,13 +163,30 @@ body.leaderboard2-route #root {
 .leaderboard2__header {
   height: 75px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 30px 0;
 }
 
 .leaderboard2__logo {
   font-size: 24px !important;
+}
+
+.leaderboard2__version {
+  color: rgba(255, 255, 255, 0.42);
+  font-family: var(--lb2-proxima);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  user-select: text;
+}
+
+.leaderboard2__version--top {
+  margin-top: 0;
 }
 
 .leaderboard2__heroCard {
@@ -1285,6 +1302,18 @@ body.leaderboard2-route #root {
 
 .leaderboard2__footerLogo {
   font-size: 24px !important;
+}
+
+.leaderboard2__footerBrand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.leaderboard2__version--footer {
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 11px;
 }
 
 .leaderboard2__socialsLabel,

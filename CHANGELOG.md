@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.91] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing version labels:** added the product version to `/leaderboard2` near the top `AMAZING RED` logo and in the footer, so mobile/desktop checks can immediately confirm which product build is open.
+- **Remote Leaderboard version source:** wired the label to the root product `package.json` version instead of a fallback dev value.
+- **Remote versions:** `remote-frontend` raised to `0.1.86`.
+
+### Verification
+
+- Chrome/Playwright desktop and mobile checks verified both visible labels render as the current product version and no horizontal overflow appears.
+
 ## [0.5.90] - 2026-06-28
 
 ### Remote system

@@ -26,7 +26,7 @@ export default defineConfig({
     port: Number(process.env.REMOTE_FRONTEND_PORT) || 5174,
     strictPort: true,
     fs: {
-      allow: [path.resolve(__dirname, '..'), path.resolve(__dirname, '../frontend')],
+      allow: [path.resolve(__dirname, '../..'), path.resolve(__dirname, '..'), path.resolve(__dirname, '../frontend')],
     },
     proxy: {
       '/api': {

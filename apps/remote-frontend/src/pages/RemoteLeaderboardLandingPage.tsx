@@ -1,7 +1,10 @@
 import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { LogoMark } from '@local-fe/ui/components/LogoMark';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
+import rootPackage from '../../../../package.json';
 import './RemoteLeaderboardLandingPage.css';
+
+const PRODUCT_VERSION = rootPackage.version;
 
 type CountdownState = {
   days: number;
@@ -200,6 +203,9 @@ export default function RemoteLeaderboardLandingPage() {
     <main className="leaderboard2">
       <header className="leaderboard2__header" aria-label="AMAZING RED">
         <LogoMark className="leaderboard2__logo" />
+        <span className="leaderboard2__version leaderboard2__version--top" aria-label={`Версия продукта ${PRODUCT_VERSION}`}>
+          v{PRODUCT_VERSION}
+        </span>
       </header>
 
       <section className="leaderboard2__heroCard" aria-label="Treadmill Challenge">
@@ -515,7 +521,10 @@ export default function RemoteLeaderboardLandingPage() {
       </section>
 
       <footer className="leaderboard2__footer">
-        <LogoMark className="leaderboard2__footerLogo" />
+        <div className="leaderboard2__footerBrand">
+          <LogoMark className="leaderboard2__footerLogo" />
+          <span className="leaderboard2__version leaderboard2__version--footer">v{PRODUCT_VERSION}</span>
+        </div>
         <p className="leaderboard2__socialsLabel">Мы в социальных сетях</p>
         <div className="leaderboard2__socials" aria-hidden>
           <span />
