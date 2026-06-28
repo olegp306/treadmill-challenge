@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.83] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing mobile rating:** restored participant search in the mobile rating block on `/leaderboard2` and placed it after the red race selector, before the bordered results list.
+- **Remote versions:** `remote-frontend` raised to `0.1.79`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile check verified the order: gender tabs, race selector, search field with `Найти`, then the bordered participant list; search activates after two entered characters and no horizontal overflow appears.
+
+---
+
 ## [0.5.82] - 2026-06-28
 
 ### Remote system

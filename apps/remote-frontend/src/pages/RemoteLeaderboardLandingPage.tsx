@@ -393,7 +393,6 @@ export default function RemoteLeaderboardLandingPage() {
             hideEmbedBrand
             embedSearchPlacement="stack-top"
             embedSearchPlaceholder="поиск участника"
-            hideEmbedSearchOnNarrow
             onEntryCountChange={handleEntryCountChange}
           />
         </div>
