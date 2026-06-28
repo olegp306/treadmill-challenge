@@ -95,7 +95,7 @@
   --lb2-muted: rgba(255, 255, 255, 0.6);
   --lb2-wide: 'Druk Wide Cyr', 'Oswald', 'Arial Black', system-ui, sans-serif;
   --lb2-condensed: 'Druk Cyr', 'Druk Wide Cyr', 'Oswald', 'Arial Black', system-ui, sans-serif;
-  --lb2-proxima: Arial, system-ui, sans-serif;
+  --lb2-proxima: 'Proxima Nova', Arial, system-ui, sans-serif;
 }
 
 html {
@@ -1115,6 +1115,10 @@ body.leaderboard2-route #root {
   display: block;
 }
 
+.leaderboard2__finalCtaModelMobile {
+  display: none !important;
+}
+
 .leaderboard2__finalCta p {
   position: relative;
   z-index: 2;
@@ -1966,7 +1970,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__step span {
-    font-family: var(--lb2-proxima);
+    font-family: 'Proxima Nova', var(--lb2-proxima);
     font-size: 20px;
     font-weight: 400;
   }
@@ -3979,7 +3983,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__heroTitleFirstLine {
-    transform: scaleX(0.9);
+    transform: scaleX(0.25);
   }
 
   .leaderboard2__heroTitleSecondLine {
@@ -4373,7 +4377,7 @@ body.leaderboard2-route #root {
   .leaderboard2__disciplines h2 {
     margin: 0;
     width: 430px;
-    font-size: 32px;
+    font-size: 36px;
     line-height: 1.2;
     text-align: left;
     transform: scaleX(0.78);
@@ -4436,7 +4440,7 @@ body.leaderboard2-route #root {
     font-size: 96px;
     line-height: 0.9;
     letter-spacing: -1.92px;
-    transform: scaleX(0.38);
+    transform: scaleX(0.304);
     transform-origin: left top;
   }
 
@@ -4657,17 +4661,37 @@ body.leaderboard2-route #root {
     left: 0;
     top: 102px;
     display: block;
-    width: 540px;
+    width: 311px;
     max-width: none;
     color: #fff;
     font-family: var(--lb2-condensed);
-    font-size: 96px;
+    font-size: 64px;
     font-weight: 500;
     line-height: 1;
-    letter-spacing: -1.2px;
+    letter-spacing: 0;
     white-space: nowrap;
-    transform: scaleX(0.56);
+    transform: none;
     transform-origin: left top;
+  }
+
+  .leaderboard2__prize .leaderboard2__prizeModel--mobile .leaderboard2__prizeModelLine {
+    display: block;
+    max-width: none;
+    font-size: 64px;
+    line-height: 1;
+    width: 760px;
+    transform-origin: left top;
+  }
+
+  .leaderboard2__prize .leaderboard2__prizeModel--mobile .leaderboard2__prizeModelLine--1 {
+    word-spacing: 18px;
+    transform: scaleX(0.285);
+  }
+
+  .leaderboard2__prize .leaderboard2__prizeModel--mobile .leaderboard2__prizeModelLine--2 {
+    width: 520px;
+    word-spacing: 14px;
+    transform: scaleX(0.355);
   }
 
   .leaderboard2__prize em {
@@ -4689,31 +4713,51 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__finalCta h2 {
-    width: 420px;
+    width: 311px;
     margin: 0;
+    font-family: var(--lb2-wide);
     font-size: 21px;
+    font-weight: 500;
     line-height: 1.2;
-    transform: scaleX(0.74);
+    white-space: nowrap;
+    transform: none;
     transform-origin: left top;
   }
 
   .leaderboard2__finalCta strong {
-    width: 470px;
+    width: 311px;
     margin-top: 0;
     font-family: var(--lb2-condensed);
-    font-size: 79px;
+    font-size: 64px;
     font-weight: 500;
     line-height: 1;
-    transform: scaleX(0.41);
+    transform: none;
+    transform-origin: left top;
+  }
+
+  .leaderboard2__finalCtaModelDesktop {
+    display: none !important;
+  }
+
+  .leaderboard2__finalCtaModelMobile {
+    display: block !important;
+    width: 980px;
+    color: var(--lb2-red);
+    font-size: 77px;
+    line-height: 1;
+    white-space: nowrap;
+    transform: scaleX(0.31);
     transform-origin: left top;
   }
 
   .leaderboard2__finalCta p {
     width: 311px;
     margin-top: 20px;
+    font-family: 'Proxima Nova', var(--lb2-proxima);
     font-size: 16px;
     line-height: 1.3;
     letter-spacing: -0.48px;
+    text-transform: uppercase;
   }
 
   .leaderboard2__finalCtaGeo {
@@ -4991,8 +5035,8 @@ body.leaderboard2-route #root {
     font-size: 16px;
     font-weight: 400;
     line-height: 1.3;
-    letter-spacing: 0;
-    text-transform: none;
+    letter-spacing: -0.48px;
+    text-transform: uppercase;
   }
 
   .leaderboard2__finalCta {

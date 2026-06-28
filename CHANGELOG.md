@@ -7,6 +7,22 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.92] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** polished the Puma prize card on `/leaderboard2`: the mobile prize model now renders as separate fitted `DEVIATE NITRO` and `ELITE TRAIL` lines with intentional right-side breathing room.
+- **Remote Leaderboard landing mobile CTA:** aligned the final CTA headline to three fixed lines and tightened `DEVIATE NITRO?` so the question mark fits on mobile without clipping.
+- **Remote versions:** `remote-frontend` raised to `0.1.87`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile checks verified no horizontal overflow, fitted Puma model lines, and a visible `DEVIATE NITRO?` question mark.
+- Chrome/Playwright desktop smoke checks verified the desktop prize and final CTA text remain unchanged.
+
+---
+
 ## [0.5.91] - 2026-06-28
 
 ### Remote system

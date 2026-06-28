@@ -159,6 +159,10 @@ export default function RemoteLeaderboardLandingPage() {
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
+  const mobilePrizeModelParts =
+    prize.model === 'DEVIATE NITRO ELITE TRAIL'
+      ? ['DEVIATE NITRO', 'ELITE TRAIL']
+      : [prize.model];
   const handleEntryCountChange = useCallback((count: number) => {
     setParticipantCount(count);
   }, []);
@@ -427,11 +431,14 @@ export default function RemoteLeaderboardLandingPage() {
           <strong>{prize.brand}</strong>
           <span className="leaderboard2__prizeModel leaderboard2__prizeModel--desktop">{prize.model}</span>
           <span className="leaderboard2__prizeModel leaderboard2__prizeModel--mobile">
-            <Fragment>
-              MAGMAX
-              <br />
-              NITRO 2
-            </Fragment>
+            {mobilePrizeModelParts.map((part, index) => (
+              <span
+                className={`leaderboard2__prizeModelLine leaderboard2__prizeModelLine--${index + 1}`}
+                key={part}
+              >
+                {part}
+              </span>
+            ))}
           </span>
           <em>{prize.text}</em>
         </div>
@@ -444,8 +451,9 @@ export default function RemoteLeaderboardLandingPage() {
           <br />свою пару
         </h2>
         <strong>
-          <span>PUMA MagMax</span>
-          <span>NITRO 2?</span>
+          <span className="leaderboard2__finalCtaModelDesktop">PUMA MagMax</span>
+          <span className="leaderboard2__finalCtaModelDesktop">NITRO 2?</span>
+          <span className="leaderboard2__finalCtaModelMobile">DEVIATE NITRO?</span>
         </strong>
         <p className="leaderboard2__finalCtaText">
           <span>Выбирай дисциплину,</span>
