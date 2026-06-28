@@ -177,20 +177,25 @@ export function LeaderboardExperience({
   const urlScopeSynced = useRef(false);
   const fadeTimerRef = useRef<number | null>(null);
   const searchFeedbackTimerRef = useRef<number | null>(null);
+  const hasLoadedSlidesRef = useRef(false);
 
   /** Загрузка / опрос шести зачётов через переданный источник данных. */
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      setSlides(Array.from({ length: 6 }, () => emptySlide()));
+      if (!hasLoadedSlidesRef.current) {
+        setSlides(Array.from({ length: 6 }, () => emptySlide()));
+      }
       try {
         const next = await fetchAllSlides();
         if (cancelled) return;
         setSlides(next);
+        hasLoadedSlidesRef.current = true;
       } catch (e) {
         if (cancelled) return;
         const msg = e instanceof Error ? e.message : 'Ошибка загрузки';
         setSlides(Array.from({ length: 6 }, () => ({ loading: false, error: msg, entries: [] })));
+        hasLoadedSlidesRef.current = true;
       }
     };
     void load();
@@ -391,6 +396,7 @@ export function LeaderboardExperience({
         parent.scrollTop += rowCenter - viewCenter;
         return;
       }
+      if (layoutMode === 'embed') return;
       row.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }, 160);
     return () => clearTimeout(t);
@@ -1000,9 +1006,9 @@ const styles: Record<string, CSSProperties> = {
   },
   searchRowEmbedNarrow: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) 92px',
+    gridTemplateColumns: 'minmax(0, 1fr) 86px',
     alignItems: 'stretch',
-    height: '56px',
+    height: '44px',
     gap: '8px',
   },
   searchRowEmbedNarrowIdle: {
@@ -1048,8 +1054,8 @@ const styles: Record<string, CSSProperties> = {
     alignItems: 'stretch',
   },
   searchFindBtnSlotEmbedNarrow: {
-    width: '92px',
-    height: '56px',
+    width: '86px',
+    height: '44px',
     alignItems: 'stretch',
   },
   searchFindBtnSlotVisible: {
@@ -1088,11 +1094,11 @@ const styles: Record<string, CSSProperties> = {
   },
   searchFindBtnEmbedNarrow: {
     width: '100%',
-    height: '56px',
-    minHeight: '56px',
-    padding: '12px 10px',
-    borderRadius: '14px',
-    fontSize: '12px',
+    height: '44px',
+    minHeight: '44px',
+    padding: '9px 10px',
+    borderRadius: '11px',
+    fontSize: '11px',
   },
   searchFindBtnText: {
     display: 'inline-block',
@@ -1143,11 +1149,12 @@ const styles: Record<string, CSSProperties> = {
     gap: '16px',
   },
   searchBarEmbedNarrow: {
-    height: '56px',
-    minHeight: '56px',
-    padding: '12px 14px',
-    borderRadius: '14px',
+    height: '44px',
+    minHeight: '44px',
+    padding: '9px 12px',
+    borderRadius: '11px',
     gap: '8px',
+    overflow: 'hidden',
   },
   searchBarEmbedFocused: {
     minWidth: 0,
@@ -1187,10 +1194,15 @@ const styles: Record<string, CSSProperties> = {
   },
   searchInputEmbedNarrow: {
     fontFamily: '"Druk Wide Cyr", "Oswald", Arial, sans-serif',
-    fontSize: '13px',
+    fontSize: '16px',
     fontWeight: 500,
-    letterSpacing: '0.65px',
+    letterSpacing: '0.8px',
     textTransform: 'uppercase',
+    transform: 'scale(0.6875)',
+    transformOrigin: 'left center',
+    width: '145.46%',
+    flexBasis: '145.46%',
+    marginRight: '-45.46%',
   },
   searchInputWithSwitchButtons: {
     paddingRight: w(188),

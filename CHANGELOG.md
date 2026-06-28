@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.85] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing mobile search:** fixed iOS auto-zoom after focusing the participant search by keeping the input technically at 16px while preserving the compact visual size.
+- **Remote Leaderboard landing stability:** stopped embedded search highlighting from scrolling the landing page and removed the loading-state reset during background leaderboard polling, preventing periodic visual jumps.
+- **Remote versions:** `remote-frontend` raised to `0.1.81`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile check verified search submit keeps `scrollY` stable, keeps the input at 16px for mobile browsers, and avoids horizontal overflow.
+
+---
+
 ## [0.5.84] - 2026-06-28
 
 ### Remote system
