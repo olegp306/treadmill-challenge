@@ -7,6 +7,36 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.88] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing fonts:** bundled Druk Wide Cyr weights `100-900` into `remote-frontend` and switched landing typography away from local-only font discovery, so dev and production render the hero/title widths consistently.
+- **Frontend font stability:** removed local-only Proxima/Inter fallbacks from shared frontend styles that are imported by the remote bundle.
+- **Remote versions:** `remote-frontend` remains `0.1.83`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- `npm run build:frontend`
+- Production CSS check verified no `Proxima Nova`, `ProximaNova`, `Inter Tight`, or `src: local(...)` remains in the remote frontend bundle.
+
+---
+
+## [0.5.87] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing desktop:** aligned the desktop rating block on `/leaderboard2` with the Figma reference: participant search now sits below the gender tabs, the rating table uses the centered overlay stack with dimmed side lists, and the section heading marker is placed on the right.
+- **Remote versions:** `remote-frontend` raised to `0.1.83`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright desktop and mobile checks verified the rating block layout and no horizontal overflow.
+
+---
+
 ## [0.5.86] - 2026-06-28
 
 ### Remote system

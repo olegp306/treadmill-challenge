@@ -7,8 +7,8 @@ export const td = {
   text: '#ffffff',
   /** Druk Wide Cyr: local @font-face weights 100–900 (`/assets/fonts/DrukWideCyr-*.woff2`). */
   fontDruk: '"Druk Wide Cyr", "Oswald", system-ui, sans-serif',
-  /** Proxima Nova: declared @font-face for used weights (400/700), with Oswald fallback. */
-  fontProxima: '"Proxima Nova", "Oswald", system-ui, sans-serif',
+  /** Deterministic text stack: avoid locally installed commercial font variance. */
+  fontProxima: 'Arial, system-ui, sans-serif',
   designW: 2560,
   designH: 1120,
 } as const;

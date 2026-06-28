@@ -428,7 +428,11 @@ export function LeaderboardExperience({
   const isNarrowEmbedLayout = isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= 520;
   const hideSearchControls = isNarrowEmbedLayout && hideEmbedSearchOnNarrow;
   const useStackSearch = !hideSearchControls && isNarrowEmbedLayout && embedSearchPlacement === 'stack-top';
-  const useBelowTabsSearch = !hideSearchControls && isEmbedLayout && embedSearchPlacement === 'below-tabs';
+  const useBelowTabsSearch =
+    !hideSearchControls &&
+    isEmbedLayout &&
+    (embedSearchPlacement === 'below-tabs' || (!isNarrowEmbedLayout && embedSearchPlacement === 'stack-top'));
+  const showEmbedDesktopSideStacks = isEmbedLayout && !isNarrowEmbedLayout;
   const isSearchExpanded = isSearchFocused || searchInputDraft.trim().length > 0;
   const canSubmitNameSearch = searchInputDraft.trim().length >= LEADERBOARD_SEARCH_MIN_QUERY_LENGTH;
   const showSearchFindButton = canSubmitNameSearch || useBelowTabsSearch;
@@ -673,11 +677,12 @@ export function LeaderboardExperience({
                 <LbCarouselArrow rotationDeg={180} />
               </button>
 
-              {!isEmbedLayout ? (
+              {(!isEmbedLayout || showEmbedDesktopSideStacks) ? (
                 <aside
                   style={{
                     ...styles.sideColLayer1,
                     ...styles.colCarouselFlankLeft,
+                    ...(showEmbedDesktopSideStacks ? styles.sideColLayerEmbedLeft : {}),
                     pointerEvents: 'none',
                   }}
                   aria-hidden
@@ -697,7 +702,7 @@ export function LeaderboardExperience({
                 </aside>
               ) : null}
 
-              <section style={{ ...styles.mainColLayer2, ...(isEmbedLayout ? styles.mainColLayer2Embed : {}) }}>
+              <section style={{ ...styles.mainColLayer2, ...(isEmbedLayout ? styles.mainColLayer2Embed : {}), ...(isNarrowEmbedLayout ? styles.mainColLayer2EmbedNarrow : {}) }}>
                 <LeaderboardStack
                   entries={centerEntries}
                   runTypeId={centerScope.runTypeId}
@@ -717,11 +722,12 @@ export function LeaderboardExperience({
                 />
               </section>
 
-              {!isEmbedLayout ? (
+              {(!isEmbedLayout || showEmbedDesktopSideStacks) ? (
                 <aside
                   style={{
                     ...styles.sideColLayer3,
                     ...styles.colCarouselFlankRight,
+                    ...(showEmbedDesktopSideStacks ? styles.sideColLayerEmbedRight : {}),
                     pointerEvents: 'none',
                   }}
                   aria-hidden
@@ -1350,6 +1356,7 @@ const styles: Record<string, CSSProperties> = {
   leaderboardRowEmbed: {
     minHeight: h(940),
     maxWidth: '100%',
+    overflow: 'visible',
   },
   leaderboardRowEmbedNarrow: {
     minHeight: '0',
@@ -1441,7 +1448,29 @@ const styles: Record<string, CSSProperties> = {
     transition: 'transform 0.45s ease',
     boxSizing: 'border-box',
   },
+  sideColLayerEmbedLeft: {
+    left: 0,
+    top: h(66),
+    width: '52%',
+    opacity: 0.46,
+    transform: 'translateX(-13%) scale(0.92) translateZ(0)',
+  },
+  sideColLayerEmbedRight: {
+    right: 0,
+    top: h(66),
+    width: '52%',
+    opacity: 0.46,
+    transform: 'translateX(13%) scale(0.92) translateZ(0)',
+  },
   mainColLayer2Embed: {
+    position: 'absolute',
+    left: '50%',
+    top: h(38),
+    width: '78%',
+    maxWidth: '78%',
+    transform: 'translateX(-50%) translateZ(0)',
+  },
+  mainColLayer2EmbedNarrow: {
     position: 'relative',
     left: 'auto',
     top: 'auto',

@@ -220,7 +220,7 @@ export const rs: Record<string, CSSProperties> = {
   },
   detailDesc: {
     margin: 0,
-    fontFamily: "'Proxima Nova', 'ProximaNova', 'Inter', 'Segoe UI', Arial, sans-serif",
+    fontFamily: "Arial, system-ui, sans-serif",
     fontWeight: 400,
     fontSize: w(50),
     lineHeight: 1.35,

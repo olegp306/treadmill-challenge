@@ -1,12 +1,89 @@
 @font-face {
-  font-family: 'Druk Cyr';
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-100.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-200.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-300.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src:
-    local('Druk Cyr Medium'),
-    local('DrukCyr-Medium'),
-    local('Druk Cyr');
+  src: url('/assets/fonts/DrukWideCyr-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-800.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Wide Cyr';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-900.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Druk Cyr';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/assets/fonts/DrukWideCyr-500.woff2') format('woff2');
 }
 
 :root {
@@ -17,8 +94,8 @@
   --lb2-card-mid: #1a1a1a;
   --lb2-muted: rgba(255, 255, 255, 0.6);
   --lb2-wide: 'Druk Wide Cyr', 'Oswald', 'Arial Black', system-ui, sans-serif;
-  --lb2-condensed: 'Druk Cyr', 'Oswald', 'Arial Black', system-ui, sans-serif;
-  --lb2-proxima: 'Proxima Nova', Arial, system-ui, sans-serif;
+  --lb2-condensed: 'Druk Cyr', 'Druk Wide Cyr', 'Oswald', 'Arial Black', system-ui, sans-serif;
+  --lb2-proxima: Arial, system-ui, sans-serif;
 }
 
 html {
@@ -798,7 +875,10 @@ body.leaderboard2-route #root {
 }
 
 .leaderboard2__sectionHead--rating {
-  align-items: flex-end;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-direction: row-reverse;
   margin-bottom: 28px;
 }
 
@@ -4207,7 +4287,7 @@ body.leaderboard2-route #root {
     left: 20px;
     top: 20px;
     width: 302px;
-    font-family: 'Inter Tight', var(--lb2-proxima);
+    font-family: var(--lb2-proxima);
     font-size: 20px;
     font-weight: 400;
     line-height: normal;

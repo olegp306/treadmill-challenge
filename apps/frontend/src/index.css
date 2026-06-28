@@ -1,7 +1,7 @@
 /*
  * Font setup
  * - Druk Wide Cyr: woff2 per weight in /public/assets/fonts (see fonts/README.md).
- * - Proxima Nova: declared for used weights (400/700). Tries local installed faces first.
+ * - Text UI uses system fonts; do not depend on locally installed commercial faces.
  * - Oswald: self-hosted via @fontsource/oswald (imported in main.tsx), used as fallback.
  */
 @font-face {
@@ -66,28 +66,6 @@
   font-weight: 900;
   font-display: swap;
   src: url('/assets/fonts/DrukWideCyr-900.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Proxima Nova';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src:
-    local('Proxima Nova Regular'),
-    local('ProximaNova-Regular'),
-    local('Proxima Nova');
-}
-
-@font-face {
-  font-family: 'Proxima Nova';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src:
-    local('Proxima Nova Bold'),
-    local('ProximaNova-Bold'),
-    local('Proxima Nova');
 }
 
 .ar-ozio-ipad {

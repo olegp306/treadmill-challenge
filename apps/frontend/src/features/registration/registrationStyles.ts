@@ -518,7 +518,7 @@ export const reg: Record<string, CSSProperties> = {
     color: 'rgba(255,255,255,0.92)',
   },
   queueFullBlockedSubtext: {
-    fontFamily: "'Proxima Nova', 'ProximaNova', 'Inter', 'Segoe UI', Arial, sans-serif",
+    fontFamily: "Arial, system-ui, sans-serif",
     fontWeight: 400,
     fontSize: w(50),
     lineHeight: 1.35,
