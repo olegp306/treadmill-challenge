@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.84] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing checkpoint:** prepared a clean `main` checkpoint after restoring the mobile participant search in the rating block, so the local and remote branches can be tested from the same version.
+- **Remote versions:** `remote-frontend` raised to `0.1.80`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Local branch sync checked against `origin/main`.
+
+---
+
 ## [0.5.83] - 2026-06-28
 
 ### Remote system
