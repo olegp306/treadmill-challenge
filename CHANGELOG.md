@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.94] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** added a lightweight mobile-only page reveal animation for `/leaderboard2`, so the landing fades in smoothly instead of appearing with a small visual jerk.
+- **Remote Leaderboard motion safety:** the reveal respects `prefers-reduced-motion`, does not apply on desktop, and clears transform state after the animation to avoid affecting scroll and overlays.
+- **Remote versions:** `remote-frontend` raised to `0.1.88`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright checks verified the reveal is active only on mobile width, disabled on desktop and reduced-motion, and does not introduce horizontal overflow.
+
+---
+
 ## [0.5.93] - 2026-06-28
 
 ### Remote system
