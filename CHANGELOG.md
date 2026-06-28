@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.93] - 2026-06-28
+
+### Remote system
+
+- **Remote Leaderboard landing fonts:** removed reintroduced Proxima Nova references from `/leaderboard2` styles so production no longer depends on locally installed font discovery.
+- **Remote versions:** `remote-frontend` remains `0.1.87`.
+
+### Verification
+
+- `npm run build:shared`
+- `npm run build:remote-frontend`
+- Production CSS check verified no `Proxima Nova`, `ProximaNova`, `Inter Tight`, or `src: local(...)` remains in the remote frontend bundle.
+
+---
+
 ## [0.5.92] - 2026-06-28
 
 ### Remote system
