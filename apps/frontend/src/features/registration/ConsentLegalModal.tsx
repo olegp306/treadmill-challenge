@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ui } from '../../ui/tokens';
 
 const FONT_DRUK = "'Druk Wide Cyr', 'Oswald', system-ui, sans-serif";
-const FONT_PROXIMA = 'Arial, system-ui, sans-serif';
+const FONT_PROXIMA = '"Proxima Nova", Arial, system-ui, sans-serif';
 
 type Props = {
   open: boolean;

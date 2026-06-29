@@ -7,7 +7,7 @@ import { ArOzioViewport } from '../../arOzio/ArOzioViewport';
 import { ScreenContainer } from '../../arOzio/ScreenContainer';
 import { h, w } from '../../arOzio/dimensions';
 import type { LeaderboardEntry } from '../../hooks/useLeaderboard';
-import { getRunOption } from '../run-selection/runOptions';
+import { getRunOption, RUN_OPTIONS } from '../run-selection/runOptions';
 import { HeaderChrome } from '../../ui/components/HeaderChrome';
 import { Sheet } from '../../ui/components/Sheet';
 import { ui } from '../../ui/tokens';
@@ -164,6 +164,7 @@ export function LeaderboardExperience({
     sex: Gender;
   } | null>(null);
   const [isCarouselFading, setIsCarouselFading] = useState(false);
+  const [isRunTypeMenuOpen, setIsRunTypeMenuOpen] = useState(false);
 
   useInactivityReset({
     enabled: enableInactivityReset,
@@ -413,6 +414,11 @@ export function LeaderboardExperience({
     const next = (carouselIndex + delta + 3) % 3;
     switchCarouselWithFade(next);
   }, [carouselIndex, switchCarouselWithFade]);
+
+  const selectRunType = useCallback((runTypeId: RunTypeId) => {
+    setIsRunTypeMenuOpen(false);
+    switchCarouselWithFade(runTypeId);
+  }, [switchCarouselWithFade]);
 
   const setGenderTab = useCallback((sex: Gender) => {
     setSelectedSex(sex);
@@ -718,6 +724,9 @@ export function LeaderboardExperience({
                   narrow={isNarrowEmbedLayout}
                   pageScrollPassthrough={isEmbedLayout}
                   topSlot={useStackSearch ? searchControls : undefined}
+                  isRunTypeMenuOpen={isNarrowEmbedLayout ? isRunTypeMenuOpen : false}
+                  onRunTypeMenuToggle={isNarrowEmbedLayout ? () => setIsRunTypeMenuOpen((current) => !current) : undefined}
+                  onRunTypeSelect={isNarrowEmbedLayout ? selectRunType : undefined}
                   emptyHint="Пока нет результатов в этом зачёте."
                 />
               </section>
@@ -787,6 +796,9 @@ function LeaderboardStack({
   narrow = false,
   pageScrollPassthrough = false,
   topSlot,
+  isRunTypeMenuOpen = false,
+  onRunTypeMenuToggle,
+  onRunTypeSelect,
 }: {
   entries: LeaderboardEntry[];
   runTypeId: RunTypeId;
@@ -804,9 +816,13 @@ function LeaderboardStack({
   narrow?: boolean;
   pageScrollPassthrough?: boolean;
   topSlot?: ReactNode;
+  isRunTypeMenuOpen?: boolean;
+  onRunTypeMenuToggle?: () => void;
+  onRunTypeSelect?: (runTypeId: RunTypeId) => void;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
   const rows = dim || narrow ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
+  const showRunTypeMenu = narrow && onRunTypeMenuToggle && onRunTypeSelect;
 
   return (
     <div
@@ -819,10 +835,58 @@ function LeaderboardStack({
       }}
     >
       <div style={{ ...styles.stackHeaderBar, ...(narrow ? styles.stackHeaderBarNarrow : {}) }}>
-        <p style={{ ...styles.stackHeaderLabel, ...(compact ? styles.stackHeaderLabelCompact : {}), ...(narrow ? styles.stackHeaderLabelNarrow : {}) }}>
-          <span style={narrow ? styles.stackHeaderTextNarrow : undefined}>{title}</span>
-          {narrow ? <span style={styles.stackHeaderChevronNarrow} aria-hidden /> : null}
-        </p>
+        {showRunTypeMenu ? (
+          <div style={styles.stackRunTypeSelectWrap}>
+            <button
+              type="button"
+              style={{
+                ...styles.stackHeaderLabel,
+                ...(compact ? styles.stackHeaderLabelCompact : {}),
+                ...styles.stackHeaderLabelNarrow,
+                ...styles.stackRunTypeSelectButton,
+              }}
+              aria-haspopup="listbox"
+              aria-expanded={isRunTypeMenuOpen}
+              onClick={onRunTypeMenuToggle}
+            >
+              <span style={styles.stackHeaderTextNarrow}>{title}</span>
+              <span
+                style={{
+                  ...styles.stackHeaderChevronNarrow,
+                  ...(isRunTypeMenuOpen ? styles.stackHeaderChevronNarrowOpen : {}),
+                }}
+                aria-hidden
+              />
+            </button>
+            {isRunTypeMenuOpen ? (
+              <div style={styles.stackRunTypeMenu} role="listbox" aria-label="Тип забега">
+                {RUN_OPTIONS.map((option) => {
+                  const isSelected = option.runTypeId === runTypeId;
+                  return (
+                    <button
+                      key={option.runTypeId}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      style={{
+                        ...styles.stackRunTypeMenuItem,
+                        ...(isSelected ? styles.stackRunTypeMenuItemActive : {}),
+                      }}
+                      onClick={() => onRunTypeSelect(option.runTypeId)}
+                    >
+                      {option.title}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p style={{ ...styles.stackHeaderLabel, ...(compact ? styles.stackHeaderLabelCompact : {}), ...(narrow ? styles.stackHeaderLabelNarrow : {}) }}>
+            <span style={narrow ? styles.stackHeaderTextNarrow : undefined}>{title}</span>
+            {narrow ? <span style={styles.stackHeaderChevronNarrow} aria-hidden /> : null}
+          </p>
+        )}
       </div>
       {topSlot ? <div style={{ ...styles.stackTopSlot, ...(narrow ? styles.stackTopSlotNarrow : {}) }}>{topSlot}</div> : null}
       <div
@@ -1574,6 +1638,54 @@ const styles: Record<string, CSSProperties> = {
     borderBottom: '2px solid rgba(255,255,255,0.9)',
     transform: 'rotate(45deg) translateY(-2px)',
     flexShrink: 0,
+  },
+  stackHeaderChevronNarrowOpen: {
+    transform: 'rotate(225deg) translateY(-1px)',
+  },
+  stackRunTypeSelectWrap: {
+    position: 'relative',
+    zIndex: 20,
+    width: '100%',
+  },
+  stackRunTypeSelectButton: {
+    width: '100%',
+    border: '1px solid rgba(255,255,255,0.08)',
+    cursor: 'pointer',
+  },
+  stackRunTypeMenu: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 'calc(100% + 6px)',
+    zIndex: 40,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    padding: '6px',
+    borderRadius: '14px',
+    background: '#151515',
+    border: '1px solid rgba(230,35,58,0.52)',
+    boxShadow: '0 18px 34px rgba(0,0,0,0.44)',
+  },
+  stackRunTypeMenuItem: {
+    minHeight: '42px',
+    padding: '10px 12px',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '12px',
+    background: '#242424',
+    color: '#fff',
+    fontFamily: '"Druk Wide Cyr"',
+    fontSize: '12px',
+    fontWeight: 500,
+    fontSynthesis: 'none',
+    lineHeight: 1.16,
+    textAlign: 'left',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+  },
+  stackRunTypeMenuItemActive: {
+    background: ui.color.red,
+    borderColor: 'rgba(255,255,255,0.16)',
   },
   stackTopSlot: {
     padding: '0 8px 8px',

@@ -120,11 +120,20 @@ const FAQ = [
   { q: 'Сколько всего победителей?', a: 'Каждый месяц выбираются 6 победителей.' },
 ];
 
-const HISTORY = [
-  { run: 'Стайер-спринт на 5 км', name: 'Александр Александров', result: '12:37' },
-  { run: 'Золотой километр', name: 'Григорий Григорьев', result: '05:37' },
-  { run: 'Максимум за 5 минут', name: 'Дмитрий Дмитриев', result: '1530 м' },
-];
+const HISTORY = {
+  female: [
+    { run: 'Стайер-спринт на 5 км', name: 'Кабанова Настя', result: '--:--' },
+    { run: 'Золотой километр', name: 'Газалова Диана', result: '05:20.38' },
+    { run: 'Максимум за 5 минут', name: 'Смирнова Анна', result: '15 м' },
+  ],
+  male: [
+    { run: 'Стайер-спринт на 5 км', name: 'Клюка Дмитрий', result: '--:--' },
+    { run: 'Золотой километр', name: 'Князев Максим', result: '03:34.22' },
+    { run: 'Максимум за 5 минут', name: 'Дд Иван', result: '1242 м' },
+  ],
+} satisfies Record<'female' | 'male', Array<{ run: string; name: string; result: string }>>;
+
+const HISTORY_MONTHS = ['Май 2026', 'Июнь 2026', 'Июль 2026', 'Август 2026', 'Сентябрь 2026', 'Октябрь 2026', 'Ноябрь 2026', 'Декабрь 2026'];
 
 function loopIndex(current: number, delta: -1 | 1, length: number) {
   return (current + delta + length) % length;
@@ -157,6 +166,8 @@ export default function RemoteLeaderboardLandingPage() {
   const [countdown, setCountdown] = useState<CountdownState>(() => getCountdownState());
   const [participantCount, setParticipantCount] = useState(0);
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
+  const [historyGender, setHistoryGender] = useState<'female' | 'male'>('male');
+  const [historyMonth, setHistoryMonth] = useState(HISTORY_MONTHS[0]);
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
   const mobilePrizeModelParts =
@@ -509,16 +520,34 @@ export default function RemoteLeaderboardLandingPage() {
       <section className="leaderboard2__history" id="history" aria-labelledby="leaderboard2-history-title">
         <div className="leaderboard2__historyHead">
           <h2 id="leaderboard2-history-title">История забегов</h2>
-          <span>Май 2026</span>
+          <label className="leaderboard2__historyMonth" aria-label="Месяц истории забегов">
+            <select value={historyMonth} onChange={(event) => setHistoryMonth(event.target.value)}>
+              {HISTORY_MONTHS.map((month) => (
+                <option key={month} value={month}>
+                  {month}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         <div className="leaderboard2__historyTabs">
-          <button type="button">Женщины</button>
-          <button type="button" className="leaderboard2__historyTabActive">
+          <button
+            type="button"
+            className={historyGender === 'female' ? 'leaderboard2__historyTabActive' : undefined}
+            onClick={() => setHistoryGender('female')}
+          >
+            Женщины
+          </button>
+          <button
+            type="button"
+            className={historyGender === 'male' ? 'leaderboard2__historyTabActive' : undefined}
+            onClick={() => setHistoryGender('male')}
+          >
             Мужчины
           </button>
         </div>
         <div className="leaderboard2__historyGrid">
-          {HISTORY.map((item) => (
+          {HISTORY[historyGender].map((item) => (
             <article key={item.run}>
               <p>{item.run}</p>
               <h3>{item.name}</h3>
@@ -527,33 +556,6 @@ export default function RemoteLeaderboardLandingPage() {
           ))}
         </div>
       </section>
-
-      <footer className="leaderboard2__footer">
-        <div className="leaderboard2__footerBrand">
-          <LogoMark className="leaderboard2__footerLogo" />
-          <span className="leaderboard2__version leaderboard2__version--footer">v{PRODUCT_VERSION}</span>
-        </div>
-        <p className="leaderboard2__socialsLabel">Мы в социальных сетях</p>
-        <div className="leaderboard2__socials" aria-hidden>
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
-        <form className="leaderboard2__subscribe">
-          <label>
-            Подпишитесь на рассылку
-            <input type="email" placeholder="Ваш адрес электронной почты" />
-          </label>
-          <button type="button">Подписаться</button>
-        </form>
-        <p className="leaderboard2__subscribeNote">
-          Подписываясь на рассылку, вы соглашаетесь на обработку персональных данных в соответствии с условиями политики
-          конфиденциальности.
-        </p>
-        <p className="leaderboard2__copyright">© Inventive Retail Group, 2026</p>
-      </footer>
 
       {isJoinPopupOpen ? (
         <div

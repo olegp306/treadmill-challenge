@@ -95,7 +95,7 @@
   --lb2-muted: rgba(255, 255, 255, 0.6);
   --lb2-wide: 'Druk Wide Cyr', 'Oswald', 'Arial Black', system-ui, sans-serif;
   --lb2-condensed: 'Druk Cyr', 'Druk Wide Cyr', 'Oswald', 'Arial Black', system-ui, sans-serif;
-  --lb2-proxima: Arial, system-ui, sans-serif;
+  --lb2-proxima: 'Proxima Nova', Arial, system-ui, sans-serif;
 }
 
 html {
@@ -1247,12 +1247,45 @@ body.leaderboard2-route #root {
   align-items: center;
 }
 
-.leaderboard2__historyHead span {
+.leaderboard2__historyMonth {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   padding: 14px 24px;
   font-size: 16px;
   text-transform: uppercase;
+}
+
+.leaderboard2__historyMonth::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  margin-left: 18px;
+  border-right: 3px solid rgba(255, 255, 255, 0.55);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.55);
+  transform: rotate(45deg) translateY(-3px);
+  pointer-events: none;
+}
+
+.leaderboard2__historyMonth select {
+  width: 100%;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+.leaderboard2__historyMonth option {
+  background: #111;
+  color: #fff;
 }
 
 .leaderboard2__historyTabs {
@@ -1267,10 +1300,15 @@ body.leaderboard2-route #root {
 }
 
 .leaderboard2__historyTabs button {
+  width: 100%;
+  min-width: 0;
+  padding: 0 18px;
   border: 0;
   border-radius: 10px;
   background: transparent;
   color: rgba(255, 255, 255, 0.66);
+  font-family: var(--lb2-wide);
+  font-weight: 500;
   text-transform: uppercase;
   font-size: 16px;
 }
@@ -1304,24 +1342,42 @@ body.leaderboard2-route #root {
   padding: 10px 16px;
   border-radius: 8px;
   background: var(--lb2-red);
-  font-size: 13px;
-  line-height: 1.1;
+  box-sizing: border-box;
+  color: #fff;
+  font-family: var(--lb2-wide);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  text-align: center;
+  text-transform: uppercase;
+  text-overflow: clip;
 }
 
 .leaderboard2__historyGrid h3 {
   margin: 30px 0 0;
+  color: #fff;
+  font-family: var(--lb2-wide);
   font-size: 24px;
-  line-height: 1.1;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .leaderboard2__historyGrid strong {
   display: block;
   margin-top: 24px;
   font-family: var(--lb2-condensed);
-  font-size: 62px;
+  color: #fff;
+  font-size: 72px;
+  font-style: normal;
   font-weight: 500;
-  line-height: 0.9;
-  transform: scaleX(0.76);
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  transform: none;
 }
 
 .leaderboard2__footer {
@@ -2340,7 +2396,7 @@ body.leaderboard2-route #root {
     line-height: 0.96;
   }
 
-  .leaderboard2__historyHead span {
+  .leaderboard2__historyMonth {
     position: relative;
     display: flex;
     align-items: center;
@@ -2353,7 +2409,7 @@ body.leaderboard2-route #root {
     font-size: 18px;
   }
 
-  .leaderboard2__historyHead span::after {
+  .leaderboard2__historyMonth::after {
     content: '';
     width: 10px;
     height: 10px;
@@ -2894,10 +2950,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__historyHead {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 86px;
-    gap: 12px;
-    align-items: start;
+    display: block;
   }
 
   .leaderboard2__historyHead h2 {
@@ -2908,20 +2961,20 @@ body.leaderboard2-route #root {
     transform-origin: left top;
   }
 
-  .leaderboard2__historyHead span {
+  .leaderboard2__historyMonth {
     width: 86px;
     min-height: 54px;
     margin-top: 0;
     padding: 0 10px;
     justify-content: center;
-    gap: 7px;
+    gap: 0;
     border-radius: 10px;
     font-size: 12px;
     line-height: 1.05;
     text-align: center;
   }
 
-  .leaderboard2__historyHead span::after {
+  .leaderboard2__historyMonth::after {
     width: 8px;
     height: 8px;
     border-width: 2px;
@@ -3535,17 +3588,14 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__historyHead {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 70px;
-    gap: 10px;
-    align-items: start;
+    display: block;
   }
 
   .leaderboard2__history {
     margin-top: 44px;
   }
 
-  .leaderboard2__historyHead span {
+  .leaderboard2__historyMonth {
     width: 70px;
     min-height: 52px;
     margin-top: 0;
@@ -3558,7 +3608,7 @@ body.leaderboard2-route #root {
     text-align: center;
   }
 
-  .leaderboard2__historyHead span::after {
+  .leaderboard2__historyMonth::after {
     width: 7px;
     height: 7px;
     border-width: 2px;
@@ -3936,6 +3986,10 @@ body.leaderboard2-route #root {
 }
 
 @media (max-width: 520px) {
+  .leaderboard2 {
+    --lb2-mobile-content: calc(100vw - 32px);
+  }
+
   .leaderboard2__header,
   .leaderboard2__heroCard,
   .leaderboard2__timerCard,
@@ -3949,7 +4003,7 @@ body.leaderboard2-route #root {
   .leaderboard2__faq,
   .leaderboard2__history,
   .leaderboard2__footer {
-    width: min(343px, calc(100vw - 32px));
+    width: var(--lb2-mobile-content);
     margin-left: auto;
     margin-right: auto;
   }
@@ -4084,8 +4138,9 @@ body.leaderboard2-route #root {
     height: 171px;
     min-height: 171px;
     margin-top: 10px;
-    padding: 12px 0 0;
+    padding: 12px 10px 0;
     gap: 12px;
+    box-sizing: border-box;
   }
 
   .leaderboard2__timer {
@@ -4102,8 +4157,8 @@ body.leaderboard2-route #root {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    transform: scaleX(0.78);
+    gap: 0;
+    transform: none;
     transform-origin: center center;
   }
 
@@ -4117,7 +4172,7 @@ body.leaderboard2-route #root {
   .leaderboard2__timerLabels {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    width: 270px;
+    width: 100%;
   }
 
   .leaderboard2__timerLabel {
@@ -4130,7 +4185,7 @@ body.leaderboard2-route #root {
     font-size: 13px;
     line-height: 1.1;
     white-space: nowrap;
-    transform: scaleX(0.82);
+    transform: none;
     transform-origin: center top;
   }
 
@@ -4169,12 +4224,12 @@ body.leaderboard2-route #root {
 
   .leaderboard2__introTitle {
     margin: 0;
-    width: 760px;
-    max-width: none;
-    font-size: 27px !important;
+    width: 100%;
+    max-width: var(--lb2-mobile-content);
+    font-size: 26px !important;
     line-height: 1.1 !important;
     letter-spacing: 0;
-    transform: scaleX(0.73);
+    transform: none;
     transform-origin: left top;
   }
 
@@ -4300,7 +4355,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__how {
-    width: min(342px, calc(100vw - 32px));
+    width: var(--lb2-mobile-content);
     margin-top: 56px;
   }
 
@@ -4442,9 +4497,10 @@ body.leaderboard2-route #root {
     display: block;
     position: absolute;
     left: 16px;
+    right: 16px;
     top: 16px;
     z-index: 2;
-    width: 311px;
+    width: auto;
     height: 16px;
   }
 
@@ -4457,7 +4513,8 @@ body.leaderboard2-route #root {
     flex-direction: column;
     align-items: flex-start;
     gap: 20px;
-    width: 311px;
+    right: 16px;
+    width: auto;
     min-height: 0;
     padding: 0;
   }
@@ -4473,8 +4530,8 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__modeText p {
-    width: 311px;
-    max-width: 311px;
+    width: 100%;
+    max-width: none;
     margin: 0;
     font-size: 18px;
     line-height: 1.2;
@@ -4493,13 +4550,16 @@ body.leaderboard2-route #root {
     right: 16px;
     top: 343px;
     bottom: auto;
-    width: 311px;
+    width: auto;
     height: 50px;
+    justify-content: space-between;
+    gap: 7px;
     transform: none;
   }
 
   .leaderboard2__modeControls .leaderboard2__carouselButton {
-    width: 152px;
+    flex: 1 1 0;
+    width: auto;
     height: 50px;
     border-radius: 16px;
   }
@@ -4570,7 +4630,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__prize {
-    width: min(343px, calc(100vw - 32px));
+    width: var(--lb2-mobile-content);
     height: 597px;
     min-height: 597px;
     margin-top: 56px;
@@ -4727,7 +4787,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__finalCta {
-    width: min(343px, calc(100vw - 32px));
+    width: var(--lb2-mobile-content);
     height: 410px;
     min-height: 410px;
     margin-top: 20px;
@@ -4817,7 +4877,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faq {
-    width: min(343px, calc(100vw - 32px));
+    width: var(--lb2-mobile-content);
     height: 522px;
     min-height: 522px;
     margin-top: 56px;
@@ -4837,7 +4897,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__faq h2 {
-    width: 343px;
+    width: var(--lb2-mobile-content);
     max-width: 100%;
     display: block;
     margin: 0;
@@ -4900,8 +4960,12 @@ body.leaderboard2-route #root {
     overflow: hidden;
   }
 
+  .leaderboard2__historyHead {
+    display: block;
+  }
+
   .leaderboard2__historyHead h2 {
-    width: 343px;
+    width: var(--lb2-mobile-content);
     max-width: none;
     padding: 20px 16px 0;
     font-size: 32px;
@@ -4909,8 +4973,8 @@ body.leaderboard2-route #root {
     transform: none;
   }
 
-  .leaderboard2__historyHead span {
-    width: min(343px, calc(100vw - 32px));
+  .leaderboard2__historyMonth {
+    width: var(--lb2-mobile-content);
     min-height: 54px;
     margin: 10px auto 0;
     padding: 0 20px;
@@ -4920,7 +4984,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__historyTabs {
-    width: min(342px, calc(100vw - 33px));
+    width: calc(100vw - 33px);
     height: 48px;
     margin: 20px auto 0;
     padding: 4px;
@@ -4933,7 +4997,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__historyGrid {
-    width: min(343px, calc(100vw - 32px));
+    width: var(--lb2-mobile-content);
     margin: 27px auto 0;
     gap: 27px;
   }
@@ -4952,6 +5016,9 @@ body.leaderboard2-route #root {
     border-radius: 16px;
     font-size: 15px;
     line-height: 1;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .leaderboard2__historyGrid h3 {
@@ -4965,7 +5032,7 @@ body.leaderboard2-route #root {
   }
 
   .leaderboard2__footer {
-    width: min(343px, calc(100vw - 32px));
+    width: var(--lb2-mobile-content);
     height: 457px;
     min-height: 457px;
     margin-top: 80px;

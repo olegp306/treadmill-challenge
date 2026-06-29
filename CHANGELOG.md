@@ -7,6 +7,25 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.95] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** aligned `/leaderboard2` mobile spacing with the Figma `375px` layout while keeping responsive `16px` side margins on wider phones.
+- **Remote Leaderboard landing mobile:** widened the race mode card internals: the carousel controls, top strip, title/description block, and CTA controls now follow the card width instead of staying on the old fixed `311px` layout.
+- **Remote Leaderboard history:** added a real month selector for May-December 2026, kept the gender tabs full-width, and matched history card typography for race name, participant name, and result.
+- **Remote Leaderboard mobile history:** fixed the mobile order so the month selector sits directly under `История забегов`, before the gender tabs.
+- **Remote Leaderboard fonts:** prepared licensed Proxima Nova asset folders and wired existing Proxima stacks to use `Proxima Nova` first with safe fallbacks.
+- **Remote versions:** `remote-frontend` raised to `0.1.89`.
+
+### Verification
+
+- `npm run build:frontend`
+- `npm run build:remote-frontend`
+- Chrome/Playwright mobile checks verified `16px` side margins, no horizontal overflow, widened race mode internals, history selector order, month options, and applied history card typography.
+
+---
+
 ## [0.5.94] - 2026-06-28
 
 ### Remote system
