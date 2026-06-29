@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.104] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing:** changed the `people already participating` counter to use the unique participant count from the active remote leaderboard data instead of summing leaderboard rows across all disciplines.
+- **Remote versions:** `remote-frontend` raised to `0.1.97`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Local API/page check verified the active leaderboard data has 35 unique participants and the landing counter renders `35`.
+
+---
+
 ## [0.5.103] - 2026-06-29
 
 ### Remote system

@@ -23,6 +23,26 @@ type LeaderboardDataOk =
 
 const POLL_MS = 45_000;
 
+function normalizeParticipantName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function uniqueParticipantCount(scopes: Array<{ leaderboard: SlideState['entries'] }>): number {
+  const keys = new Set<string>();
+  for (const scope of scopes) {
+    for (const entry of scope.leaderboard) {
+      const participantId = entry.participantId.trim();
+      if (participantId) {
+        keys.add(`id:${participantId}`);
+        continue;
+      }
+      const participantName = normalizeParticipantName(entry.participantName);
+      if (participantName) keys.add(`name:${participantName}`);
+    }
+  }
+  return keys.size;
+}
+
 export function RemoteLeaderboardView({
   embed = false,
   hideEmbedBrand = false,
@@ -54,9 +74,7 @@ export function RemoteLeaderboardView({
       return CAROUSEL_ORDER.map(() => ({ loading: false, error: null, entries: [] }));
     }
     setBackupUnavailableMessage(null);
-    onEntryCountChange?.(
-      data.scopes.reduce((sum, scope) => sum + scope.leaderboard.length, 0)
-    );
+    onEntryCountChange?.(uniqueParticipantCount(data.scopes));
     return data.scopes.map((s) => ({
       loading: false,
       error: null,
