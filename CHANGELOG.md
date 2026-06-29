@@ -7,6 +7,22 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.103] - 2026-06-29
+
+### Remote system
+
+- **Remote routes:** changed the remote frontend root URL (`/`) to open the landing page.
+- **Remote routes:** kept the public remote leaderboard available at `/leaderboard`; `/leaderboard2` remains as a landing alias for compatibility.
+- **Remote versions:** `remote-frontend` raised to `0.1.96`.
+
+### Verification
+
+- `npm run build:frontend`
+- `npm run build:remote-frontend`
+- Local route check verified `/` renders the landing page and `/leaderboard` renders the public remote leaderboard.
+
+---
+
 ## [0.5.102] - 2026-06-29
 
 ### Remote system

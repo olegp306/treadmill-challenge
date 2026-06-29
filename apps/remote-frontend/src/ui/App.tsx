@@ -29,7 +29,7 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Routes>
-        <Route path="/" element={<RemoteLeaderboardPage />} />
+        <Route path="/" element={<RemoteLeaderboardLandingPage />} />
         <Route path="/leaderboard" element={<RemoteLeaderboardPage />} />
         <Route path="/leaderboard2" element={<RemoteLeaderboardLandingPage />} />
         <Route path="/liderboard2" element={<RemoteLeaderboardLandingPage />} />
