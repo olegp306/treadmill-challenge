@@ -426,6 +426,7 @@ export default function RemoteLeaderboardLandingPage() {
           <p className="leaderboard2__marker">[ 04 ]</p>
           <h2 id="leaderboard2-rating-title">
             <span>Рейтинг</span>
+            {' '}
             <span>участников</span>
           </h2>
         </div>
@@ -447,6 +448,13 @@ export default function RemoteLeaderboardLandingPage() {
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--topRight" aria-hidden />
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--bottomLeft" aria-hidden />
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--bottomRight" aria-hidden />
+        <img className="leaderboard2__prizeRings" src="/assets/leaderboard2/prize-rings-figma.svg" alt="" aria-hidden />
+        <img className="leaderboard2__prizeShoeDodge" src="/assets/leaderboard2/prize-shoe-dodge-figma.png" alt="" aria-hidden />
+        <img className="leaderboard2__prizeShoeMain" src="/assets/leaderboard2/prize-shoe-main-figma.png" alt="" aria-hidden />
+        <span className="leaderboard2__prizeGlobe" aria-hidden>
+          <img className="leaderboard2__prizeGlobeBrackets" src="/assets/leaderboard2/prize-globe-brackets-figma.svg" alt="" />
+          <img className="leaderboard2__prizeGlobeIcon" src="/assets/leaderboard2/prize-globe-figma.svg" alt="" />
+        </span>
         <div className="leaderboard2__prizeHeader">
           <CarouselButton
             direction="prev"

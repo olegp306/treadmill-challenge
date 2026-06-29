@@ -388,7 +388,7 @@ body.leaderboard2-route #root {
   letter-spacing: 0;
   text-transform: uppercase;
   white-space: nowrap;
-  transform: scaleX(0.38);
+  transform: scaleX(0.32);
   transform-origin: left top;
 }
 
@@ -511,7 +511,7 @@ body.leaderboard2-route #root {
 
 .leaderboard2__introTitle {
   width: 1030px;
-  font-size: 48px !important;
+  font-size: 45px !important;
   line-height: 1.1 !important;
   text-transform: none !important;
   letter-spacing: 0;
@@ -1142,6 +1142,181 @@ body.leaderboard2-route #root {
   font-style: normal;
 }
 
+.leaderboard2__prizeRings,
+.leaderboard2__prizeShoeDodge,
+.leaderboard2__prizeShoeMain,
+.leaderboard2__prizeGlobe {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .leaderboard2__prize {
+    height: 420px;
+    min-height: 420px;
+    padding: 0;
+    border-radius: 30px;
+    background: #131313;
+  }
+
+  .leaderboard2__prizeHeader,
+  .leaderboard2__prizeImage,
+  .leaderboard2__prize em {
+    display: none;
+  }
+
+  .leaderboard2__prize .leaderboard2__cornerMark {
+    width: 20px;
+    height: 20px;
+    opacity: 0.48;
+    max-width: none;
+    transform: none;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.42)) center / 20px 1px no-repeat,
+      linear-gradient(rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.42)) center / 1px 20px no-repeat;
+  }
+
+  .leaderboard2__cornerMark--topLeft {
+    left: 30px;
+    top: 30px;
+  }
+
+  .leaderboard2__cornerMark--topRight {
+    right: 29px;
+    top: 30px;
+  }
+
+  .leaderboard2__cornerMark--bottomLeft {
+    left: 30px;
+    bottom: 26px;
+  }
+
+  .leaderboard2__cornerMark--bottomRight {
+    right: 29px;
+    bottom: 26px;
+  }
+
+  .leaderboard2__prizeRings {
+    position: absolute;
+    left: 242px;
+    top: -81px;
+    display: block;
+    width: 597px;
+    height: 585px;
+    pointer-events: none;
+  }
+
+  .leaderboard2__prizeShoeDodge {
+    position: absolute;
+    left: 175px;
+    top: -172px;
+    display: block;
+    width: 675px;
+    height: 676px;
+    object-fit: contain;
+    mix-blend-mode: color-dodge;
+    transform: rotate(7.33deg);
+    pointer-events: none;
+  }
+
+  .leaderboard2__prizeShoeMain {
+    position: absolute;
+    left: 175px;
+    top: -172px;
+    display: block;
+    width: 675px;
+    height: 676px;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+    transform: rotate(7.33deg);
+    pointer-events: none;
+  }
+
+  .leaderboard2__prize .leaderboard2__prizeGlobe {
+    position: absolute;
+    left: 1101px;
+    top: 80px;
+    z-index: 5;
+    display: block;
+    width: 40px;
+    height: 40px;
+    max-width: none;
+    transform: none;
+    pointer-events: none;
+  }
+
+  .leaderboard2__prizeGlobeBrackets,
+  .leaderboard2__prizeGlobeIcon {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .leaderboard2__prizeText {
+    position: static;
+    z-index: 4;
+    min-height: 0;
+    display: block;
+  }
+
+  .leaderboard2__prize p {
+    position: absolute;
+    left: 30px;
+    top: 150px;
+    z-index: 4;
+    width: 332px;
+    margin: 0;
+    color: #fff;
+    font-family: var(--lb2-wide);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .leaderboard2__prize strong {
+    position: absolute;
+    left: 30px;
+    top: 183px;
+    z-index: 4;
+    width: 332px;
+    color: var(--lb2-red);
+    font-family: var(--lb2-wide);
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    transform: none;
+  }
+
+  .leaderboard2__prize .leaderboard2__prizeModel--desktop {
+    position: absolute;
+    left: auto;
+    right: 50px;
+    top: 150px;
+    z-index: 4;
+    display: block;
+    width: 1740px;
+    max-width: none;
+    color: #fff;
+    font-family: var(--lb2-condensed);
+    font-size: 82px;
+    font-weight: 500;
+    line-height: 1;
+    text-align: right;
+    text-transform: uppercase;
+    white-space: nowrap;
+    word-spacing: 0.12em;
+    transform: scaleX(0.376);
+    transform-origin: right center;
+  }
+
+  .leaderboard2__prize .leaderboard2__prizeModel--mobile {
+    display: none;
+  }
+}
+
 .leaderboard2__finalCta {
   position: relative;
   min-height: 346px;
@@ -1228,6 +1403,12 @@ body.leaderboard2-route #root {
   font-family: var(--lb2-condensed);
   font-size: 104px;
   line-height: 0.9;
+}
+
+.leaderboard2__faq h2 span {
+  display: inline-block;
+  transform: scaleX(0.32);
+  transform-origin: left center;
 }
 
 .leaderboard2__faqList {

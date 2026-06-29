@@ -7,6 +7,23 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.99] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing desktop:** rebuilt the `Призы месяца` / PUMA prize card from the Figma assets, including the shoe artwork, ring overlay, corner marks, globe mark, and desktop typography.
+- **Remote Leaderboard landing desktop:** tightened the hero `Беги на максимум.` headline to `scaleX(0.32)`.
+- **Remote Leaderboard landing desktop:** tightened both `Частые` and `вопросы` FAQ title lines to `scaleX(0.32)`.
+- **Remote Leaderboard landing desktop:** kept the intro `Каждый месяц лучшие...` title at the requested `45px` desktop size.
+- **Remote versions:** `remote-frontend` raised to `0.1.92`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Local dev check verified `/leaderboard2` responds on `http://127.0.0.1:5174/leaderboard2` with the remote backend health endpoint responding on `http://127.0.0.1:3002/health`.
+
+---
+
 ## [0.5.98] - 2026-06-29
 
 ### Remote system
