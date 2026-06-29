@@ -6,6 +6,8 @@ import './RemoteLeaderboardLandingPage.css';
 
 const PRODUCT_VERSION = rootPackage.version;
 const FONT_GATE_TIMEOUT_MS = 3_000;
+const LEADERBOARD2_DESKTOP_WIDTH = 1364;
+const LEADERBOARD2_PHONE_WIDTH = 520;
 const LEADERBOARD2_FONT_REQUESTS = [
   '500 16px "Druk Wide Cyr"',
   '700 16px "Druk Wide Cyr"',
@@ -215,13 +217,52 @@ export default function RemoteLeaderboardLandingPage() {
 
   useEffect(() => {
     document.body.classList.add('leaderboard2-route');
+    let frame = 0;
+
+    const updateResponsiveStage = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const viewportWidth = window.innerWidth;
+        const phoneWidth = viewportWidth <= LEADERBOARD2_PHONE_WIDTH;
+        const touchTabletWidth = window.matchMedia('(max-width: 900px) and (hover: none) and (pointer: coarse)').matches;
+        const useMobileLayout = phoneWidth || (touchTabletWidth && navigator.maxTouchPoints > 0);
+        const useDesktopScale = !useMobileLayout && viewportWidth < LEADERBOARD2_DESKTOP_WIDTH;
+        const scale = Math.min(1, viewportWidth / LEADERBOARD2_DESKTOP_WIDTH);
+        document.body.classList.toggle('leaderboard2-route--desktop-scaled', useDesktopScale);
+        document.documentElement.style.setProperty('--lb2-desktop-scale', String(scale));
+
+        const page = document.querySelector<HTMLElement>('.leaderboard2');
+        const scaledHeight = page ? Math.ceil(page.scrollHeight * scale) : window.innerHeight;
+        document.documentElement.style.setProperty('--lb2-desktop-scaled-height', `${scaledHeight}px`);
+      });
+    };
+
+    updateResponsiveStage();
+    window.addEventListener('resize', updateResponsiveStage);
+    window.addEventListener('orientationchange', updateResponsiveStage);
+
+    const page = document.querySelector<HTMLElement>('.leaderboard2');
+    const resizeObserver = page && 'ResizeObserver' in window ? new ResizeObserver(updateResponsiveStage) : null;
+    if (page && resizeObserver) {
+      resizeObserver.observe(page);
+    }
+
     const hash = window.location.hash;
     if (hash) {
       window.setTimeout(() => {
         document.querySelector(hash)?.scrollIntoView({ block: 'start' });
       }, 0);
     }
-    return () => document.body.classList.remove('leaderboard2-route');
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', updateResponsiveStage);
+      window.removeEventListener('orientationchange', updateResponsiveStage);
+      document.body.classList.remove('leaderboard2-route', 'leaderboard2-route--desktop-scaled');
+      document.documentElement.style.removeProperty('--lb2-desktop-scale');
+      document.documentElement.style.removeProperty('--lb2-desktop-scaled-height');
+    };
   }, []);
 
   useEffect(() => {

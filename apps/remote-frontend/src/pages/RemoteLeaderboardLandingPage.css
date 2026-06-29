@@ -151,6 +151,24 @@ body.leaderboard2-route #root {
   min-height: 100dvh;
 }
 
+body.leaderboard2-route--desktop-scaled {
+  overflow-x: hidden;
+}
+
+body.leaderboard2-route--desktop-scaled #root {
+  width: 100%;
+  min-height: var(--lb2-desktop-scaled-height, 100dvh);
+  overflow: hidden;
+}
+
+body.leaderboard2-route--desktop-scaled .leaderboard2 {
+  width: 1364px;
+  max-width: none;
+  margin-left: 50%;
+  transform: translateX(-50%) scale(var(--lb2-desktop-scale, 1));
+  transform-origin: top center;
+}
+
 @keyframes leaderboard2PageReveal {
   from {
     opacity: 0;
@@ -1908,7 +1926,7 @@ body.leaderboard2-route #root {
   object-fit: cover;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 900px) and (hover: none) and (pointer: coarse) {
   .leaderboard2 {
     padding-bottom: 56px;
     background: var(--lb2-bg);
@@ -4009,7 +4027,7 @@ body.leaderboard2-route #root {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 900px) and (hover: none) and (pointer: coarse) {
   .leaderboard2__modeCard {
     min-height: 432px;
     padding: 32px 22px 20px;
@@ -4125,7 +4143,7 @@ body.leaderboard2-route #root {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 900px) and (hover: none) and (pointer: coarse) {
   .leaderboard2__timer {
     transform: scaleX(0.85);
     transform-origin: center top;
@@ -4179,7 +4197,7 @@ body.leaderboard2-route #root {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 900px) and (hover: none) and (pointer: coarse) {
   .leaderboard2__modeCard {
     isolation: isolate;
     min-height: 520px;

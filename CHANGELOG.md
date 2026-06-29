@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.102] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing responsive:** added a dedicated desktop scaling stage so the desktop layout stays centered and compresses symmetrically between desktop and phone widths.
+- **Remote Leaderboard landing responsive:** restricted the tablet/mobile `900px` layout rules to coarse pointer touch devices, preventing narrow desktop windows from falling into the intermediate mobile-like layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.95`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Local preview DOM checks verified `1440px` renders normal desktop, `768px` renders scaled desktop, and `390px` renders mobile.
+
+---
+
 ## [0.5.101] - 2026-06-29
 
 ### Remote system
