@@ -139,6 +139,12 @@ function loopIndex(current: number, delta: -1 | 1, length: number) {
   return (current + delta + length) % length;
 }
 
+function splitHistoryName(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length <= 1) return { lastName: name, firstName: '' };
+  return { lastName: parts[0], firstName: parts.slice(1).join(' ') };
+}
+
 function CarouselButton({
   direction,
   onClick,
@@ -547,13 +553,19 @@ export default function RemoteLeaderboardLandingPage() {
           </button>
         </div>
         <div className="leaderboard2__historyGrid">
-          {HISTORY[historyGender].map((item) => (
-            <article key={item.run}>
-              <p>{item.run}</p>
-              <h3>{item.name}</h3>
-              <strong>{item.result}</strong>
-            </article>
-          ))}
+          {HISTORY[historyGender].map((item) => {
+            const name = splitHistoryName(item.name);
+            return (
+              <article key={item.run}>
+                <p>{item.run}</p>
+                <h3>
+                  <span>{name.lastName}</span>
+                  {name.firstName ? <span>{name.firstName}</span> : null}
+                </h3>
+                <strong>{item.result}</strong>
+              </article>
+            );
+          })}
         </div>
       </section>
 

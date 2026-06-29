@@ -7,6 +7,23 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.96] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing history:** aligned the desktop race history cards so all three cards use equal grid columns, matching height, and consistent result positioning.
+- **Remote Leaderboard landing history names:** split participant surname and first name into separate desktop lines while keeping mobile-specific layout rules isolated.
+- **Remote Leaderboard landing history results:** tightened the visual result typography, kept results centered, and prevented distance results such as `1242 м` from wrapping onto a second line.
+- **Remote versions:** `remote-frontend` raised to `0.1.90`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Chrome/Playwright desktop checks verified equal `423 × 300` history cards, two-line names, and centered results.
+- Chrome/Playwright mobile checks verified centered history results, no result wrapping, and the narrower result scale.
+
+---
+
 ## [0.5.95] - 2026-06-29
 
 ### Remote system
