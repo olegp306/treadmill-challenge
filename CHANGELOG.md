@@ -7,6 +7,24 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.97] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing desktop race modes:** tightened the large race mode titles and refreshed the desktop mode backgrounds from Figma assets for all three disciplines.
+- **Remote Leaderboard landing race mode copy:** updated the desktop descriptions for `Максимум за 5 минут` and `Золотой километр` to match the Figma text, including the bold emphasis on the 1 km distance.
+- **Remote Leaderboard desktop rating:** removed result truncation in compact leaderboard rows so distance results such as `1230 м` and `1225 м` render without ellipses.
+- **Remote versions:** `remote-frontend` raised to `0.1.91`.
+
+### Verification
+
+- `npm run build:frontend`
+- `npm run build:remote-frontend`
+- Chrome/Playwright desktop checks verified the updated race mode typography/backgrounds and leaderboard results without ellipses.
+- Chrome/Playwright mobile checks verified the mobile race mode title scale remained isolated from the desktop tightening.
+
+---
+
 ## [0.5.96] - 2026-06-29
 
 ### Remote system

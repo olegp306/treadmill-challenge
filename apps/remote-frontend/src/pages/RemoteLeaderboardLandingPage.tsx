@@ -77,19 +77,29 @@ const DISCIPLINES = [
     title: 'Максимум за 5 минут',
     titleLines: ['Максимум', 'за 5 минут'],
     text: 'Пробеги максимальное расстояние за 5 минут.',
-    image: '/assets/leaderboard2/mode-stopwatch.png',
+    desktopDescription: [
+      { text: 'Пробеги максимальное расстояние за 5 минут.' },
+      { text: 'Максимум мощности' },
+      { text: 'за короткое время' },
+    ],
+    image: '/assets/leaderboard2/mode-5min-figma.png',
   },
   {
     title: 'Золотой километр',
     titleLines: ['Золотой', 'километр'],
     text: 'Один километр на время: короткая дистанция, где важна каждая секунда.',
-    image: '/assets/leaderboard2/shoe-1112.png',
+    desktopDescription: [
+      { text: 'Время сотворить историю! Покажи лучшее время ' },
+      { text: 'на дистанции 1 километр!', bold: true },
+    ],
+    image: '/assets/leaderboard2/mode-golden-figma.png',
   },
   {
     title: 'Стайер-спринт на 5 км',
     titleLines: ['Стайер-спринт', 'на 5 км'],
     text: 'Пять километров на выносливость и стабильный темп до финиша.',
-    image: '/assets/leaderboard2/hero-figma.png',
+    desktopDescription: [{ text: 'Пять километров на выносливость и стабильный темп до финиша.' }],
+    image: '/assets/leaderboard2/mode-stayer-figma.png',
   },
 ];
 
@@ -378,7 +388,14 @@ export default function RemoteLeaderboardLandingPage() {
               ))}
             </strong>
             <p>
-              <span className="leaderboard2__modeFullText">{discipline.text}</span>
+              <span className="leaderboard2__modeFullText">
+                {discipline.desktopDescription.map((line, index) => (
+                  <Fragment key={`${line.text}-${index}`}>
+                    {index > 0 ? <br aria-hidden /> : null}
+                    <span className={line.bold ? 'leaderboard2__modeDescriptionBold' : undefined}>{line.text}</span>
+                  </Fragment>
+                ))}
+              </span>
               <span className="leaderboard2__modeShortText">
                 {discipline.text.split('.')[0].split(' ').slice(0, 2).join(' ')}
                 <br />

@@ -1849,9 +1849,8 @@ const styles: Record<string, CSSProperties> = {
   lbResultCompact: {
     fontSize: '20px',
     letterSpacing: '0.04em',
-    maxWidth: 'clamp(44px, 18vw, 96px)',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    minWidth: 'clamp(86px, 12vw, 132px)',
+    overflow: 'visible',
     whiteSpace: 'nowrap',
   },
   lbResultNarrow: {
