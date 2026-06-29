@@ -86,6 +86,38 @@
   src: url('/assets/fonts/DrukWideCyr-500.woff2') format('woff2');
 }
 
+@font-face {
+  font-family: 'Proxima Nova';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/assets/fonts/proxima-nova/ProximaNova-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/assets/fonts/proxima-nova/ProximaNova-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/assets/fonts/proxima-nova/ProximaNova-Semibold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Proxima Nova';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/assets/fonts/proxima-nova/ProximaNova-Bold.woff2') format('woff2');
+}
+
 :root {
   --lb2-red: #e6233a;
   --lb2-bg: #0f0f0f;

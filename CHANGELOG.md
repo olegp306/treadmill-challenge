@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.98] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing fonts:** added temporary bundled `ProximaNova-*.woff2` placeholder files for production testing until licensed Proxima Nova files arrive from design.
+- **Remote Leaderboard landing fonts:** declared `Proxima Nova` weights `400`, `500`, `600`, and `700` through explicit `@font-face` URLs so production no longer depends on locally installed fonts for this family.
+
+### Verification
+
+- `npm run build:shared`
+- `npm run build:remote-frontend`
+- Production CSS check verifies Proxima Nova is loaded through `/assets/fonts/proxima-nova/*.woff2` and no `src: local(...)` is used.
+
+---
+
 ## [0.5.97] - 2026-06-29
 
 ### Remote system
