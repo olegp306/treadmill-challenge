@@ -220,6 +220,23 @@ body.leaderboard2-route #root {
   }
 }
 
+.leaderboard2--fontGate {
+  opacity: 0;
+  pointer-events: none;
+  animation: none !important;
+}
+
+.leaderboard2--fontGateReady {
+  opacity: 1;
+  animation: leaderboard2PageReveal 360ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaderboard2--fontGateReady {
+    animation: none;
+  }
+}
+
 .leaderboard2__header {
   height: 75px;
   display: flex;
@@ -5460,5 +5477,37 @@ body.leaderboard2-route #root {
   .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoCorner--bottomRight {
     right: 0;
     bottom: 0;
+  }
+
+  .leaderboard2__prizeHeader,
+  .leaderboard2__prize .leaderboard2__cornerMark,
+  .leaderboard2__prizeImage,
+  .leaderboard2__prizeGlobeIcon {
+    display: none;
+  }
+
+  .leaderboard2__prize .leaderboard2__prizeGlobe {
+    position: absolute;
+    right: 18px;
+    top: 136px;
+    z-index: 5;
+    display: block;
+    width: 20px;
+    height: 20px;
+    max-width: none;
+    transform: none;
+    pointer-events: none;
+  }
+
+  .leaderboard2__prizeGlobeBrackets {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .leaderboard2__finalCta {
+    background: #131313;
   }
 }

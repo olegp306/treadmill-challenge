@@ -5,6 +5,20 @@ import rootPackage from '../../../../package.json';
 import './RemoteLeaderboardLandingPage.css';
 
 const PRODUCT_VERSION = rootPackage.version;
+const FONT_GATE_TIMEOUT_MS = 3_000;
+const LEADERBOARD2_FONT_REQUESTS = [
+  '500 16px "Druk Wide Cyr"',
+  '700 16px "Druk Wide Cyr"',
+  '500 16px "Druk Cyr"',
+  '400 16px "Proxima Nova"',
+  '500 16px "Proxima Nova"',
+  '600 16px "Proxima Nova"',
+];
+const LEADERBOARD2_PRELOAD_IMAGES = [
+  '/assets/leaderboard2/prize-shoe-main-figma.png',
+  '/assets/leaderboard2/prize-shoe-dodge-figma.png',
+  '/assets/leaderboard2/prize-rings-figma.svg',
+];
 
 type CountdownState = {
   days: number;
@@ -182,6 +196,7 @@ export default function RemoteLeaderboardLandingPage() {
   const [countdown, setCountdown] = useState<CountdownState>(() => getCountdownState());
   const [participantCount, setParticipantCount] = useState(0);
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
   const [historyGender, setHistoryGender] = useState<'female' | 'male'>('male');
   const [historyMonth, setHistoryMonth] = useState(HISTORY_MONTHS[0]);
   const discipline = DISCIPLINES[activeDiscipline];
@@ -210,6 +225,51 @@ export default function RemoteLeaderboardLandingPage() {
   }, []);
 
   useEffect(() => {
+    const links = LEADERBOARD2_PRELOAD_IMAGES.map((href) => {
+      const existing = document.head.querySelector<HTMLLinkElement>(`link[rel="preload"][as="image"][href="${href}"]`);
+      if (existing) return null;
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = href;
+      document.head.appendChild(link);
+      return link;
+    });
+
+    return () => {
+      links.forEach((link) => link?.remove());
+    };
+  }, []);
+
+  useEffect(() => {
+    const fontSet = document.fonts;
+    if (!fontSet?.load) {
+      setFontsReady(true);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timeout = window.setTimeout(() => {
+      if (!cancelled) setFontsReady(true);
+    }, FONT_GATE_TIMEOUT_MS);
+
+    Promise.all([...LEADERBOARD2_FONT_REQUESTS.map((font) => fontSet.load(font)), fontSet.ready])
+      .catch(() => undefined)
+      .then(() => {
+        if (cancelled) return;
+        window.clearTimeout(timeout);
+        window.requestAnimationFrame(() => {
+          if (!cancelled) setFontsReady(true);
+        });
+      });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  useEffect(() => {
     const updateCountdown = () => setCountdown(getCountdownState());
     updateCountdown();
     const timer = window.setInterval(updateCountdown, 1_000);
@@ -231,7 +291,7 @@ export default function RemoteLeaderboardLandingPage() {
   }, [isJoinPopupOpen]);
 
   return (
-    <main className="leaderboard2">
+    <main className={`leaderboard2 ${fontsReady ? 'leaderboard2--fontGateReady' : 'leaderboard2--fontGate'}`} aria-busy={!fontsReady}>
       <header className="leaderboard2__header" aria-label="AMAZING RED">
         <LogoMark className="leaderboard2__logo" />
         <span className="leaderboard2__version leaderboard2__version--top" aria-label={`Версия продукта ${PRODUCT_VERSION}`}>

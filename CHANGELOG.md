@@ -7,6 +7,23 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.100] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing:** added a `/leaderboard2` font gate so the landing waits for critical Druk/Proxima fonts before revealing the page, reducing visible font jumps on reload.
+- **Remote Leaderboard landing:** preloaded critical Druk/Proxima font files from the remote frontend HTML entry point.
+- **Remote Leaderboard landing mobile:** simplified the `Призы месяца` card by hiding mobile carousel arrows, decorative brackets, and the prize shoe image while keeping a small red globe marker.
+- **Remote Leaderboard landing mobile:** removed the background image from the lower `Готов попасть в топ-10...` CTA block while keeping the coordinate digits.
+- **Remote versions:** `remote-frontend` raised to `0.1.93`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Playwright mobile smoke check verified the font gate reaches `leaderboard2--fontGateReady`, critical fonts are loaded, prize arrows/brackets/image are hidden, the small globe is visible, and the lower CTA no longer has a background image.
+
+---
+
 ## [0.5.99] - 2026-06-29
 
 ### Remote system
