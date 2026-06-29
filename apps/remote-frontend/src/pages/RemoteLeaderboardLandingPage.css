@@ -5481,7 +5481,6 @@ body.leaderboard2-route #root {
 
   .leaderboard2__prizeHeader,
   .leaderboard2__prize .leaderboard2__cornerMark,
-  .leaderboard2__prizeImage,
   .leaderboard2__prizeGlobeIcon {
     display: none;
   }

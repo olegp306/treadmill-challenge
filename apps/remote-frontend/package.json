@@ -1,6 +1,6 @@
 {
   "name": "remote-frontend",
-  "version": "0.1.93",
+  "version": "0.1.94",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,8 +13,8 @@
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
     "@fontsource/oswald": "^5.2.8",
-    "@mui/material": "^5.16.10",
     "@mui/icons-material": "^5.16.10",
+    "@mui/material": "^5.16.10",
     "@treadmill-challenge/shared": "*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

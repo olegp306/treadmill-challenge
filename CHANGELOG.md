@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.101] - 2026-06-29
+
+### Remote system
+
+- **Remote Leaderboard landing mobile:** restored the prize shoe image in the `Prizes of the month` / PUMA card background while keeping the mobile carousel controls and extra decorative corners hidden.
+- **Remote versions:** `remote-frontend` raised to `0.1.94`.
+
+### Verification
+
+- `npm run build:remote-frontend`
+- Playwright mobile smoke check verified the prize shoe image is visible again, while the hidden mobile prize controls remain hidden.
+
+---
+
 ## [0.5.100] - 2026-06-29
 
 ### Remote system
