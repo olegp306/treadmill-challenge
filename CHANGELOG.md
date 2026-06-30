@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.108] - 2026-06-30
+
+### Remote system
+
+- **Remote Leaderboard landing history:** updated May history cards to use confirmed leaderboard leaders for the full period from launch through the end of May.
+- **Remote Leaderboard landing history:** set men to `Лобов Костя 19:56.45`, `Князев Максим 03:34.22`, and `Минаков Иван 1244 м`.
+- **Remote Leaderboard landing history:** set women to `—`, `Старк Мария 05:08.50`, and `Агафонова Надежда 907 м`.
+- **Remote versions:** `remote-frontend` raised to `0.1.101`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright DOM check verified the history block renders the confirmed men/women results on `/leaderboard2`.
+
 ## [0.5.107] - 2026-06-30
 
 ### Remote system

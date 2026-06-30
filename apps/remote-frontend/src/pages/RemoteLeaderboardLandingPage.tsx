@@ -149,13 +149,13 @@ const FAQ = [
 const HISTORY = {
   female: [
     { run: 'Стайер-спринт на 5 км', name: '', result: '—' },
-    { run: 'Золотой километр', name: 'Газалова Диана', result: '05:20.38' },
-    { run: 'Максимум за 5 минут', name: 'Смирнова Анна', result: '15 м' },
+    { run: 'Золотой километр', name: 'Старк Мария', result: '05:08.50' },
+    { run: 'Максимум за 5 минут', name: 'Агафонова Надежда', result: '907 м' },
   ],
   male: [
-    { run: 'Стайер-спринт на 5 км', name: '', result: '—' },
+    { run: 'Стайер-спринт на 5 км', name: 'Лобов Костя', result: '19:56.45' },
     { run: 'Золотой километр', name: 'Князев Максим', result: '03:34.22' },
-    { run: 'Максимум за 5 минут', name: 'Дд Иван', result: '1242 м' },
+    { run: 'Максимум за 5 минут', name: 'Минаков Иван', result: '1244 м' },
   ],
 } satisfies Record<'female' | 'male', Array<{ run: string; name: string; result: string }>>;
 
