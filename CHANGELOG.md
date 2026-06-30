@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.107] - 2026-06-30
+
+### Remote system
+
+- **Remote Leaderboard landing embed:** added iframe resize messaging so the landing posts its real height to the Amazing Red host via `running-challenge:resize`.
+- **Remote Leaderboard landing history:** removed month selection and locked race history to `Май 2026`.
+- **Remote Leaderboard landing history:** filled May results from the exported leaderboard data using discipline rules: fastest valid time for `Золотой километр`, longest valid distance for `Максимум за 5 минут`, and placeholder `—` cards for invalid/missing `Стайер-спринт на 5 км` results.
+- **Remote versions:** `remote-frontend` raised to `0.1.100`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright DOM checks verified the May-only history block has no month selector, renders three cards for men and women, and leaves 5 km cards without a name and with `—`.
+- Playwright iframe harness verified the landing sends `running-challenge:resize` to `https://amazingred.ru` and the host iframe height updates from `800px` to the landing height.
+
 ## [0.5.106] - 2026-06-30
 
 ### Remote system

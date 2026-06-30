@@ -1627,41 +1627,12 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   padding: 14px 24px;
   font-size: 16px;
   text-transform: uppercase;
-}
-
-.leaderboard2__historyMonth::after {
-  content: '';
-  width: 10px;
-  height: 10px;
-  margin-left: 18px;
-  border-right: 3px solid rgba(255, 255, 255, 0.55);
-  border-bottom: 3px solid rgba(255, 255, 255, 0.55);
-  transform: rotate(45deg) translateY(-3px);
-  pointer-events: none;
-}
-
-.leaderboard2__historyMonth select {
-  width: 100%;
-  border: 0;
-  appearance: none;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  cursor: pointer;
-  outline: none;
-}
-
-.leaderboard2__historyMonth option {
-  background: #111;
-  color: #fff;
 }
 
 .leaderboard2__historyTabs {
@@ -1744,6 +1715,13 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
 
 .leaderboard2__historyGrid h3 span + span::before {
   content: ' ';
+}
+
+.leaderboard2__historyEmptyResult::after {
+  content: '';
+  display: block;
+  min-height: 58px;
+  margin-top: 30px;
 }
 
 .leaderboard2__historyGrid strong {
@@ -2810,22 +2788,13 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     width: 100%;
     margin-top: 28px;
     min-height: 58px;
     padding: 0 20px;
     border-radius: 14px;
     font-size: 18px;
-  }
-
-  .leaderboard2__historyMonth::after {
-    content: '';
-    width: 10px;
-    height: 10px;
-    border-right: 3px solid rgba(255, 255, 255, 0.55);
-    border-bottom: 3px solid rgba(255, 255, 255, 0.55);
-    transform: rotate(45deg) translateY(-3px);
   }
 
   .leaderboard2__historyTabs {
@@ -3376,12 +3345,6 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
     font-size: 12px;
     line-height: 1.05;
     text-align: center;
-  }
-
-  .leaderboard2__historyMonth::after {
-    width: 8px;
-    height: 8px;
-    border-width: 2px;
   }
 
   .leaderboard2__historyTabs {
@@ -4004,12 +3967,6 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
     font-size: 11px;
     line-height: 1.05;
     text-align: center;
-  }
-
-  .leaderboard2__historyMonth::after {
-    width: 7px;
-    height: 7px;
-    border-width: 2px;
   }
 
   .leaderboard2__historyGrid article {

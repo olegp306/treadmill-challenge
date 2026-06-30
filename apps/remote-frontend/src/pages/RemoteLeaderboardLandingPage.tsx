@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
+import { installRunningChallengeResizeMessenger } from './iframeResizeMessenger';
 import rootPackage from '../../../../package.json';
 import './RemoteLeaderboardLandingPage.css';
 
@@ -147,18 +148,18 @@ const FAQ = [
 
 const HISTORY = {
   female: [
-    { run: 'Стайер-спринт на 5 км', name: 'Кабанова Настя', result: '--:--' },
+    { run: 'Стайер-спринт на 5 км', name: '', result: '—' },
     { run: 'Золотой километр', name: 'Газалова Диана', result: '05:20.38' },
     { run: 'Максимум за 5 минут', name: 'Смирнова Анна', result: '15 м' },
   ],
   male: [
-    { run: 'Стайер-спринт на 5 км', name: 'Клюка Дмитрий', result: '--:--' },
+    { run: 'Стайер-спринт на 5 км', name: '', result: '—' },
     { run: 'Золотой километр', name: 'Князев Максим', result: '03:34.22' },
     { run: 'Максимум за 5 минут', name: 'Дд Иван', result: '1242 м' },
   ],
 } satisfies Record<'female' | 'male', Array<{ run: string; name: string; result: string }>>;
 
-const HISTORY_MONTHS = ['Май 2026', 'Июнь 2026', 'Июль 2026', 'Август 2026', 'Сентябрь 2026', 'Октябрь 2026', 'Ноябрь 2026', 'Декабрь 2026'];
+const HISTORY_MONTH = 'Май 2026';
 
 function loopIndex(current: number, delta: -1 | 1, length: number) {
   return (current + delta + length) % length;
@@ -200,7 +201,6 @@ export default function RemoteLeaderboardLandingPage() {
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
   const [historyGender, setHistoryGender] = useState<'female' | 'male'>('male');
-  const [historyMonth, setHistoryMonth] = useState(HISTORY_MONTHS[0]);
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
   const mobilePrizeModelParts = [prize.model];
@@ -215,6 +215,8 @@ export default function RemoteLeaderboardLandingPage() {
     setDisciplineDirection(direction < 0 ? 'prev' : 'next');
     setActiveDiscipline((current) => loopIndex(current, direction, DISCIPLINES.length));
   }, []);
+
+  useEffect(() => installRunningChallengeResizeMessenger(), []);
 
   useEffect(() => {
     document.body.classList.add('leaderboard2-route');
@@ -654,15 +656,9 @@ export default function RemoteLeaderboardLandingPage() {
       <section className="leaderboard2__history" id="history" aria-labelledby="leaderboard2-history-title">
         <div className="leaderboard2__historyHead">
           <h2 id="leaderboard2-history-title">История забегов</h2>
-          <label className="leaderboard2__historyMonth" aria-label="Месяц истории забегов">
-            <select value={historyMonth} onChange={(event) => setHistoryMonth(event.target.value)}>
-              {HISTORY_MONTHS.map((month) => (
-                <option key={month} value={month}>
-                  {month}
-                </option>
-              ))}
-            </select>
-          </label>
+          <span className="leaderboard2__historyMonth" aria-label="Месяц истории забегов">
+            {HISTORY_MONTH}
+          </span>
         </div>
         <div className="leaderboard2__historyTabs">
           <button
@@ -684,12 +680,14 @@ export default function RemoteLeaderboardLandingPage() {
           {HISTORY[historyGender].map((item) => {
             const name = splitHistoryName(item.name);
             return (
-              <article key={item.run}>
+              <article key={item.run} className={name.lastName ? undefined : 'leaderboard2__historyEmptyResult'}>
                 <p>{item.run}</p>
-                <h3>
-                  <span>{name.lastName}</span>
-                  {name.firstName ? <span>{name.firstName}</span> : null}
-                </h3>
+                {name.lastName ? (
+                  <h3>
+                    <span>{name.lastName}</span>
+                    {name.firstName ? <span>{name.firstName}</span> : null}
+                  </h3>
+                ) : null}
                 <strong>{item.result}</strong>
               </article>
             );
