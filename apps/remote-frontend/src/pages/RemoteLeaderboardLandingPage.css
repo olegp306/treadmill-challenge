@@ -5004,7 +5004,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
 
   .leaderboard2__leaderboardFrameWrap,
   .leaderboard2__leaderboardFrame {
-    height: 682px;
+    height: 742px;
     border-radius: 20px;
   }
 
@@ -5317,9 +5317,15 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   .leaderboard2__faqList summary {
     grid-template-columns: 34px minmax(0, 265px);
     gap: 12px;
-    align-items: start;
+    align-items: center;
     font-size: 16px;
     line-height: 1.2;
+  }
+
+  .leaderboard2__faqList summary > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
   }
 
   .leaderboard2__faqList summary .leaderboard2__faqQuestion {
@@ -5640,7 +5646,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   .leaderboard2__finalCta .leaderboard2__finalCtaText {
     position: absolute;
     left: 0;
-    top: -80px;
+    top: -196px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -5685,15 +5691,15 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoText {
     left: 8px;
     right: 8px;
-    top: auto;
-    bottom: 7px;
+    top: 50%;
+    bottom: auto;
     font-family: var(--lb2-proxima);
     font-size: 12.981px;
     font-weight: 400;
     line-height: 1;
     letter-spacing: 2.6px;
     text-align: center;
-    transform: none;
+    transform: translateY(-50%);
   }
 
   .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoCorner {

@@ -642,7 +642,7 @@ export default function RemoteLeaderboardLandingPage() {
           {FAQ.map((item, index) => (
             <details key={item.q} open={index === 0}>
               <summary>
-                <span>[ 0{index + 1} ]</span>
+                <span>[{String(index + 1).padStart(2, '0')}]</span>
                 <span className="leaderboard2__faqQuestion">{item.q}</span>
               </summary>
               <p>{item.a}</p>

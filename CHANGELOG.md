@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.106] - 2026-06-30
+
+### Remote system
+
+- **Remote Leaderboard landing mobile CTA:** tightened the gap between the red `DEVIATE NITRO 4?` model line and the CTA description to match the mobile composition.
+- **Remote Leaderboard landing mobile CTA:** vertically centered the red coordinate labels inside their corner brackets.
+- **Remote Leaderboard landing mobile rating:** added extra frame height so the last leaderboard result is not covered by the iPhone browser bottom bar.
+- **Remote Leaderboard landing mobile FAQ:** normalized `[01]` numeric labels and centered them against FAQ question rows.
+- **Remote versions:** `remote-frontend` raised to `0.1.99`.
+
+### Verification
+
+- Mobile Playwright check at `393x852` verified the CTA description gap, centered coordinate labels, and extra leaderboard frame room above the iPhone browser bottom bar.
+
 ## [0.5.105] - 2026-06-30
 
 ### Remote system
