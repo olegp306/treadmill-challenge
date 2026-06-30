@@ -7,6 +7,26 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.105] - 2026-06-30
+
+### Remote system
+
+- **Remote Leaderboard landing prizes:** updated the `Призы месяца` / PUMA card to use the Figma `DEVIATE NITRO 4` shoe artwork and model text across desktop and mobile.
+- **Remote Leaderboard landing CTA:** restored the final CTA treadmill background from Figma as a soft-light overlay on both desktop and mobile while keeping CTA text, coordinates, and button layered above it.
+- **Remote Leaderboard landing CTA:** aligned the final CTA height with the 500px Figma background layer and kept the mobile CTA content inside the card without overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.98`.
+
+### Workspace
+
+- **Package manager:** added pnpm workspace metadata and lockfile, removed the stale npm lockfile, switched internal `@treadmill-challenge/shared` dependencies to `workspace:*`, and updated setup/run docs plus local startup scripts for pnpm.
+- **Remote frontend tooling:** added the missing `vitest` dev dependency so the remote frontend TypeScript build can type-check its existing test file.
+
+### Verification
+
+- `pnpm exec vite build` from `apps/remote-frontend`
+- Browser checks verified `/leaderboard2` renders the updated PUMA prize block and final CTA background on desktop and 390px mobile.
+- GitHub API check found no open PRs to merge before publishing `main`.
+
 ## [0.5.104] - 2026-06-29
 
 ### Remote system

@@ -14,7 +14,7 @@
 
 ## 2) Технологический стек
 
-- Monorepo на npm workspaces
+- Monorepo на pnpm workspaces
 - Frontend: React + TypeScript + Vite
 - Backend: Node.js + Fastify + TypeScript
 - База данных: SQLite (`apps/backend/data/treadmill.db`)
@@ -153,15 +153,15 @@
 
 Базовые команды (из корня репо):
 
-- установить зависимости: `npm install`
-- frontend dev: `npm run dev -w apps/frontend`
-- backend dev: `npm run dev -w apps/backend`
-- production build frontend: `npm run build -w apps/frontend`
-- production build backend: `npm run build -w apps/backend`
+- установить зависимости: `pnpm install`
+- frontend dev: `pnpm --dir apps/frontend run dev`
+- backend dev: `pnpm --dir apps/backend run dev`
+- production build frontend: `pnpm --dir apps/frontend run build`
+- production build backend: `pnpm --dir apps/backend run build`
 
 Релизный цикл, используемый в проекте:
 
-1. `npm run release:patch`
+1. `pnpm run release:patch`
 2. обновить секцию версии в `CHANGELOG.md`
 3. собрать frontend/backend
 4. `git commit`

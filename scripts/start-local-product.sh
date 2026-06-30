@@ -58,7 +58,6 @@ echo ""
 
 # Do NOT start remote backend here.
 # Use concurrently (preferred) if available via repo devDependencies.
-npx concurrently -n be,fe -c blue,green \
-  "npm run dev:backend" \
-  "npm run dev:frontend"
-
+pnpm exec concurrently -n be,fe -c blue,green \
+  "pnpm run dev:backend" \
+  "pnpm run dev:frontend"

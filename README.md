@@ -31,30 +31,31 @@ Interactive treadmill challenge installation for a retail store. Local-first: Re
 ### 1. Set up your environment
 
 - Install **Node.js 20** or newer on your computer. Check: open a terminal and type `node -v`. You should see a number like 20.x.x.
+- Install **pnpm 10.26** or newer. If Corepack is available, run `corepack enable` and then `corepack prepare pnpm@10.26.0 --activate`.
 - Open a terminal and go to the project folder: `cd treadmill-challenge`.
-- Install dependencies: run `npm install`.
-- Build the shared package (you need to do this once): run `npm run build:shared`.
+- Install dependencies: run `pnpm install`.
+- Build the shared package (you need to do this once): run `pnpm run build:shared`.
 
 ### 2. Run the app
 
 You need the backend and the frontend running.
 
 **Easy way – one command:**  
-Run `npm run dev`. This starts both. Wait a few seconds.
+Run `pnpm run dev`. This starts both. Wait a few seconds.
 
 **Or use two terminals:**
 
-- **Terminal 1:** run `npm run dev:backend`. Leave it open. Backend will run on port 3001.
-- **Terminal 2:** run `npm run dev:frontend`. Leave it open. Frontend will run on port 5173.
+- **Terminal 1:** run `pnpm run dev:backend`. Leave it open. Backend will run on port 3001.
+- **Terminal 2:** run `pnpm run dev:frontend`. Leave it open. Frontend will run on port 5173.
 
 When you see “ready” or “listening” in the terminal, the app is running.
 
 ### 3a. Open the app on your phone (same Wi‑Fi)
 
 1. Connect your **phone and laptop to the same Wi‑Fi** network.
-2. From the repo root, run `npm install` (once), then `npm run dev` (starts backend + frontend).
+2. From the repo root, run `pnpm install` (once), then `pnpm run dev` (starts backend + frontend).
 3. When the Vite dev server is ready, the **frontend** terminal prints a **LAN URL** (for example `http://192.168.x.x:5173`) and an **ASCII QR code**. Scan the QR with your phone’s camera, or type the URL in the mobile browser.
-4. Optional: run `npm run print-dev-qr` in another terminal to print the same URL and QR again (default port **5173**; override with `PORT=5174 npm run print-dev-qr` on Unix, or `set PORT=5174&& npm run print-dev-qr` on Windows if you use a different port).
+4. Optional: run `pnpm run print-dev-qr` in another terminal to print the same URL and QR again (default port **5173**; override with `PORT=5174 pnpm run print-dev-qr` on Unix, or `set PORT=5174&& pnpm run print-dev-qr` on Windows if you use a different port).
 
 The dev server listens on all interfaces (`host: true` / `vite --host`), so the app is available at your machine’s local IP, not only `localhost`. API calls from the phone go to `/api` on the Vite dev server, which **proxies** to the backend on `localhost:3001`. The backend listens on `0.0.0.0:3001`; CORS in development allows requests from your phone’s origin.
 
@@ -73,7 +74,7 @@ You can visit these pages:
 | Start running   | http://localhost:5173/start | Name, phone, sex → TouchDesigner     |
 
 Click the links in the app or type the URLs in the browser to open each page.  
-If the page does not load, check that the frontend is running (Terminal 2 or `npm run dev`).
+If the page does not load, check that the frontend is running (Terminal 2 or `pnpm run dev`).
 
 ---
 
@@ -82,7 +83,7 @@ If the page does not load, check that the frontend is running (Terminal 2 or `np
 - **Frontend:** React 18, TypeScript, Vite
 - **Backend:** Node.js, TypeScript, Fastify
 - **Database:** SQLite via **sql.js** (no native compilation; works on Windows without Visual Studio)
-- **Monorepo:** npm workspaces with shared types in `packages/shared`
+- **Monorepo:** pnpm workspaces with shared types in `packages/shared`
 
 ## Repository structure
 
@@ -100,7 +101,7 @@ root/
 ## Prerequisites
 
 - **Node.js 20 LTS** (required; use Node ≥ 20; Node 16 and 18 are not supported)
-- **npm** 9+ (for workspaces)
+- **pnpm** 10.26+ (for workspaces)
 
 ## Setup
 
@@ -108,13 +109,13 @@ root/
 
    ```bash
    cd treadmill-challenge
-   npm install
+   pnpm install
    ```
 
 2. **Build the shared package** (required before running backend/frontend):
 
    ```bash
-   npm run build:shared
+   pnpm run build:shared
    ```
 
 ## Run locally
@@ -124,7 +125,7 @@ root/
 **Terminal 1 – Backend**
 
 ```bash
-npm run dev:backend
+pnpm run dev:backend
 ```
 
 - API: http://localhost:3001  
@@ -134,7 +135,7 @@ npm run dev:backend
 **Terminal 2 – Frontend**
 
 ```bash
-npm run dev:frontend
+pnpm run dev:frontend
 ```
 
 - App: http://localhost:5173  
@@ -143,7 +144,7 @@ npm run dev:frontend
 ### Option B: Run both (if your setup supports it)
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 This runs the backend and frontend together in parallel (backend on port 3001, frontend on 5173).
@@ -169,7 +170,7 @@ To start the app when you log in to Windows:
 5. Program: click **Browse** and choose `start-app.bat` in your project folder (e.g. `C:\Repos\treadmill-challenge\start-app.bat`). Leave arguments empty. Next → Finish.
 6. Optional: right‑click the task → Properties → **Run whether user is logged on or not** if you want it to run before you log in (you may need to enter your password).
 
-The script `start-app.bat` runs `npm run dev` from the project folder. Make sure Node.js 20 is installed and you have run `npm install` and `npm run build:shared` at least once before using autorun.
+The script `start-app.bat` runs the local dev command from the project folder. Make sure Node.js 20 and pnpm 10 are installed, and you have run `pnpm install` and `pnpm run build:shared` at least once before using autorun.
 
 ## API endpoints
 
@@ -248,7 +249,7 @@ Replace `<PARTICIPANT_ID>` with a real UUID from a registered participant.
 
 ### TouchDesigner quick setup (comfortable mode)
 
-Use env vars in backend terminal before `npm run dev:backend` (PowerShell):
+Use env vars in backend terminal before `pnpm run dev:backend` (PowerShell):
 
 ```bash
 $env:TD_ADAPTER="osc"
@@ -291,7 +292,7 @@ For local verification without TouchDesigner, set `TD_ADAPTER=mock` and check ba
 
 ### Quick check with TouchDesigner developer
 
-1. Run backend + frontend: `npm run dev`
+1. Run backend + frontend: `pnpm run dev`
 2. Open: `http://localhost:5173/start`
 3. Fill Name + Phone, pick Sex, pick mode (**Time / 1 km / 5 km**), click **Start**
 4. In backend terminal, check log line: `[TouchDesigner Mock] sendParticipantRegistered: ...`
@@ -336,25 +337,25 @@ curl -X POST "http://localhost:3001/api/touchdesigner/run-result" \
 Optional local smoke script:
 
 ```bash
-npm run td:callback:smoke -- --runSessionId <RUN_SESSION_ID> --resultTime 312.5 --distance 1000
+pnpm run td:callback:smoke -- --runSessionId <RUN_SESSION_ID> --resultTime 312.5 --distance 1000
 ```
 
 If token is enabled:
 
 ```bash
-npm run td:callback:smoke -- --runSessionId <RUN_SESSION_ID> --resultTime 312.5 --distance 1000 --token <TD_CALLBACK_TOKEN>
+pnpm run td:callback:smoke -- --runSessionId <RUN_SESSION_ID> --resultTime 312.5 --distance 1000 --token <TD_CALLBACK_TOKEN>
 ```
 
 Auto-pick a real queue session (prefers `running`, then first `queued`):
 
 ```bash
-npm run td:callback:smoke -- --autoFromQueue --resultTime 312.5 --distance 1000
+pnpm run td:callback:smoke -- --autoFromQueue --resultTime 312.5 --distance 1000
 ```
 
 Optional filters:
 
 ```bash
-npm run td:callback:smoke -- --autoFromQueue --runTypeId 1 --sex female --resultTime 312.5 --distance 1000 --token <TD_CALLBACK_TOKEN>
+pnpm run td:callback:smoke -- --autoFromQueue --runTypeId 1 --sex female --resultTime 312.5 --distance 1000 --token <TD_CALLBACK_TOKEN>
 ```
 
 ## API-контракт: приложение ↔ TouchDesigner
@@ -464,21 +465,21 @@ npm run td:callback:smoke -- --autoFromQueue --runTypeId 1 --sex female --result
   - `401` (если неверный token при включенной защите),
   - `404` (если `runSessionId` не найден).
 
-## NPM scripts (from root)
+## pnpm scripts (from root)
 
 | Script | Description |
 |--------|-------------|
-| `npm run build:shared` | Build `packages/shared` |
-| `npm run dev:backend` | Start local backend (tsx watch) |
-| `npm run dev:frontend` | Start local frontend (Vite dev server) |
-| `npm run dev:local` | Start local backend + frontend (default ports) |
-| `npm run dev:remote` | Start remote-backend + remote-frontend (default ports) |
-| `npm run dev:all` | Start local + remote together |
-| `npm run dev:stop` | Kill listeners on dev ports (Windows-friendly) |
-| `npm run dev` | Alias for `dev:local` |
-| `npm run build` | Build all workspaces |
-| `npm run start:backend` | Run backend from `dist` (run `build:backend` first) |
-| `npm run preview:frontend` | Vite preview (run `build:frontend` first) |
+| `pnpm run build:shared` | Build `packages/shared` |
+| `pnpm run dev:backend` | Start local backend (tsx watch) |
+| `pnpm run dev:frontend` | Start local frontend (Vite dev server) |
+| `pnpm run dev:local` | Start local backend + frontend (default ports) |
+| `pnpm run dev:remote` | Start remote-backend + remote-frontend (default ports) |
+| `pnpm run dev:all` | Start local + remote together |
+| `pnpm run dev:stop` | Kill listeners on dev ports (Windows-friendly) |
+| `pnpm run dev` | Alias for `dev:local` |
+| `pnpm run build` | Build all workspaces |
+| `pnpm run start:backend` | Run backend from `dist` (run `build:backend` first) |
+| `pnpm run preview:frontend` | Vite preview (run `build:frontend` first) |
 
 ## Data model
 

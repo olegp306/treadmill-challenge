@@ -5,7 +5,7 @@
 | Что | Где |
 |-----|-----|
 | **Источник правды** | Корневой `package.json`, поле **`version`** (пакет **`treadmill-challenge`**) |
-| Дубликаты для npm | `apps/frontend`, `apps/backend`, `packages/shared` — тот же номер (обновляет скрипт) |
+| Дубликаты для pnpm workspace | `apps/frontend`, `apps/backend`, `packages/shared` — тот же номер (обновляет скрипт) |
 
 Формат: **SemVer** `MAJOR.MINOR.PATCH` (например `0.1.0`, `0.2.0`, `1.0.0`).
 
@@ -27,11 +27,11 @@
 
 1. Слить/закоммитить код, который входит в релиз.
 2. Выполнить бамп одной командой из корня репозитория:
-   - `npm run release:patch` **или** `npm run release:minor` **или** `npm run release:major`  
+   - `pnpm run release:patch` **или** `pnpm run release:minor` **или** `pnpm run release:major`
    (это `node scripts/bump-version.mjs …` — обновляет корень и workspace `package.json`).
 3. **Сразу** добавить в **`CHANGELOG.md`** секцию `## [X.Y.Z] - YYYY-MM-DD` и перечислить изменения (Added / Changed / Fixed) — коротко, по делу.
-4. Собрать фронт: `npm run build:frontend` — в бандл попадает **`VITE_APP_VERSION`** из корневого `package.json` (`vite.config.ts`).
-5. Собрать backend при необходимости: `npm run build:backend`.
+4. Собрать фронт: `pnpm run build:frontend` — в бандл попадает **`VITE_APP_VERSION`** из корневого `package.json` (`vite.config.ts`).
+5. Собрать backend при необходимости: `pnpm run build:backend`.
 6. По желанию: **`git tag -a vX.Y.Z -m "vX.Y.Z"`** на коммите релиза.
 
 **Когда писать changelog:** в шаге 3 сразу после бампа версии, до деплоя; так по номеру версии всегда есть текст «что вошло».

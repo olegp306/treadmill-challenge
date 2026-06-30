@@ -1,5 +1,4 @@
 import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { LogoMark } from '@local-fe/ui/components/LogoMark';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
 import rootPackage from '../../../../package.json';
 import './RemoteLeaderboardLandingPage.css';
@@ -17,8 +16,7 @@ const LEADERBOARD2_FONT_REQUESTS = [
   '600 16px "Proxima Nova"',
 ];
 const LEADERBOARD2_PRELOAD_IMAGES = [
-  '/assets/leaderboard2/prize-shoe-main-figma.png',
-  '/assets/leaderboard2/prize-shoe-dodge-figma.png',
+  '/assets/leaderboard2/prize-shoe-deviate-nitro-4-figma.png',
   '/assets/leaderboard2/prize-rings-figma.svg',
 ];
 
@@ -84,7 +82,7 @@ const STEPS = [
   {
     number: '03',
     title: 'Следи за позицией',
-    text: 'Возвращайся в лидерборд и смотри, как меняется твое место в рейтинге!',
+    text: 'Возвращайся в лидерборд и смотри, как меняется твое место в рейтинге.',
   },
 ];
 
@@ -105,8 +103,9 @@ const DISCIPLINES = [
     titleLines: ['Золотой', 'километр'],
     text: 'Один километр на время: короткая дистанция, где важна каждая секунда.',
     desktopDescription: [
-      { text: 'Время сотворить историю! Покажи лучшее время ' },
-      { text: 'на дистанции 1 километр!', bold: true },
+      { text: 'Сотвори историю' },
+      { text: 'Покажи лучшее время' },
+      { text: 'на дистанции 1 километр', bold: true },
     ],
     image: '/assets/leaderboard2/mode-golden-figma.png',
   },
@@ -123,16 +122,16 @@ const PRIZES = [
   {
     label: 'Призы месяца:',
     brand: 'PUMA',
-    model: 'DEVIATE NITRO ELITE TRAIL',
+    model: 'DEVIATE NITRO 4',
     text: 'Главный приз для лучших участников месяца в каждой дисциплине.',
-    image: '/assets/leaderboard2/shoe-1111.png',
+    image: '/assets/leaderboard2/prize-shoe-deviate-nitro-4-figma.png',
   },
   {
     label: 'Готов попасть в топ-10?',
     brand: 'PUMA',
-    model: 'DEVIATE NITRO',
+    model: 'DEVIATE NITRO 4',
     text: 'Выбирай дисциплину, показывай максимум и следи за своим результатом в рейтинге.',
-    image: '/assets/leaderboard2/shoe-1111.png',
+    image: '/assets/leaderboard2/prize-shoe-deviate-nitro-4-figma.png',
   },
 ];
 
@@ -194,6 +193,7 @@ function CarouselButton({
 
 export default function RemoteLeaderboardLandingPage() {
   const [activeDiscipline, setActiveDiscipline] = useState(0);
+  const [disciplineDirection, setDisciplineDirection] = useState<'prev' | 'next'>('next');
   const [activePrize, setActivePrize] = useState(0);
   const [countdown, setCountdown] = useState<CountdownState>(() => getCountdownState());
   const [participantCount, setParticipantCount] = useState(0);
@@ -203,16 +203,17 @@ export default function RemoteLeaderboardLandingPage() {
   const [historyMonth, setHistoryMonth] = useState(HISTORY_MONTHS[0]);
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
-  const mobilePrizeModelParts =
-    prize.model === 'DEVIATE NITRO ELITE TRAIL'
-      ? ['DEVIATE NITRO', 'ELITE TRAIL']
-      : [prize.model];
+  const mobilePrizeModelParts = [prize.model];
   const handleEntryCountChange = useCallback((count: number) => {
     setParticipantCount(count);
   }, []);
   const handleJoinPopupClick = useCallback((event: { preventDefault: () => void }) => {
     event.preventDefault();
     setIsJoinPopupOpen(true);
+  }, []);
+  const handleDisciplineChange = useCallback((direction: -1 | 1) => {
+    setDisciplineDirection(direction < 0 ? 'prev' : 'next');
+    setActiveDiscipline((current) => loopIndex(current, direction, DISCIPLINES.length));
   }, []);
 
   useEffect(() => {
@@ -333,14 +334,10 @@ export default function RemoteLeaderboardLandingPage() {
 
   return (
     <main className={`leaderboard2 ${fontsReady ? 'leaderboard2--fontGateReady' : 'leaderboard2--fontGate'}`} aria-busy={!fontsReady}>
-      <header className="leaderboard2__header" aria-label="AMAZING RED">
-        <LogoMark className="leaderboard2__logo" />
+      <section className="leaderboard2__heroCard" aria-label="Treadmill Challenge">
         <span className="leaderboard2__version leaderboard2__version--top" aria-label={`Версия продукта ${PRODUCT_VERSION}`}>
           v{PRODUCT_VERSION}
         </span>
-      </header>
-
-      <section className="leaderboard2__heroCard" aria-label="Treadmill Challenge">
         <div className="leaderboard2__heroMedia" aria-hidden />
         <div className="leaderboard2__heroBracket leaderboard2__heroBracket--left" aria-hidden />
         <div className="leaderboard2__heroBracket leaderboard2__heroBracket--right" aria-hidden />
@@ -472,7 +469,8 @@ export default function RemoteLeaderboardLandingPage() {
       <section className="leaderboard2__disciplines" id="disciplines" aria-labelledby="leaderboard2-disciplines-title">
         <h2 id="leaderboard2-disciplines-title">Режимы забега</h2>
         <div
-          className="leaderboard2__modeCard"
+          key={activeDiscipline}
+          className={`leaderboard2__modeCard leaderboard2__modeCard--${disciplineDirection}`}
           style={{ '--leaderboard2-mode-image': `url(${discipline.image})` } as CSSProperties}
         >
           <img className="leaderboard2__modeGlobes" src="/assets/leaderboard2/mode-globes.svg" alt="" aria-hidden />
@@ -508,12 +506,12 @@ export default function RemoteLeaderboardLandingPage() {
             <CarouselButton
               direction="prev"
               label="Предыдущий режим"
-              onClick={() => setActiveDiscipline((current) => loopIndex(current, -1, DISCIPLINES.length))}
+              onClick={() => handleDisciplineChange(-1)}
             />
             <CarouselButton
               direction="next"
               label="Следующий режим"
-              onClick={() => setActiveDiscipline((current) => loopIndex(current, 1, DISCIPLINES.length))}
+              onClick={() => handleDisciplineChange(1)}
             />
           </div>
           <a className="leaderboard2__modeCta" href="#join" onClick={handleJoinPopupClick}>
@@ -550,8 +548,8 @@ export default function RemoteLeaderboardLandingPage() {
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--bottomLeft" aria-hidden />
         <span className="leaderboard2__cornerMark leaderboard2__cornerMark--bottomRight" aria-hidden />
         <img className="leaderboard2__prizeRings" src="/assets/leaderboard2/prize-rings-figma.svg" alt="" aria-hidden />
-        <img className="leaderboard2__prizeShoeDodge" src="/assets/leaderboard2/prize-shoe-dodge-figma.png" alt="" aria-hidden />
-        <img className="leaderboard2__prizeShoeMain" src="/assets/leaderboard2/prize-shoe-main-figma.png" alt="" aria-hidden />
+        <img className="leaderboard2__prizeShoeDodge" src="/assets/leaderboard2/prize-shoe-deviate-nitro-4-figma.png" alt="" aria-hidden />
+        <img className="leaderboard2__prizeShoeMain" src="/assets/leaderboard2/prize-shoe-deviate-nitro-4-figma.png" alt="" aria-hidden />
         <span className="leaderboard2__prizeGlobe" aria-hidden>
           <img className="leaderboard2__prizeGlobeBrackets" src="/assets/leaderboard2/prize-globe-brackets-figma.svg" alt="" />
           <img className="leaderboard2__prizeGlobeIcon" src="/assets/leaderboard2/prize-globe-figma.svg" alt="" />
@@ -589,39 +587,43 @@ export default function RemoteLeaderboardLandingPage() {
 
       <section className="leaderboard2__finalCta" id="final-cta">
         <h2>
-          Готов попасть
-          <br />в топ-10 и забрать
-          <br />свою пару
+          Готов попасть в топ-10
+          <br />и забрать свою пару
         </h2>
         <strong>
-          <span className="leaderboard2__finalCtaModelDesktop">PUMA MagMax</span>
-          <span className="leaderboard2__finalCtaModelDesktop">NITRO 2?</span>
-          <span className="leaderboard2__finalCtaModelMobile">DEVIATE NITRO?</span>
+          <span className="leaderboard2__finalCtaModelDesktop">Deviate Nitro 4?</span>
+          <span className="leaderboard2__finalCtaModelMobile">DEVIATE NITRO 4?</span>
         </strong>
-        <p className="leaderboard2__finalCtaText">
-          <span>Выбирай дисциплину,</span>
-          <span>показывай максимум,</span>
-          <span>следи за своим результатом</span>
-        </p>
         <div className="leaderboard2__finalCtaGeo" aria-hidden>
           <span className="leaderboard2__finalCtaGeoDesktop">
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topLeft" />
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topRight" />
-            <span className="leaderboard2__finalCtaGeoText">55° 50' 8" N&nbsp;&nbsp;&nbsp;37° 37' 2" E.</span>
+            <span className="leaderboard2__finalCtaGeoText">55.7508° N</span>
+            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomLeft" />
+            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomRight" />
+          </span>
+          <span className="leaderboard2__finalCtaGeoDesktop leaderboard2__finalCtaGeoDesktop--east">
+            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topLeft" />
+            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topRight" />
+            <span className="leaderboard2__finalCtaGeoText">37.6172° E.</span>
+            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomLeft" />
+            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomRight" />
+          </span>
+          <p className="leaderboard2__finalCtaText">
+            <span>Выбирай дисциплину, показывай максимум </span>
+            <span>и следи за своим результатом в рейтинге</span>
+          </p>
+          <span className="leaderboard2__finalCtaGeoGroup">
+            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topLeft" />
+            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topRight" />
+            <span className="leaderboard2__finalCtaGeoText">55.7508° N</span>
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomLeft" />
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomRight" />
           </span>
           <span className="leaderboard2__finalCtaGeoGroup">
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topLeft" />
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topRight" />
-            <span className="leaderboard2__finalCtaGeoText">55° 50' 8" N</span>
-            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomLeft" />
-            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomRight" />
-          </span>
-          <span className="leaderboard2__finalCtaGeoGroup">
-            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topLeft" />
-            <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topRight" />
-            <span className="leaderboard2__finalCtaGeoText">37° 37' 2" E.</span>
+            <span className="leaderboard2__finalCtaGeoText">37.6172° E.</span>
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomLeft" />
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomRight" />
           </span>

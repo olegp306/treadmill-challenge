@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.5.104",
+  "version": "0.5.105",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@fontsource/oswald": "^5.2.8",
-    "@treadmill-challenge/shared": "*",
+    "@treadmill-challenge/shared": "workspace:*",
     "glin-profanity": "^3.3.0",
     "input-format": "^0.3.14",
     "libphonenumber-js": "^1.12.41",
