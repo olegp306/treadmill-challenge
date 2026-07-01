@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.112] - 2026-07-01
+
+### Remote system
+
+- **Amazing Red embed scrolling:** switched the Amazing Red iframe integration to an internal `800px` scroll window instead of resizing the cross-origin iframe to the full landing height, so wheel/touch scrolling works when the pointer is over the challenge content.
+- **Remote versions:** `remote-frontend` raised to `0.1.105`.
+
+### Verification
+
+- Reproduced on `https://amazingred.ru/promo/running_challenge/`: wheel over the iframe body did not move the page while wheel at the edge did, confirming the full-height cross-origin iframe scroll trap.
+- `pnpm run build:remote-frontend`
+
 ## [0.5.111] - 2026-07-01
 
 ### Remote system

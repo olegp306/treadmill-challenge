@@ -34,4 +34,31 @@ describe('createRunningChallengeResizeMessenger', () => {
       'https://amazingred.ru'
     );
   });
+
+  it('uses an internal iframe scroll window when embedded on Amazing Red', () => {
+    const postMessage = vi.fn();
+    const messenger = createRunningChallengeResizeMessenger({
+      window: {
+        parent: { postMessage },
+        innerHeight: 6478,
+      },
+      document: {
+        referrer: 'https://amazingred.ru/promo/running_challenge/',
+        documentElement: { scrollHeight: 6478 },
+        body: { scrollHeight: 6478 },
+        querySelector: (selector: string) => {
+          if (selector === '#root') return makeElement(6478, 6478);
+          if (selector === '.leaderboard2') return makeElement(6478, 6478);
+          return null;
+        },
+      },
+    });
+
+    messenger.sendHeight();
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: 'running-challenge:resize', height: 800 },
+      'https://amazingred.ru'
+    );
+  });
 });

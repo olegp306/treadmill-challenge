@@ -1,5 +1,6 @@
 const RUNNING_CHALLENGE_PARENT_ORIGIN = 'https://amazingred.ru';
 const RUNNING_CHALLENGE_RESIZE_MESSAGE = 'running-challenge:resize';
+const AMAZING_RED_IFRAME_SCROLL_HEIGHT = 800;
 
 type MeasurableElement = {
   scrollHeight?: number;
@@ -27,6 +28,7 @@ type ResizeMessengerWindow = {
 type ResizeMessengerDocument = {
   documentElement: MeasurableElement;
   body: MeasurableElement;
+  referrer?: string;
   querySelector: (selector: string) => MeasurableElement | null;
   fonts?: {
     ready: Promise<unknown>;
@@ -58,9 +60,25 @@ function measureLandingHeight(deps: ResizeMessengerDeps): number {
   );
 }
 
+function isAmazingRedEmbed(referrer: string | undefined): boolean {
+  if (!referrer) return false;
+
+  try {
+    const { hostname } = new URL(referrer);
+    return hostname === 'amazingred.ru' || hostname.endsWith('.amazingred.ru');
+  } catch {
+    return false;
+  }
+}
+
+function measurePostedHeight(deps: ResizeMessengerDeps): number {
+  if (isAmazingRedEmbed(deps.document.referrer)) return AMAZING_RED_IFRAME_SCROLL_HEIGHT;
+  return measureLandingHeight(deps);
+}
+
 export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps) {
   const sendHeight = () => {
-    const height = measureLandingHeight(deps);
+    const height = measurePostedHeight(deps);
     if (deps.window.parent === deps.window) return height;
 
     const postMessage = deps.window.parent.postMessage;
