@@ -1,6 +1,7 @@
 const RUNNING_CHALLENGE_PARENT_ORIGIN = 'https://amazingred.ru';
 const RUNNING_CHALLENGE_RESIZE_MESSAGE = 'running-challenge:resize';
 const RUNNING_CHALLENGE_SCROLL_MESSAGE = 'running-challenge:scroll';
+const AMAZING_RED_IFRAME_SCROLL_HEIGHT = 800;
 
 type RunningChallengeParentMessage =
   | { type: typeof RUNNING_CHALLENGE_RESIZE_MESSAGE; height: number }
@@ -76,6 +77,7 @@ export function isRunningChallengeAmazingRedEmbed(referrer: string | undefined):
 }
 
 function measurePostedHeight(deps: ResizeMessengerDeps): number {
+  if (isRunningChallengeAmazingRedEmbed(deps.document.referrer)) return AMAZING_RED_IFRAME_SCROLL_HEIGHT;
   return measureLandingHeight(deps);
 }
 

@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.118] - 2026-07-01
+
+### Remote system
+
+- **Amazing Red embed rollback:** reverted the experimental full-height iframe sheet mode because it performs poorly on mobile; the embed is back to the fixed `800px` internal scroll window with scroll handoff messages.
+- **Remote versions:** `remote-frontend` raised to `0.1.111`.
+
+### Verification
+
+- `pnpm run build:shared`
+- `pnpm run build:remote-backend`
+- `pnpm run build:remote-frontend`
+
 ## [0.5.117] - 2026-07-01
 
 ### Remote system

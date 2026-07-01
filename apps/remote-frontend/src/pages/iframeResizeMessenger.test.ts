@@ -35,7 +35,7 @@ describe('createRunningChallengeResizeMessenger', () => {
     );
   });
 
-  it('posts the full landing height when embedded on Amazing Red', () => {
+  it('uses an internal iframe scroll window when embedded on Amazing Red', () => {
     const postMessage = vi.fn();
     const messenger = createRunningChallengeResizeMessenger({
       window: {
@@ -57,7 +57,7 @@ describe('createRunningChallengeResizeMessenger', () => {
     messenger.sendHeight();
 
     expect(postMessage).toHaveBeenCalledWith(
-      { type: 'running-challenge:resize', height: 6478 },
+      { type: 'running-challenge:resize', height: 800 },
       'https://amazingred.ru'
     );
   });
