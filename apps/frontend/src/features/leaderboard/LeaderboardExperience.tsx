@@ -38,7 +38,7 @@ function slideIndexFor(runTypeId: RunTypeId, sex: Gender): number {
 }
 
 const CAROUSEL_FADE_MS = 220;
-const EMBED_NARROW_LAYOUT_WIDTH = 1363;
+const EMBED_NARROW_LAYOUT_WIDTH = 1024;
 
 function parseLeaderboardScope(searchParams: URLSearchParams): { runTypeId: RunTypeId; sex: Gender } | null {
   const rt = searchParams.get('runTypeId');

@@ -7,6 +7,22 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.111] - 2026-07-01
+
+### Remote system
+
+- **Remote Leaderboard landing responsive:** moved the desktop-to-mobile layout switch to `1024px` and below, keeping narrowed desktop windows on the scaled desktop layout until the tablet/mobile breakpoint.
+- **Remote Leaderboard landing prize block:** forced the PUMA prize card to use the real mobile composition through the full mobile/tablet range so the shoe and model text no longer enter a broken intermediate state.
+- **Remote Leaderboard landing history:** forced the monthly result cards and gender tabs to use the same mobile width through the full mobile/tablet range so the cards no longer clip in narrowed desktop windows.
+- **Remote Leaderboard embedded rating:** aligned the embedded leaderboard narrow layout breakpoint with the landing page at `1024px`.
+- **Remote versions:** `remote-frontend` raised to `0.1.104`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright viewport checks verified `390px`, `450px`, `520px`, `640px`, `769px`, and `1024px` render the PUMA prize card in mobile composition with no horizontal overflow, while `1025px` and `1364px` use the desktop prize layout.
+- Playwright viewport checks verified the monthly history cards at `390px`, `450px`, `520px`, `640px`, `730px`, `900px`, and `1024px` stay inside the mobile card width with no horizontal overflow.
+
 ## [0.5.110] - 2026-07-01
 
 ### Remote system

@@ -7,7 +7,7 @@ import './RemoteLeaderboardLandingPage.css';
 const PRODUCT_VERSION = rootPackage.version;
 const FONT_GATE_TIMEOUT_MS = 3_000;
 const LEADERBOARD2_DESKTOP_WIDTH = 1364;
-const LEADERBOARD2_MOBILE_LAYOUT_WIDTH = 1363;
+const LEADERBOARD2_MOBILE_LAYOUT_WIDTH = 1024;
 const LEADERBOARD2_FONT_REQUESTS = [
   '500 16px "Druk Wide Cyr"',
   '700 16px "Druk Wide Cyr"',
