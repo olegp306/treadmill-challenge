@@ -89,6 +89,10 @@ function measurePostedHeight(deps: ResizeMessengerDeps): number {
   return measureLandingHeight(deps);
 }
 
+function shouldInstallScrollHandoff(deps: ResizeMessengerDeps): boolean {
+  return isRunningChallengeAmazingRedEmbed(deps.document.referrer) && deps.window.innerWidth >= AMAZING_RED_SHEET_MODE_MIN_WIDTH;
+}
+
 function canElementScroll(element: Element | null | undefined, deltaY: number): boolean {
   if (!element || !('scrollHeight' in element)) return false;
 
@@ -142,6 +146,7 @@ function canAnyLocalScrollerMove(target: EventTarget | null, deltaY: number, dep
 
 export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps) {
   const isAmazingRedEmbed = isRunningChallengeAmazingRedEmbed(deps.document.referrer);
+  const installScrollHandoff = shouldInstallScrollHandoff(deps);
 
   const postParentMessage = (message: RunningChallengeParentMessage) => {
     if (deps.window.parent === deps.window) return false;
@@ -225,7 +230,7 @@ export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps)
       lastTouchY = null;
     };
 
-    if (isAmazingRedEmbed) {
+    if (installScrollHandoff) {
       deps.window.addEventListener?.('wheel', handleWheel as EventListener, { passive: false });
       deps.window.addEventListener?.('touchstart', handleTouchStart as EventListener, { passive: true });
       deps.window.addEventListener?.('touchmove', handleTouchMove as EventListener, { passive: false });

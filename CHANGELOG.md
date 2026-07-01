@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.120] - 2026-07-01
+
+### Remote system
+
+- **Amazing Red mobile embed scroll:** stopped installing iframe scroll-handoff touch listeners on mobile/tablet so native iframe scrolling stays smooth; desktop sheet mode is unchanged.
+- **Remote versions:** `remote-frontend` raised to `0.1.113`.
+
+### Verification
+
+- `pnpm --dir apps/remote-frontend exec vitest run src/pages/iframeResizeMessenger.test.ts` *(blocked by local `vitest@4` / `vite@5.4.21` `./module-runner` export mismatch before tests run)*
+- `pnpm run build:remote-frontend`
+
 ## [0.5.119] - 2026-07-01
 
 ### Remote system

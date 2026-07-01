@@ -115,4 +115,52 @@ describe('createRunningChallengeResizeMessenger', () => {
       'https://amazingred.ru'
     );
   });
+
+  it('does not install scroll handoff listeners on Amazing Red mobile', () => {
+    const postMessage = vi.fn();
+    const addEventListener = vi.fn();
+    const messenger = createRunningChallengeResizeMessenger({
+      window: {
+        parent: { postMessage },
+        innerWidth: 390,
+        innerHeight: 800,
+        addEventListener,
+      },
+      document: {
+        referrer: 'https://amazingred.ru/promo/running_challenge/',
+        documentElement: { scrollHeight: 6478 },
+        body: { scrollHeight: 6478 },
+        querySelector: () => null,
+      },
+    });
+
+    messenger.start();
+
+    expect(addEventListener).not.toHaveBeenCalledWith('wheel', expect.any(Function), expect.anything());
+    expect(addEventListener).not.toHaveBeenCalledWith('touchmove', expect.any(Function), expect.anything());
+  });
+
+  it('keeps scroll handoff listeners on Amazing Red desktop', () => {
+    const postMessage = vi.fn();
+    const addEventListener = vi.fn();
+    const messenger = createRunningChallengeResizeMessenger({
+      window: {
+        parent: { postMessage },
+        innerWidth: 1366,
+        innerHeight: 800,
+        addEventListener,
+      },
+      document: {
+        referrer: 'https://amazingred.ru/promo/running_challenge/',
+        documentElement: { scrollHeight: 6478 },
+        body: { scrollHeight: 6478 },
+        querySelector: () => null,
+      },
+    });
+
+    messenger.start();
+
+    expect(addEventListener).toHaveBeenCalledWith('wheel', expect.any(Function), { passive: false });
+    expect(addEventListener).toHaveBeenCalledWith('touchmove', expect.any(Function), { passive: false });
+  });
 });
