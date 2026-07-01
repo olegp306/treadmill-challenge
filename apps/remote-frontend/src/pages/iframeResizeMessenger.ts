@@ -81,20 +81,40 @@ function measurePostedHeight(deps: ResizeMessengerDeps): number {
   return measureLandingHeight(deps);
 }
 
-function canElementScroll(element: Element | MeasurableElement | null | undefined, deltaY: number): boolean {
+function canElementScroll(element: Element | null | undefined, deltaY: number): boolean {
   if (!element || !('scrollHeight' in element)) return false;
 
-  const scrollElement = element as Element & {
+  const overflowY = window.getComputedStyle(element).overflowY;
+  if (!['auto', 'scroll', 'overlay'].includes(overflowY)) return false;
+
+  const clientHeight = element.clientHeight;
+  const scrollHeight = element.scrollHeight;
+  const scrollTop = element.scrollTop;
+
+  if (scrollHeight <= clientHeight + 1) return false;
+  if (deltaY > 0) return scrollTop + clientHeight < scrollHeight - 1;
+  if (deltaY < 0) return scrollTop > 1;
+  return false;
+}
+
+function canRootScroll(deltaY: number, deps: ResizeMessengerDeps): boolean {
+  const documentElement = deps.document.documentElement as Element & {
     clientHeight?: number;
     scrollHeight?: number;
     scrollTop?: number;
   };
-  const clientHeight = scrollElement.clientHeight ?? 0;
-  const scrollHeight = scrollElement.scrollHeight ?? 0;
-  const scrollTop = scrollElement.scrollTop ?? 0;
+  const body = deps.document.body as Element & {
+    clientHeight?: number;
+    scrollHeight?: number;
+    scrollTop?: number;
+  };
 
-  if (scrollHeight <= clientHeight + 1) return false;
-  if (deltaY > 0) return scrollTop + clientHeight < scrollHeight - 1;
+  const viewportHeight = Math.max(deps.window.innerHeight, documentElement.clientHeight ?? 0, body.clientHeight ?? 0);
+  const scrollHeight = Math.max(documentElement.scrollHeight ?? 0, body.scrollHeight ?? 0);
+  const scrollTop = Math.max(documentElement.scrollTop ?? 0, body.scrollTop ?? 0);
+
+  if (scrollHeight <= viewportHeight + 1) return false;
+  if (deltaY > 0) return scrollTop + viewportHeight < scrollHeight - 1;
   if (deltaY < 0) return scrollTop > 1;
   return false;
 }
@@ -103,13 +123,13 @@ function canAnyLocalScrollerMove(target: EventTarget | null, deltaY: number, dep
   if (typeof Element !== 'undefined' && target instanceof Element) {
     let node: Element | null = target;
     while (node) {
-      if (canElementScroll(node, deltaY)) return true;
       if (node === deps.document.body || node === deps.document.documentElement) break;
+      if (canElementScroll(node, deltaY)) return true;
       node = node.parentElement;
     }
   }
 
-  return canElementScroll(deps.document.documentElement, deltaY) || canElementScroll(deps.document.body, deltaY);
+  return canRootScroll(deltaY, deps);
 }
 
 export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps) {

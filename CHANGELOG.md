@@ -7,6 +7,17 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.114] - 2026-07-01
+
+### Remote system
+
+- **Amazing Red embed scroll bridge:** fixed downward scroll handoff by treating only real `overflow-y: auto|scroll|overlay` elements as nested scrollers; regular tall content blocks no longer suppress `running-challenge:scroll` messages.
+- **Remote versions:** `remote-frontend` raised to `0.1.107`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+
 ## [0.5.113] - 2026-07-01
 
 ### Remote system
