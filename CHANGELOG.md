@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.113] - 2026-07-01
+
+### Remote system
+
+- **Amazing Red embed scroll bridge:** added `running-challenge:scroll` messages when the embedded leaderboard reaches the top or bottom of its internal scroll area, so the parent page can continue scrolling with `window.scrollBy(...)`.
+- **Amazing Red embed scrollbar:** hide the internal iframe scrollbar in Amazing Red embed mode while keeping wheel/touch scrolling active, removing the double-scrollbar visual.
+- **Remote versions:** `remote-frontend` raised to `0.1.106`.
+
+### Verification
+
+- `pnpm run build:shared`
+- `pnpm run build:remote-backend`
+- `pnpm run build:remote-frontend`
+
 ## [0.5.112] - 2026-07-01
 
 ### Remote system

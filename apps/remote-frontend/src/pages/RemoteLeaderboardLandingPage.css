@@ -146,6 +146,19 @@ body.leaderboard2-route {
   -webkit-overflow-scrolling: touch;
 }
 
+html.leaderboard2-route--amazingred-embed,
+body.leaderboard2-route--amazingred-embed {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html.leaderboard2-route--amazingred-embed::-webkit-scrollbar,
+body.leaderboard2-route--amazingred-embed::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 body.leaderboard2-route #root {
   height: auto;
   min-height: 100dvh;

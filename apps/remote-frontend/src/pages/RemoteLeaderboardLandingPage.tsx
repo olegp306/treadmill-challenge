@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
-import { installRunningChallengeResizeMessenger } from './iframeResizeMessenger';
+import { installRunningChallengeResizeMessenger, isRunningChallengeAmazingRedEmbed } from './iframeResizeMessenger';
 import rootPackage from '../../../../package.json';
 import './RemoteLeaderboardLandingPage.css';
 
@@ -247,6 +247,9 @@ export default function RemoteLeaderboardLandingPage() {
 
   useEffect(() => {
     document.body.classList.add('leaderboard2-route');
+    const isAmazingRedEmbed = isRunningChallengeAmazingRedEmbed(document.referrer);
+    document.documentElement.classList.toggle('leaderboard2-route--amazingred-embed', isAmazingRedEmbed);
+    document.body.classList.toggle('leaderboard2-route--amazingred-embed', isAmazingRedEmbed);
     let frame = 0;
 
     const updateResponsiveStage = () => {
@@ -287,7 +290,12 @@ export default function RemoteLeaderboardLandingPage() {
       resizeObserver?.disconnect();
       window.removeEventListener('resize', updateResponsiveStage);
       window.removeEventListener('orientationchange', updateResponsiveStage);
-      document.body.classList.remove('leaderboard2-route', 'leaderboard2-route--desktop-scaled');
+      document.body.classList.remove(
+        'leaderboard2-route',
+        'leaderboard2-route--desktop-scaled',
+        'leaderboard2-route--amazingred-embed'
+      );
+      document.documentElement.classList.remove('leaderboard2-route--amazingred-embed');
       document.documentElement.style.removeProperty('--lb2-desktop-scale');
       document.documentElement.style.removeProperty('--lb2-desktop-scaled-height');
     };

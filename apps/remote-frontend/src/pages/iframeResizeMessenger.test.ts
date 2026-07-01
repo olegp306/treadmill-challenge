@@ -61,4 +61,27 @@ describe('createRunningChallengeResizeMessenger', () => {
       'https://amazingred.ru'
     );
   });
+
+  it('posts scroll handoff messages when embedded on Amazing Red', () => {
+    const postMessage = vi.fn();
+    const messenger = createRunningChallengeResizeMessenger({
+      window: {
+        parent: { postMessage },
+        innerHeight: 800,
+      },
+      document: {
+        referrer: 'https://amazingred.ru/promo/running_challenge/',
+        documentElement: { scrollHeight: 6478 },
+        body: { scrollHeight: 6478 },
+        querySelector: () => null,
+      },
+    });
+
+    messenger.sendScroll(320);
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: 'running-challenge:scroll', deltaY: 320 },
+      'https://amazingred.ru'
+    );
+  });
 });

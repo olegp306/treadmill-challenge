@@ -1,6 +1,11 @@
 const RUNNING_CHALLENGE_PARENT_ORIGIN = 'https://amazingred.ru';
 const RUNNING_CHALLENGE_RESIZE_MESSAGE = 'running-challenge:resize';
+const RUNNING_CHALLENGE_SCROLL_MESSAGE = 'running-challenge:scroll';
 const AMAZING_RED_IFRAME_SCROLL_HEIGHT = 800;
+
+type RunningChallengeParentMessage =
+  | { type: typeof RUNNING_CHALLENGE_RESIZE_MESSAGE; height: number }
+  | { type: typeof RUNNING_CHALLENGE_SCROLL_MESSAGE; deltaY: number };
 
 type MeasurableElement = {
   scrollHeight?: number;
@@ -8,7 +13,7 @@ type MeasurableElement = {
 };
 
 type ResizeMessengerParent = {
-  postMessage: (message: { type: string; height: number }, targetOrigin: string) => void;
+  postMessage: (message: RunningChallengeParentMessage, targetOrigin: string) => void;
 };
 
 type ResizeMessengerWindow = {
@@ -60,7 +65,7 @@ function measureLandingHeight(deps: ResizeMessengerDeps): number {
   );
 }
 
-function isAmazingRedEmbed(referrer: string | undefined): boolean {
+export function isRunningChallengeAmazingRedEmbed(referrer: string | undefined): boolean {
   if (!referrer) return false;
 
   try {
@@ -72,33 +77,77 @@ function isAmazingRedEmbed(referrer: string | undefined): boolean {
 }
 
 function measurePostedHeight(deps: ResizeMessengerDeps): number {
-  if (isAmazingRedEmbed(deps.document.referrer)) return AMAZING_RED_IFRAME_SCROLL_HEIGHT;
+  if (isRunningChallengeAmazingRedEmbed(deps.document.referrer)) return AMAZING_RED_IFRAME_SCROLL_HEIGHT;
   return measureLandingHeight(deps);
 }
 
+function canElementScroll(element: Element | MeasurableElement | null | undefined, deltaY: number): boolean {
+  if (!element || !('scrollHeight' in element)) return false;
+
+  const scrollElement = element as Element & {
+    clientHeight?: number;
+    scrollHeight?: number;
+    scrollTop?: number;
+  };
+  const clientHeight = scrollElement.clientHeight ?? 0;
+  const scrollHeight = scrollElement.scrollHeight ?? 0;
+  const scrollTop = scrollElement.scrollTop ?? 0;
+
+  if (scrollHeight <= clientHeight + 1) return false;
+  if (deltaY > 0) return scrollTop + clientHeight < scrollHeight - 1;
+  if (deltaY < 0) return scrollTop > 1;
+  return false;
+}
+
+function canAnyLocalScrollerMove(target: EventTarget | null, deltaY: number, deps: ResizeMessengerDeps): boolean {
+  if (typeof Element !== 'undefined' && target instanceof Element) {
+    let node: Element | null = target;
+    while (node) {
+      if (canElementScroll(node, deltaY)) return true;
+      if (node === deps.document.body || node === deps.document.documentElement) break;
+      node = node.parentElement;
+    }
+  }
+
+  return canElementScroll(deps.document.documentElement, deltaY) || canElementScroll(deps.document.body, deltaY);
+}
+
 export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps) {
-  const sendHeight = () => {
-    const height = measurePostedHeight(deps);
-    if (deps.window.parent === deps.window) return height;
+  const isAmazingRedEmbed = isRunningChallengeAmazingRedEmbed(deps.document.referrer);
+
+  const postParentMessage = (message: RunningChallengeParentMessage) => {
+    if (deps.window.parent === deps.window) return false;
 
     const postMessage = deps.window.parent.postMessage;
-    if (typeof postMessage !== 'function') return height;
+    if (typeof postMessage !== 'function') return false;
 
-    postMessage.call(
-      deps.window.parent,
-      {
-        type: RUNNING_CHALLENGE_RESIZE_MESSAGE,
-        height,
-      },
-      RUNNING_CHALLENGE_PARENT_ORIGIN
-    );
+    postMessage.call(deps.window.parent, message, RUNNING_CHALLENGE_PARENT_ORIGIN);
+    return true;
+  };
+
+  const sendHeight = () => {
+    const height = measurePostedHeight(deps);
+    postParentMessage({
+      type: RUNNING_CHALLENGE_RESIZE_MESSAGE,
+      height,
+    });
 
     return height;
+  };
+
+  const sendScroll = (deltaY: number) => {
+    if (!isAmazingRedEmbed || !Number.isFinite(deltaY) || Math.abs(deltaY) < 1) return false;
+
+    return postParentMessage({
+      type: RUNNING_CHALLENGE_SCROLL_MESSAGE,
+      deltaY,
+    });
   };
 
   const start = () => {
     let frame = 0;
     let stopped = false;
+    let lastTouchY: number | null = null;
     const timers: number[] = [];
 
     const scheduleSend = () => {
@@ -121,6 +170,40 @@ export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps)
     deps.window.addEventListener?.('load', scheduleSend);
     deps.window.addEventListener?.('resize', scheduleSend);
     deps.window.addEventListener?.('orientationchange', scheduleSend);
+
+    const handleWheel = (event: WheelEvent) => {
+      if (canAnyLocalScrollerMove(event.target, event.deltaY, deps)) return;
+      if (sendScroll(event.deltaY)) event.preventDefault();
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      lastTouchY = event.touches[0]?.clientY ?? null;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const nextTouchY = event.touches[0]?.clientY;
+      if (lastTouchY === null || nextTouchY === undefined) {
+        lastTouchY = nextTouchY ?? null;
+        return;
+      }
+
+      const deltaY = lastTouchY - nextTouchY;
+      lastTouchY = nextTouchY;
+      if (canAnyLocalScrollerMove(event.target, deltaY, deps)) return;
+      if (sendScroll(deltaY)) event.preventDefault();
+    };
+
+    const handleTouchEnd = () => {
+      lastTouchY = null;
+    };
+
+    if (isAmazingRedEmbed) {
+      deps.window.addEventListener?.('wheel', handleWheel as EventListener, { passive: false });
+      deps.window.addEventListener?.('touchstart', handleTouchStart as EventListener, { passive: true });
+      deps.window.addEventListener?.('touchmove', handleTouchMove as EventListener, { passive: false });
+      deps.window.addEventListener?.('touchend', handleTouchEnd as EventListener);
+      deps.window.addEventListener?.('touchcancel', handleTouchEnd as EventListener);
+    }
 
     const observedElements = [
       deps.document.documentElement,
@@ -151,10 +234,15 @@ export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps)
       deps.window.removeEventListener?.('load', scheduleSend);
       deps.window.removeEventListener?.('resize', scheduleSend);
       deps.window.removeEventListener?.('orientationchange', scheduleSend);
+      deps.window.removeEventListener?.('wheel', handleWheel as EventListener);
+      deps.window.removeEventListener?.('touchstart', handleTouchStart as EventListener);
+      deps.window.removeEventListener?.('touchmove', handleTouchMove as EventListener);
+      deps.window.removeEventListener?.('touchend', handleTouchEnd as EventListener);
+      deps.window.removeEventListener?.('touchcancel', handleTouchEnd as EventListener);
     };
   };
 
-  return { sendHeight, start };
+  return { sendHeight, sendScroll, start };
 }
 
 export function installRunningChallengeResizeMessenger() {
