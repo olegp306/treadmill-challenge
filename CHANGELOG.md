@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.110] - 2026-07-01
+
+### Remote system
+
+- **Remote Leaderboard landing responsive:** removed the narrow desktop transition state by switching the landing and embedded leaderboard to the same mobile layout below the full desktop width.
+- **Remote Leaderboard landing responsive:** centered the mobile layout inside narrowed desktop windows from `521px` to `1363px`.
+- **Remote Leaderboard landing rating:** switched the embedded leaderboard controls to narrow/mobile mode at `1363px` and below so gender tabs and search controls no longer overflow.
+- **Remote versions:** `remote-frontend` raised to `0.1.103`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright viewport checks verified `390px`, `640px`, `1025px`, and `1363px` use mobile/narrow layout without desktop scaling or horizontal overflow, while `1364px` uses the full desktop path.
+- Visual Playwright screenshots checked the prize and rating blocks at `640px`.
+
 ## [0.5.109] - 2026-07-01
 
 ### Remote system

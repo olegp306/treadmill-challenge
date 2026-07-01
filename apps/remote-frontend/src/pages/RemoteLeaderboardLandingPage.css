@@ -221,7 +221,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   margin-right: auto;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 1363px) {
   .leaderboard2 {
     opacity: 1;
     animation: leaderboard2PageReveal 460ms cubic-bezier(0.22, 1, 0.36, 1) 70ms backwards;
@@ -1053,7 +1053,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   min-height: 0;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 1363px) {
   .leaderboard2 .leaderboard2__leaderboardFrameWrap .ar-ozio-remote-lb-viewport {
     height: 100% !important;
     min-height: 0 !important;
@@ -2068,7 +2068,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   object-fit: cover;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1363px) {
   .leaderboard2 {
     padding-bottom: 56px;
     background: var(--lb2-bg);
@@ -4130,7 +4130,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1363px) {
   .leaderboard2__modeCard {
     min-height: 432px;
     padding: 32px 22px 20px;
@@ -4246,7 +4246,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1363px) {
   .leaderboard2__timer {
     transform: scaleX(0.85);
     transform-origin: center top;
@@ -4300,7 +4300,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1363px) {
   .leaderboard2__modeCard {
     isolation: isolate;
     min-height: 520px;
@@ -4380,7 +4380,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 1363px) {
   .leaderboard2 {
     --lb2-mobile-content: calc(100vw - 32px);
   }
@@ -5632,7 +5632,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 1363px) {
   .leaderboard2__finalCta h2 {
     width: 420px;
     max-width: none;
@@ -5705,7 +5705,11 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   }
 }
 
-@media (min-width: 521px) and (max-width: 900px) {
+@media (min-width: 521px) and (max-width: 1363px) {
+  .leaderboard2 {
+    --lb2-mobile-content: min(343px, calc(100vw - 32px));
+  }
+
   .leaderboard2__heroCard,
   .leaderboard2__timerCard,
   .leaderboard2__intro,

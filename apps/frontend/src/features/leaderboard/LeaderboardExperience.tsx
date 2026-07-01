@@ -38,6 +38,7 @@ function slideIndexFor(runTypeId: RunTypeId, sex: Gender): number {
 }
 
 const CAROUSEL_FADE_MS = 220;
+const EMBED_NARROW_LAYOUT_WIDTH = 1363;
 
 function parseLeaderboardScope(searchParams: URLSearchParams): { runTypeId: RunTypeId; sex: Gender } | null {
   const rt = searchParams.get('runTypeId');
@@ -431,7 +432,8 @@ export function LeaderboardExperience({
     slides.every((s) => !s.loading && !s.error && s.entries.length === 0);
   const isEmbedLayout = layoutMode === 'embed';
   const isRemoteLikeLayout = layoutMode === 'desktop' || isEmbedLayout;
-  const isNarrowEmbedLayout = isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= 520;
+  const isNarrowEmbedLayout =
+    isEmbedLayout && typeof window !== 'undefined' && window.innerWidth <= EMBED_NARROW_LAYOUT_WIDTH;
   const hideSearchControls = isNarrowEmbedLayout && hideEmbedSearchOnNarrow;
   const useStackSearch = !hideSearchControls && isNarrowEmbedLayout && embedSearchPlacement === 'stack-top';
   const useBelowTabsSearch =
