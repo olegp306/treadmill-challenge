@@ -7,6 +7,28 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.109] - 2026-07-01
+
+### Remote system
+
+- **Remote Leaderboard landing history:** restored month selection with `Июнь 2026` as the current default and `Май 2026` available for review.
+- **Remote Leaderboard landing history:** filled June winners from the June export: `Петров Сергей 18:42.28`, `Петров Сергей 02:59.30`, `Лукин Александр 1562 м`, `Димитрова Валерия 24:04.94`, `Ильченко Алена 03:52.36`, and `Димитрова Валерия 1246 м`.
+- **Remote Leaderboard landing history:** hidden empty dash-only result cards from monthly history.
+- **Remote Leaderboard landing responsive:** switched narrow desktop windows to the mobile/tablet layout at `900px` and below so the prize shoe block no longer stays in the broken scaled desktop state.
+- **Remote Leaderboard landing version badge:** moved the version badge back to the top-right corner and reduced its opacity.
+- **Remote versions:** `remote-frontend` raised to `0.1.102`.
+
+### Local registration
+
+- **Participation rules:** replaced the registration rules text with the latest DOCX copy from `Правила участия (2).docx`, preserving the existing modal style.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright DOM check verified the history month selector, June default winners, May selectable winners, hidden May dash card, and the top-right muted version badge.
+- Playwright viewport check verified `640px` and `900px` use mobile layout instead of desktop scaling, while `901px` keeps the scaled desktop path.
+- `pnpm run build:frontend` was attempted but remains blocked by existing missing frontend type dependencies for `vitest` and Node built-ins.
+
 ## [0.5.108] - 2026-06-30
 
 ### Remote system

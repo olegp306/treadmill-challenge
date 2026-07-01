@@ -7,7 +7,7 @@ import './RemoteLeaderboardLandingPage.css';
 const PRODUCT_VERSION = rootPackage.version;
 const FONT_GATE_TIMEOUT_MS = 3_000;
 const LEADERBOARD2_DESKTOP_WIDTH = 1364;
-const LEADERBOARD2_PHONE_WIDTH = 520;
+const LEADERBOARD2_MOBILE_LAYOUT_WIDTH = 900;
 const LEADERBOARD2_FONT_REQUESTS = [
   '500 16px "Druk Wide Cyr"',
   '700 16px "Druk Wide Cyr"',
@@ -146,20 +146,41 @@ const FAQ = [
   { q: 'Сколько всего победителей?', a: 'Каждый месяц выбираются 6 победителей.' },
 ];
 
-const HISTORY = {
-  female: [
-    { run: 'Стайер-спринт на 5 км', name: '', result: '—' },
-    { run: 'Золотой километр', name: 'Старк Мария', result: '05:08.50' },
-    { run: 'Максимум за 5 минут', name: 'Агафонова Надежда', result: '907 м' },
-  ],
-  male: [
-    { run: 'Стайер-спринт на 5 км', name: 'Лобов Костя', result: '19:56.45' },
-    { run: 'Золотой километр', name: 'Князев Максим', result: '03:34.22' },
-    { run: 'Максимум за 5 минут', name: 'Минаков Иван', result: '1244 м' },
-  ],
-} satisfies Record<'female' | 'male', Array<{ run: string; name: string; result: string }>>;
+type HistoryGender = 'female' | 'male';
+type HistoryMonth = 'june-2026' | 'may-2026';
+type HistoryItem = { run: string; name: string; result: string };
 
-const HISTORY_MONTH = 'Май 2026';
+const HISTORY_MONTHS: Array<{ value: HistoryMonth; label: string }> = [
+  { value: 'june-2026', label: 'Июнь 2026' },
+  { value: 'may-2026', label: 'Май 2026' },
+];
+
+const HISTORY = {
+  'june-2026': {
+    female: [
+      { run: 'Стайер-спринт на 5 км', name: 'Димитрова Валерия', result: '24:04.94' },
+      { run: 'Золотой километр', name: 'Ильченко Алена', result: '03:52.36' },
+      { run: 'Максимум за 5 минут', name: 'Димитрова Валерия', result: '1246 м' },
+    ],
+    male: [
+      { run: 'Стайер-спринт на 5 км', name: 'Петров Сергей', result: '18:42.28' },
+      { run: 'Золотой километр', name: 'Петров Сергей', result: '02:59.30' },
+      { run: 'Максимум за 5 минут', name: 'Лукин Александр', result: '1562 м' },
+    ],
+  },
+  'may-2026': {
+    female: [
+      { run: 'Стайер-спринт на 5 км', name: '', result: '—' },
+      { run: 'Золотой километр', name: 'Старк Мария', result: '05:08.50' },
+      { run: 'Максимум за 5 минут', name: 'Агафонова Надежда', result: '907 м' },
+    ],
+    male: [
+      { run: 'Стайер-спринт на 5 км', name: 'Лобов Костя', result: '19:56.45' },
+      { run: 'Золотой километр', name: 'Князев Максим', result: '03:34.22' },
+      { run: 'Максимум за 5 минут', name: 'Минаков Иван', result: '1244 м' },
+    ],
+  },
+} satisfies Record<HistoryMonth, Record<HistoryGender, HistoryItem[]>>;
 
 function loopIndex(current: number, delta: -1 | 1, length: number) {
   return (current + delta + length) % length;
@@ -169,6 +190,10 @@ function splitHistoryName(name: string) {
   const parts = name.trim().split(/\s+/);
   if (parts.length <= 1) return { lastName: name, firstName: '' };
   return { lastName: parts[0], firstName: parts.slice(1).join(' ') };
+}
+
+function hasHistoryResult(item: HistoryItem) {
+  return item.name.trim().length > 0 && item.result.trim() !== '—';
 }
 
 function CarouselButton({
@@ -200,9 +225,11 @@ export default function RemoteLeaderboardLandingPage() {
   const [participantCount, setParticipantCount] = useState(0);
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
-  const [historyGender, setHistoryGender] = useState<'female' | 'male'>('male');
+  const [historyGender, setHistoryGender] = useState<HistoryGender>('male');
+  const [historyMonth, setHistoryMonth] = useState<HistoryMonth>('june-2026');
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
+  const historyItems = HISTORY[historyMonth][historyGender].filter(hasHistoryResult);
   const mobilePrizeModelParts = [prize.model];
   const handleEntryCountChange = useCallback((count: number) => {
     setParticipantCount(count);
@@ -226,9 +253,7 @@ export default function RemoteLeaderboardLandingPage() {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
         const viewportWidth = window.innerWidth;
-        const phoneWidth = viewportWidth <= LEADERBOARD2_PHONE_WIDTH;
-        const touchTabletWidth = window.matchMedia('(max-width: 900px) and (hover: none) and (pointer: coarse)').matches;
-        const useMobileLayout = phoneWidth || (touchTabletWidth && navigator.maxTouchPoints > 0);
+        const useMobileLayout = viewportWidth <= LEADERBOARD2_MOBILE_LAYOUT_WIDTH;
         const useDesktopScale = !useMobileLayout && viewportWidth < LEADERBOARD2_DESKTOP_WIDTH;
         const scale = Math.min(1, viewportWidth / LEADERBOARD2_DESKTOP_WIDTH);
         document.body.classList.toggle('leaderboard2-route--desktop-scaled', useDesktopScale);
@@ -656,9 +681,20 @@ export default function RemoteLeaderboardLandingPage() {
       <section className="leaderboard2__history" id="history" aria-labelledby="leaderboard2-history-title">
         <div className="leaderboard2__historyHead">
           <h2 id="leaderboard2-history-title">История забегов</h2>
-          <span className="leaderboard2__historyMonth" aria-label="Месяц истории забегов">
-            {HISTORY_MONTH}
-          </span>
+          <label className="leaderboard2__historyMonth">
+            <span className="leaderboard2__historyMonthLabel">Месяц истории забегов</span>
+            <select
+              value={historyMonth}
+              onChange={(event) => setHistoryMonth(event.target.value as HistoryMonth)}
+              aria-label="Месяц истории забегов"
+            >
+              {HISTORY_MONTHS.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         <div className="leaderboard2__historyTabs">
           <button
@@ -677,17 +713,15 @@ export default function RemoteLeaderboardLandingPage() {
           </button>
         </div>
         <div className="leaderboard2__historyGrid">
-          {HISTORY[historyGender].map((item) => {
+          {historyItems.map((item) => {
             const name = splitHistoryName(item.name);
             return (
-              <article key={item.run} className={name.lastName ? undefined : 'leaderboard2__historyEmptyResult'}>
+              <article key={item.run}>
                 <p>{item.run}</p>
-                {name.lastName ? (
-                  <h3>
-                    <span>{name.lastName}</span>
-                    {name.firstName ? <span>{name.firstName}</span> : null}
-                  </h3>
-                ) : null}
+                <h3>
+                  <span>{name.lastName}</span>
+                  {name.firstName ? <span>{name.firstName}</span> : null}
+                </h3>
                 <strong>{item.result}</strong>
               </article>
             );
