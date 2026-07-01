@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.115] - 2026-07-01
+
+### Remote system
+
+- **Remote Leaderboard landing history:** kept monthly history discipline cards visible when a gender/month has no winner yet, showing the run label with a single `—` result instead of dropping the card.
+- **Remote Leaderboard join popup:** render the address popup outside the scaled landing container so it stays centered on desktop and keeps the address/route controls visible on mobile.
+- **Remote versions:** `remote-frontend` raised to `0.1.108`.
+
+### Verification
+
+- `pnpm run build:shared`
+- `pnpm run build:remote-backend`
+- `pnpm run build:remote-frontend`
+
 ## [0.5.114] - 2026-07-01
 
 ### Remote system

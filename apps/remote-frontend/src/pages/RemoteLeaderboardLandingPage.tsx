@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
 import { installRunningChallengeResizeMessenger, isRunningChallengeAmazingRedEmbed } from './iframeResizeMessenger';
 import rootPackage from '../../../../package.json';
@@ -229,7 +230,7 @@ export default function RemoteLeaderboardLandingPage() {
   const [historyMonth, setHistoryMonth] = useState<HistoryMonth>('june-2026');
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
-  const historyItems = HISTORY[historyMonth][historyGender].filter(hasHistoryResult);
+  const historyItems = HISTORY[historyMonth][historyGender];
   const mobilePrizeModelParts = [prize.model];
   const handleEntryCountChange = useCallback((count: number) => {
     setParticipantCount(count);
@@ -723,13 +724,18 @@ export default function RemoteLeaderboardLandingPage() {
         <div className="leaderboard2__historyGrid">
           {historyItems.map((item) => {
             const name = splitHistoryName(item.name);
+            const hasResult = hasHistoryResult(item);
             return (
               <article key={item.run}>
                 <p>{item.run}</p>
-                <h3>
-                  <span>{name.lastName}</span>
-                  {name.firstName ? <span>{name.firstName}</span> : null}
-                </h3>
+                {hasResult ? (
+                  <h3>
+                    <span>{name.lastName}</span>
+                    {name.firstName ? <span>{name.firstName}</span> : null}
+                  </h3>
+                ) : (
+                  <h3 className="leaderboard2__historyEmptyResult" aria-label="Победитель не определен" />
+                )}
                 <strong>{item.result}</strong>
               </article>
             );
@@ -737,7 +743,7 @@ export default function RemoteLeaderboardLandingPage() {
         </div>
       </section>
 
-      {isJoinPopupOpen ? (
+      {isJoinPopupOpen && typeof document !== 'undefined' ? createPortal(
         <div
           className="leaderboard2__joinOverlay"
           role="presentation"
@@ -785,7 +791,8 @@ export default function RemoteLeaderboardLandingPage() {
             </div>
             <img className="leaderboard2__joinMap" src="/assets/leaderboard2/popup-map.png" alt="Карта проезда к ТЦ Авиапарк" />
           </section>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </main>
   );
