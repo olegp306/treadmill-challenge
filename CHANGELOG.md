@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.116] - 2026-07-01
+
+### Remote system
+
+- **Remote Leaderboard landing history:** normalize monthly history to always render all three discipline cards for each month/gender; missing winners or missing discipline entries now show the discipline label with a single `—` result.
+- **Remote versions:** `remote-frontend` raised to `0.1.109`.
+
+### Verification
+
+- `pnpm run build:shared`
+- `pnpm run build:remote-backend`
+- `pnpm run build:remote-frontend`
+
 ## [0.5.115] - 2026-07-01
 
 ### Remote system

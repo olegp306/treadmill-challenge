@@ -151,6 +151,8 @@ type HistoryGender = 'female' | 'male';
 type HistoryMonth = 'june-2026' | 'may-2026';
 type HistoryItem = { run: string; name: string; result: string };
 
+const HISTORY_DISCIPLINES = ['Стайер-спринт на 5 км', 'Золотой километр', 'Максимум за 5 минут'];
+
 const HISTORY_MONTHS: Array<{ value: HistoryMonth; label: string }> = [
   { value: 'june-2026', label: 'Июнь 2026' },
   { value: 'may-2026', label: 'Май 2026' },
@@ -197,6 +199,13 @@ function hasHistoryResult(item: HistoryItem) {
   return item.name.trim().length > 0 && item.result.trim() !== '—';
 }
 
+function normalizeHistoryItems(items: HistoryItem[]) {
+  return HISTORY_DISCIPLINES.map((run) => {
+    const item = items.find((candidate) => candidate.run === run);
+    return item ?? { run, name: '', result: '—' };
+  });
+}
+
 function CarouselButton({
   direction,
   onClick,
@@ -230,7 +239,7 @@ export default function RemoteLeaderboardLandingPage() {
   const [historyMonth, setHistoryMonth] = useState<HistoryMonth>('june-2026');
   const discipline = DISCIPLINES[activeDiscipline];
   const prize = PRIZES[activePrize];
-  const historyItems = HISTORY[historyMonth][historyGender];
+  const historyItems = normalizeHistoryItems(HISTORY[historyMonth][historyGender]);
   const mobilePrizeModelParts = [prize.model];
   const handleEntryCountChange = useCallback((count: number) => {
     setParticipantCount(count);
