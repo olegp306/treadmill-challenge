@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.121] - 2026-07-01
+
+### Remote system
+
+- **Amazing Red mobile embed handoff:** restored mobile edge handoff from the `800px` iframe to the parent page using passive touch listeners, so users can continue scrolling below the iframe without blocking native iframe scroll.
+- **Remote versions:** `remote-frontend` raised to `0.1.114`.
+
+### Verification
+
+- `pnpm --dir apps/remote-frontend exec vitest run src/pages/iframeResizeMessenger.test.ts` *(blocked by local `vitest@4` / `vite@5.4.21` `./module-runner` export mismatch before tests run)*
+- `pnpm run build:remote-frontend`
+
 ## [0.5.120] - 2026-07-01
 
 ### Remote system

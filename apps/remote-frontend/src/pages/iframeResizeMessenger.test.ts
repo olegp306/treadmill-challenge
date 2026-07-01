@@ -116,7 +116,7 @@ describe('createRunningChallengeResizeMessenger', () => {
     );
   });
 
-  it('does not install scroll handoff listeners on Amazing Red mobile', () => {
+  it('installs non-blocking touch handoff listeners on Amazing Red mobile', () => {
     const postMessage = vi.fn();
     const addEventListener = vi.fn();
     const messenger = createRunningChallengeResizeMessenger({
@@ -137,7 +137,8 @@ describe('createRunningChallengeResizeMessenger', () => {
     messenger.start();
 
     expect(addEventListener).not.toHaveBeenCalledWith('wheel', expect.any(Function), expect.anything());
-    expect(addEventListener).not.toHaveBeenCalledWith('touchmove', expect.any(Function), expect.anything());
+    expect(addEventListener).toHaveBeenCalledWith('touchstart', expect.any(Function), { passive: true });
+    expect(addEventListener).toHaveBeenCalledWith('touchmove', expect.any(Function), { passive: true });
   });
 
   it('keeps scroll handoff listeners on Amazing Red desktop', () => {
@@ -162,5 +163,38 @@ describe('createRunningChallengeResizeMessenger', () => {
 
     expect(addEventListener).toHaveBeenCalledWith('wheel', expect.any(Function), { passive: false });
     expect(addEventListener).toHaveBeenCalledWith('touchmove', expect.any(Function), { passive: false });
+  });
+
+  it('passes mobile edge touch scroll to the Amazing Red parent without blocking native scrolling', () => {
+    const postMessage = vi.fn();
+    const listeners = new Map<string, EventListener>();
+    const messenger = createRunningChallengeResizeMessenger({
+      window: {
+        parent: { postMessage },
+        innerWidth: 390,
+        innerHeight: 800,
+        addEventListener: vi.fn((type: string, listener: EventListener) => {
+          listeners.set(type, listener);
+        }) as unknown as Window['addEventListener'],
+      },
+      document: {
+        referrer: 'https://amazingred.ru/promo/running_challenge/',
+        documentElement: { scrollHeight: 800 },
+        body: { scrollHeight: 800 },
+        querySelector: () => null,
+      },
+    });
+
+    messenger.start();
+
+    listeners.get('touchstart')?.({ touches: [{ clientY: 500 }] } as unknown as Event);
+    const preventDefault = vi.fn();
+    listeners.get('touchmove')?.({ touches: [{ clientY: 420 }], preventDefault } as unknown as Event);
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: 'running-challenge:scroll', deltaY: 80 },
+      'https://amazingred.ru'
+    );
+    expect(preventDefault).not.toHaveBeenCalled();
   });
 });

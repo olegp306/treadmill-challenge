@@ -89,8 +89,12 @@ function measurePostedHeight(deps: ResizeMessengerDeps): number {
   return measureLandingHeight(deps);
 }
 
-function shouldInstallScrollHandoff(deps: ResizeMessengerDeps): boolean {
+function shouldInstallBlockingScrollHandoff(deps: ResizeMessengerDeps): boolean {
   return isRunningChallengeAmazingRedEmbed(deps.document.referrer) && deps.window.innerWidth >= AMAZING_RED_SHEET_MODE_MIN_WIDTH;
+}
+
+function shouldInstallPassiveTouchHandoff(deps: ResizeMessengerDeps): boolean {
+  return isRunningChallengeAmazingRedEmbed(deps.document.referrer) && deps.window.innerWidth < AMAZING_RED_SHEET_MODE_MIN_WIDTH;
 }
 
 function canElementScroll(element: Element | null | undefined, deltaY: number): boolean {
@@ -146,7 +150,8 @@ function canAnyLocalScrollerMove(target: EventTarget | null, deltaY: number, dep
 
 export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps) {
   const isAmazingRedEmbed = isRunningChallengeAmazingRedEmbed(deps.document.referrer);
-  const installScrollHandoff = shouldInstallScrollHandoff(deps);
+  const installBlockingScrollHandoff = shouldInstallBlockingScrollHandoff(deps);
+  const installPassiveTouchHandoff = shouldInstallPassiveTouchHandoff(deps);
 
   const postParentMessage = (message: RunningChallengeParentMessage) => {
     if (deps.window.parent === deps.window) return false;
@@ -213,7 +218,7 @@ export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps)
       lastTouchY = event.touches[0]?.clientY ?? null;
     };
 
-    const handleTouchMove = (event: TouchEvent) => {
+    const handleTouchMove = (event: TouchEvent, shouldPreventDefault: boolean) => {
       const nextTouchY = event.touches[0]?.clientY;
       if (lastTouchY === null || nextTouchY === undefined) {
         lastTouchY = nextTouchY ?? null;
@@ -223,17 +228,25 @@ export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps)
       const deltaY = lastTouchY - nextTouchY;
       lastTouchY = nextTouchY;
       if (canAnyLocalScrollerMove(event.target, deltaY, deps)) return;
-      if (sendScroll(deltaY)) event.preventDefault();
+      if (sendScroll(deltaY) && shouldPreventDefault) event.preventDefault();
     };
+
+    const handleBlockingTouchMove = (event: TouchEvent) => handleTouchMove(event, true);
+    const handlePassiveTouchMove = (event: TouchEvent) => handleTouchMove(event, false);
 
     const handleTouchEnd = () => {
       lastTouchY = null;
     };
 
-    if (installScrollHandoff) {
+    if (installBlockingScrollHandoff) {
       deps.window.addEventListener?.('wheel', handleWheel as EventListener, { passive: false });
       deps.window.addEventListener?.('touchstart', handleTouchStart as EventListener, { passive: true });
-      deps.window.addEventListener?.('touchmove', handleTouchMove as EventListener, { passive: false });
+      deps.window.addEventListener?.('touchmove', handleBlockingTouchMove as EventListener, { passive: false });
+      deps.window.addEventListener?.('touchend', handleTouchEnd as EventListener);
+      deps.window.addEventListener?.('touchcancel', handleTouchEnd as EventListener);
+    } else if (installPassiveTouchHandoff) {
+      deps.window.addEventListener?.('touchstart', handleTouchStart as EventListener, { passive: true });
+      deps.window.addEventListener?.('touchmove', handlePassiveTouchMove as EventListener, { passive: true });
       deps.window.addEventListener?.('touchend', handleTouchEnd as EventListener);
       deps.window.addEventListener?.('touchcancel', handleTouchEnd as EventListener);
     }
@@ -269,7 +282,8 @@ export function createRunningChallengeResizeMessenger(deps: ResizeMessengerDeps)
       deps.window.removeEventListener?.('orientationchange', scheduleSend);
       deps.window.removeEventListener?.('wheel', handleWheel as EventListener);
       deps.window.removeEventListener?.('touchstart', handleTouchStart as EventListener);
-      deps.window.removeEventListener?.('touchmove', handleTouchMove as EventListener);
+      deps.window.removeEventListener?.('touchmove', handleBlockingTouchMove as EventListener);
+      deps.window.removeEventListener?.('touchmove', handlePassiveTouchMove as EventListener);
       deps.window.removeEventListener?.('touchend', handleTouchEnd as EventListener);
       deps.window.removeEventListener?.('touchcancel', handleTouchEnd as EventListener);
     };
