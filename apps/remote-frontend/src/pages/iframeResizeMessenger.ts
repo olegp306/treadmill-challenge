@@ -2,6 +2,7 @@ const RUNNING_CHALLENGE_PARENT_ORIGIN = 'https://amazingred.ru';
 const RUNNING_CHALLENGE_RESIZE_MESSAGE = 'running-challenge:resize';
 const RUNNING_CHALLENGE_SCROLL_MESSAGE = 'running-challenge:scroll';
 const AMAZING_RED_IFRAME_SCROLL_HEIGHT = 800;
+const AMAZING_RED_SHEET_MODE_MIN_WIDTH = 1025;
 
 type RunningChallengeParentMessage =
   | { type: typeof RUNNING_CHALLENGE_RESIZE_MESSAGE; height: number }
@@ -19,6 +20,7 @@ type ResizeMessengerParent = {
 type ResizeMessengerWindow = {
   parent: ResizeMessengerParent | ResizeMessengerWindow;
   postMessage?: ResizeMessengerParent['postMessage'];
+  innerWidth: number;
   innerHeight: number;
   requestAnimationFrame?: (callback: FrameRequestCallback) => number;
   cancelAnimationFrame?: (handle: number) => void;
@@ -77,7 +79,13 @@ export function isRunningChallengeAmazingRedEmbed(referrer: string | undefined):
 }
 
 function measurePostedHeight(deps: ResizeMessengerDeps): number {
-  if (isRunningChallengeAmazingRedEmbed(deps.document.referrer)) return AMAZING_RED_IFRAME_SCROLL_HEIGHT;
+  if (
+    isRunningChallengeAmazingRedEmbed(deps.document.referrer) &&
+    deps.window.innerWidth < AMAZING_RED_SHEET_MODE_MIN_WIDTH
+  ) {
+    return AMAZING_RED_IFRAME_SCROLL_HEIGHT;
+  }
+
   return measureLandingHeight(deps);
 }
 

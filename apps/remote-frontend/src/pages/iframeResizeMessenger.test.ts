@@ -14,6 +14,7 @@ describe('createRunningChallengeResizeMessenger', () => {
     const messenger = createRunningChallengeResizeMessenger({
       window: {
         parent: { postMessage },
+        innerWidth: 1366,
         innerHeight: 800,
       },
       document: {
@@ -35,11 +36,40 @@ describe('createRunningChallengeResizeMessenger', () => {
     );
   });
 
-  it('uses an internal iframe scroll window when embedded on Amazing Red', () => {
+  it('posts the full landing height when embedded on Amazing Red desktop', () => {
     const postMessage = vi.fn();
     const messenger = createRunningChallengeResizeMessenger({
       window: {
         parent: { postMessage },
+        innerWidth: 1366,
+        innerHeight: 6478,
+      },
+      document: {
+        referrer: 'https://amazingred.ru/promo/running_challenge/',
+        documentElement: { scrollHeight: 6478 },
+        body: { scrollHeight: 6478 },
+        querySelector: (selector: string) => {
+          if (selector === '#root') return makeElement(6478, 6478);
+          if (selector === '.leaderboard2') return makeElement(6478, 6478);
+          return null;
+        },
+      },
+    });
+
+    messenger.sendHeight();
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: 'running-challenge:resize', height: 6478 },
+      'https://amazingred.ru'
+    );
+  });
+
+  it('uses an internal iframe scroll window when embedded on Amazing Red mobile', () => {
+    const postMessage = vi.fn();
+    const messenger = createRunningChallengeResizeMessenger({
+      window: {
+        parent: { postMessage },
+        innerWidth: 390,
         innerHeight: 6478,
       },
       document: {
@@ -67,6 +97,7 @@ describe('createRunningChallengeResizeMessenger', () => {
     const messenger = createRunningChallengeResizeMessenger({
       window: {
         parent: { postMessage },
+        innerWidth: 390,
         innerHeight: 800,
       },
       document: {

@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.119] - 2026-07-01
+
+### Remote system
+
+- **Amazing Red embed hybrid mode:** desktop embeds (`1025px+`) report the full landing height for one-page scrolling, while mobile/tablet embeds keep the stable fixed `800px` iframe scroll window.
+- **Remote versions:** `remote-frontend` raised to `0.1.112`.
+
+### Verification
+
+- `pnpm run build:shared`
+- `pnpm run build:remote-backend`
+- `pnpm run build:remote-frontend`
+- `pnpm --dir apps/remote-frontend exec vitest run src/pages/iframeResizeMessenger.test.ts` *(blocked by local `vitest@4` / `vite@5.4.21` `./module-runner` export mismatch before tests run)*
+
 ## [0.5.118] - 2026-07-01
 
 ### Remote system
