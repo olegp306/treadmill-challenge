@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.117] - 2026-07-01
+
+### Remote system
+
+- **Amazing Red embed sheet mode:** changed the embedded landing resize message to report the full content height instead of a fixed `800px`, so the parent page can stretch the iframe into one long page for native page scrolling.
+- **Remote versions:** `remote-frontend` raised to `0.1.110`.
+
+### Verification
+
+- `pnpm run build:shared`
+- `pnpm run build:remote-backend`
+- `pnpm run build:remote-frontend`
+- `pnpm --dir apps/remote-frontend exec vitest run src/pages/iframeResizeMessenger.test.ts` *(blocked by local `vitest@4` / `vite@5.4.21` `./module-runner` export mismatch before tests run)*
+
 ## [0.5.116] - 2026-07-01
 
 ### Remote system
