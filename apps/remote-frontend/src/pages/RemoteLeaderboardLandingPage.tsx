@@ -92,9 +92,9 @@ const DISCIPLINES = [
   {
     title: 'Максимум за 5 минут',
     titleLines: ['Максимум', 'за 5 минут'],
-    text: 'Пробеги максимальное расстояние за 5 минут',
+    text: 'Пробеги максимальное расстояние за 5 минут.',
     desktopDescription: [
-      { text: 'Пробеги максимальное расстояние за 5 минут' },
+      { text: 'Пробеги максимальное расстояние за 5 минут.' },
     ],
     image: '/assets/leaderboard2/mode-5min-figma.png',
   },
@@ -105,7 +105,7 @@ const DISCIPLINES = [
     desktopDescription: [
       { text: 'Сотвори историю' },
       { text: 'Покажи лучшее время' },
-      { text: 'на дистанции 1 километр', bold: true },
+      { text: 'на дистанции 1 км.', bold: true },
     ],
     image: '/assets/leaderboard2/mode-golden-figma.png',
   },
@@ -522,7 +522,12 @@ export default function RemoteLeaderboardLandingPage() {
           <div className="leaderboard2__modeText">
             <strong>
               {discipline.titleLines.map((line) => (
-                <span key={line}>{line}</span>
+                <span
+                  key={line}
+                  className={line === 'Стайер-спринт' ? 'leaderboard2__modeTitleLine--stayer' : undefined}
+                >
+                  {line}
+                </span>
               ))}
             </strong>
             <p>

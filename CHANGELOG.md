@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.123] - 2026-07-02
+
+### Remote system
+
+- **Remote Leaderboard landing disciplines:** restored the full stop in the "Максимум за 5 минут" description.
+- **Remote Leaderboard landing disciplines:** shortened the golden kilometer copy to `1 км.` and tightened the mobile stayer title so it fits inside the card.
+- **Remote Leaderboard landing mobile visuals:** aligned the mode-card mobile corner marks and made the mobile background image more visible without changing the desktop layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.116`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright mobile viewport check verified the three discipline cards at `390px`, including symmetric corner marks, no horizontal overflow, and the updated discipline copy.
+
 ## [0.5.122] - 2026-07-02
 
 ### Remote system

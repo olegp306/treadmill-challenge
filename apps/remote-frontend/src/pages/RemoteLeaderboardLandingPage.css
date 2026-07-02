@@ -4892,13 +4892,13 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
     inset: -4px 0 auto;
     height: 472px;
     background: var(--leaderboard2-mode-image) center / cover no-repeat;
-    opacity: 0.5;
-    filter: saturate(0.78) brightness(0.08) contrast(0.92);
+    opacity: 0.68;
+    filter: saturate(0.92) brightness(0.16) contrast(0.96);
     mix-blend-mode: color-dodge;
   }
 
   .leaderboard2__modeCard::after {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.28);
   }
 
   .leaderboard2__modeGlobes {
@@ -4912,7 +4912,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
     right: 16px;
     top: 16px;
     z-index: 2;
-    width: auto;
+    width: calc(100% - 32px);
     height: 16px;
   }
 
@@ -4938,6 +4938,13 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
     line-height: 0.9;
     letter-spacing: -1.92px;
     transform: scaleX(0.304);
+    transform-origin: left top;
+  }
+
+  .leaderboard2__modeText strong .leaderboard2__modeTitleLine--stayer {
+    font-size: 96px;
+    letter-spacing: 0;
+    transform: scaleX(0.72);
     transform-origin: left top;
   }
 
