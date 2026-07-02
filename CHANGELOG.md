@@ -7,6 +7,20 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.122] - 2026-07-02
+
+### Remote system
+
+- **Remote Leaderboard landing copy:** changed the third step heading from position tracking to result tracking and updated the supporting sentence accordingly.
+- **Remote Leaderboard landing disciplines:** shortened the "Максимум за 5 минут" description by removing the extra power tagline and trailing full stop.
+- **Remote Leaderboard landing intro:** changed the monthly prize copy to "Каждый месяц лучшие атлеты в каждой дисциплине выигрывают новые кроссовки."
+- **Remote versions:** `remote-frontend` raised to `0.1.115`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Text search verified the old copy no longer exists in the landing page source.
+
 ## [0.5.121] - 2026-07-01
 
 ### Remote system

@@ -83,8 +83,8 @@ const STEPS = [
   },
   {
     number: '03',
-    title: 'Следи за позицией',
-    text: 'Возвращайся в лидерборд и смотри, как меняется твое место в рейтинге.',
+    title: 'Следи за результатами',
+    text: 'Возвращайся в лидерборд и смотри, как меняется твой результат в рейтинге.',
   },
 ];
 
@@ -92,11 +92,9 @@ const DISCIPLINES = [
   {
     title: 'Максимум за 5 минут',
     titleLines: ['Максимум', 'за 5 минут'],
-    text: 'Пробеги максимальное расстояние за 5 минут.',
+    text: 'Пробеги максимальное расстояние за 5 минут',
     desktopDescription: [
-      { text: 'Пробеги максимальное расстояние за 5 минут.' },
-      { text: 'Максимум мощности' },
-      { text: 'за короткое время' },
+      { text: 'Пробеги максимальное расстояние за 5 минут' },
     ],
     image: '/assets/leaderboard2/mode-5min-figma.png',
   },
@@ -441,28 +439,24 @@ export default function RemoteLeaderboardLandingPage() {
         <div className="leaderboard2__introContent">
           <h2 id="leaderboard2-intro-title" className="leaderboard2__introTitle">
             <span className="leaderboard2__introDesktop">
-              Каждый месяц лучшие
+              Каждый месяц лучшие атлеты
               <br />
-              мужчины и женщины в каждой
+              в каждой дисциплине
               <br />
-              дисциплине получают пару
-              <br />
-              новых кроссовок.
+              выигрывают новые кроссовки.
             </span>
             <span className="leaderboard2__introMobile">
               Каждый месяц
               <br />
-              лучшие мужчины
-              <br />
-              и женщины
+              лучшие атлеты
               <br />
               в каждой
               <br />
               дисциплине
               <br />
-              получают пару
+              выигрывают
               <br />
-              новых кроссовок.
+              новые кроссовки.
             </span>
           </h2>
           <div className="leaderboard2__actions">
