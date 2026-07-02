@@ -408,7 +408,7 @@ export default function RemoteLeaderboardLandingPage() {
           <br />
           <span className="leaderboard2__heroTitleSecondLine">
             на <br className="leaderboard2__heroMobileBreak" />
-            максимум.
+            максимум
           </span>
         </h1>
       </section>

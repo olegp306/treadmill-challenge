@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.124] - 2026-07-02
+
+### Remote system
+
+- **Remote Leaderboard landing hero:** removed the trailing full stop from the first-screen `Беги на максимум` headline across mobile and desktop layouts.
+- **Remote versions:** `remote-frontend` raised to `0.1.117`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright checks verified the hero headline at `390px` and `1364px` renders without the trailing full stop while the "Максимум за 5 минут" discipline description keeps its full stop.
+
 ## [0.5.123] - 2026-07-02
 
 ### Remote system
