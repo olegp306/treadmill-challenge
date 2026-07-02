@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.125] - 2026-07-02
+
+### Remote system
+
+- **Remote Leaderboard landing version badge:** made the centered top version label twice as small and twice as muted.
+- **Remote versions:** `remote-frontend` raised to `0.1.118`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright viewport checks verified the version label remains centered at `390px` and `1364px`.
+
 ## [0.5.124] - 2026-07-02
 
 ### Remote system

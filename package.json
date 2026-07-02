@@ -1,6 +1,6 @@
 {
   "name": "treadmill-challenge",
-  "version": "0.5.124",
+  "version": "0.5.125",
   "private": true,
   "packageManager": "pnpm@10.26.0",
   "description": "Interactive treadmill challenge installation - monorepo",
