@@ -4890,20 +4890,22 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
     margin-top: 20px;
     padding: 0;
     border-radius: 20px;
-    background: var(--lb2-card);
+    background: #0f0f0f;
   }
 
   .leaderboard2__modeCard::before {
+    z-index: 0;
     inset: -4px 0 auto;
     height: 472px;
     background: var(--leaderboard2-mode-image) center / cover no-repeat;
-    opacity: 0.68;
-    filter: saturate(0.92) brightness(0.16) contrast(0.96);
-    mix-blend-mode: color-dodge;
+    opacity: 0.42;
+    filter: saturate(0.9) brightness(0.72) contrast(0.96);
+    mix-blend-mode: normal;
   }
 
   .leaderboard2__modeCard::after {
-    background: rgba(0, 0, 0, 0.28);
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.58);
   }
 
   .leaderboard2__modeGlobes {
@@ -4970,6 +4972,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   }
 
   .leaderboard2__modeControls {
+    z-index: 2;
     left: 16px;
     right: 16px;
     top: 343px;

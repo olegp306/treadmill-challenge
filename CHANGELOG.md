@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.126] - 2026-07-03
+
+### Remote system
+
+- **Remote Leaderboard landing mobile visuals:** fixed the mobile discipline-card background images by moving the image layer above the card background and below the dark overlay/content.
+- **Remote Leaderboard landing mobile visuals:** replaced the hidden `color-dodge` background blend with a normal image layer so the three discipline images are visible behind the text.
+- **Remote versions:** `remote-frontend` raised to `0.1.119`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright mobile viewport check verified all three discipline cards at `390px`, with image layer `z-index: 0`, overlay `z-index: 1`, content controls above it, and no horizontal overflow.
+
 ## [0.5.125] - 2026-07-02
 
 ### Remote system
