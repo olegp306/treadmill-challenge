@@ -1936,7 +1936,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   z-index: 1000;
   box-sizing: border-box;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   padding: 24px;
   overflow-y: auto;

@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.130] - 2026-07-07
+
+### Remote system
+
+- **Remote Leaderboard join popup:** restored desktop viewport centering for the join popup when it is opened from lower CTAs, while keeping the mobile popup top-aligned for the Amazing Red iframe layout.
+- **Remote versions:** `remote-frontend` raised to `0.1.123`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright checks verified that the lower desktop CTA opens the popup centered in the current viewport, the mobile popup remains top-aligned, background scroll stays blocked while the popup is open, and normal page scroll resumes after close.
+
 ## [0.5.129] - 2026-07-07
 
 ### Remote system
