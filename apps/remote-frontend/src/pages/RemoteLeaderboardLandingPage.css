@@ -1579,6 +1579,10 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   display: block;
 }
 
+.leaderboard2__finalCtaTextLine--mobile {
+  display: none !important;
+}
+
 .leaderboard2__finalCta a {
   grid-column: 1 / -1;
   min-height: 74px;
@@ -5752,7 +5756,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   .leaderboard2__finalCta .leaderboard2__finalCtaText {
     position: absolute;
     left: 0;
-    top: -196px;
+    top: -103px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -5770,12 +5774,23 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
     transform: none;
   }
 
+  .leaderboard2__finalCtaTextLine--desktop {
+    display: none !important;
+  }
+
+  .leaderboard2__finalCtaTextLine--mobile {
+    display: block !important;
+    transform: scaleX(1.35);
+    transform-origin: left center;
+  }
+
   .leaderboard2__finalCtaGeo {
     position: absolute;
     left: 16px;
     right: 16px;
-    top: 360px;
+    top: 277px;
     height: 33px;
+    margin: 0;
     display: flex;
     align-items: stretch;
     justify-content: space-between;
@@ -5811,6 +5826,11 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   .leaderboard2__finalCtaGeoGroup .leaderboard2__finalCtaGeoCorner {
     border-color: var(--lb2-red);
     opacity: 1;
+  }
+
+  .leaderboard2__finalCta {
+    height: 394px;
+    min-height: 394px;
   }
 }
 

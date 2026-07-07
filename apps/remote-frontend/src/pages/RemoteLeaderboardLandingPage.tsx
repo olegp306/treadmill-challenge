@@ -673,8 +673,21 @@ export default function RemoteLeaderboardLandingPage() {
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--bottomRight" />
           </span>
           <p className="leaderboard2__finalCtaText">
-            <span>Выбирай дисциплину, показывай максимум </span>
-            <span>и следи за своим результатом в рейтинге</span>
+            <span className="leaderboard2__finalCtaTextLine leaderboard2__finalCtaTextLine--desktop">
+              Выбирай дисциплину, показывай максимум
+            </span>
+            <span className="leaderboard2__finalCtaTextLine leaderboard2__finalCtaTextLine--desktop">
+              и следи за своим результатом в рейтинге
+            </span>
+            <span className="leaderboard2__finalCtaTextLine leaderboard2__finalCtaTextLine--mobile">
+              Выбирай дисциплину, показывай
+            </span>
+            <span className="leaderboard2__finalCtaTextLine leaderboard2__finalCtaTextLine--mobile">
+              максимум и следи за своим
+            </span>
+            <span className="leaderboard2__finalCtaTextLine leaderboard2__finalCtaTextLine--mobile">
+              результатом в рейтинге
+            </span>
           </p>
           <span className="leaderboard2__finalCtaGeoGroup">
             <span className="leaderboard2__finalCtaGeoCorner leaderboard2__finalCtaGeoCorner--topLeft" />

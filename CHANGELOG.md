@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.131] - 2026-07-07
+
+### Remote system
+
+- **Remote Leaderboard mobile final CTA:** aligned the mobile description block to the Figma text treatment with three fixed lines, Proxima Nova Regular 16px/130%, `-0.48px` letter spacing, expanded line width, and corrected 40px/20px spacing to the coordinate badges and CTA button.
+- **Remote versions:** `remote-frontend` raised to `0.1.124`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright checks verified the mobile final CTA text uses Proxima Nova 400, `16px`, `20.8px` line height, `-0.48px` letter spacing, three-line wrapping, expanded line widths, and the intended spacing around the coordinate badges and CTA button.
+
 ## [0.5.130] - 2026-07-07
 
 ### Remote system
