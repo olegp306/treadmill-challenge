@@ -7,6 +7,21 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.127] - 2026-07-07
+
+### Remote system
+
+- **Remote Leaderboard landing join popup:** aligned the desktop and mobile store-location popup with the Figma layouts, including centered desktop address text, mobile two-line `ТЦ «Авиапарк» / 3 этаж` typography, map spacing, and removal of the horizontal popup scrollbar.
+- **Remote Leaderboard landing FAQ:** updated the FAQ answers and fixed mobile FAQ expansion so opened answers no longer clip later questions.
+- **Remote Leaderboard data panels:** made leaderboard result lists scroll when there are many entries while keeping the intended fixed showcase height.
+- **Remote Leaderboard typography:** added real `Druk Cyr` 300/400 font-face mappings from shipped Druk assets and lowered the desktop hero headline weight from 500 to 400.
+- **Remote versions:** `remote-frontend` raised to `0.1.120`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright checks verified the join popup at desktop and mobile widths, mobile two-line address text, desktop centered address text, and leaderboard list scrolling.
+
 ## [0.5.126] - 2026-07-03
 
 ### Remote system

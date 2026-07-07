@@ -823,7 +823,7 @@ function LeaderboardStack({
   onRunTypeSelect?: (runTypeId: RunTypeId) => void;
 }) {
   const title = getRunOption(runTypeId).title.toUpperCase();
-  const rows = dim || narrow ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
+  const rows = dim ? entries.slice(0, MAX_LEADERBOARD_ROWS) : entries;
   const showRunTypeMenu = narrow && onRunTypeMenuToggle && onRunTypeSelect;
 
   return (
@@ -1721,10 +1721,11 @@ const styles: Record<string, CSSProperties> = {
     scrollbarColor: 'rgba(255,255,255,0.22) transparent',
   },
   stackBodyNarrowShowcase: {
-    maxHeight: 'none',
+    minHeight: '492px',
+    maxHeight: '492px',
   },
   stackBodyPageScrollPassthrough: {
-    overflowY: 'hidden',
+    overflowY: 'auto',
     overscrollBehavior: 'auto',
     touchAction: 'pan-y',
   },
