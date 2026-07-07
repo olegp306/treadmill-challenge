@@ -7,6 +7,18 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.129] - 2026-07-07
+
+### Remote system
+
+- **Remote Leaderboard join popup:** fixed page scrolling after closing the popup by removing the `html/body` overflow-based lock and relying on the fixed overlay scroll containment instead.
+- **Remote versions:** `remote-frontend` raised to `0.1.122`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright checks verified that background scroll does not move while the popup is open and normal page scroll resumes after closing it on desktop and mobile.
+
 ## [0.5.128] - 2026-07-07
 
 ### Remote system

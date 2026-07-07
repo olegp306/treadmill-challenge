@@ -1964,6 +1964,7 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   gap: 20px;
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: 0 42px 120px rgba(0, 0, 0, 0.55);
 }
 
