@@ -22,23 +22,19 @@ const LEADERBOARD2_PRELOAD_IMAGES = [
   '/assets/leaderboard2/prize-rings-figma.svg',
 ];
 
-function getDesktopIframeViewportCenterY(): number | null {
+function getDesktopIframeTriggerCenterY(trigger: HTMLElement): number | null {
   if (typeof window === 'undefined' || window.innerWidth <= LEADERBOARD2_MOBILE_LAYOUT_WIDTH || window.parent === window) {
     return null;
   }
 
-  try {
-    const frameElement = window.frameElement;
-    if (!frameElement || typeof frameElement.getBoundingClientRect !== 'function') return null;
-
-    const frameRect = frameElement.getBoundingClientRect();
-    const parentViewportHeight = window.parent.innerHeight;
-    const centerY = parentViewportHeight / 2 - frameRect.top;
-
-    return Number.isFinite(centerY) ? centerY : null;
-  } catch {
+  if (window.innerHeight <= LEADERBOARD2_DESKTOP_WIDTH || !isRunningChallengeAmazingRedEmbed(document.referrer)) {
     return null;
   }
+
+  const rect = trigger.getBoundingClientRect();
+  const centerY = window.scrollY + rect.top + rect.height / 2;
+
+  return Number.isFinite(centerY) ? centerY : null;
 }
 
 type CountdownState = {
@@ -257,7 +253,7 @@ export default function RemoteLeaderboardLandingPage() {
   const [countdown, setCountdown] = useState<CountdownState>(() => getCountdownState());
   const [participantCount, setParticipantCount] = useState(0);
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
-  const [joinPopupViewportCenterY, setJoinPopupViewportCenterY] = useState<number | null>(null);
+  const [joinPopupTriggerCenterY, setJoinPopupTriggerCenterY] = useState<number | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [historyGender, setHistoryGender] = useState<HistoryGender>('male');
   const [historyMonth, setHistoryMonth] = useState<HistoryMonth>('june-2026');
@@ -270,12 +266,12 @@ export default function RemoteLeaderboardLandingPage() {
   }, []);
   const handleJoinPopupClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    setJoinPopupViewportCenterY(getDesktopIframeViewportCenterY());
+    setJoinPopupTriggerCenterY(getDesktopIframeTriggerCenterY(event.currentTarget));
     setIsJoinPopupOpen(true);
   }, []);
   const closeJoinPopup = useCallback(() => {
     setIsJoinPopupOpen(false);
-    setJoinPopupViewportCenterY(null);
+    setJoinPopupTriggerCenterY(null);
   }, []);
   const handleDisciplineChange = useCallback((direction: -1 | 1) => {
     setDisciplineDirection(direction < 0 ? 'prev' : 'next');
@@ -833,13 +829,13 @@ export default function RemoteLeaderboardLandingPage() {
             if (event.target === event.currentTarget) closeJoinPopup();
           }}
           style={
-            joinPopupViewportCenterY === null
+            joinPopupTriggerCenterY === null
               ? undefined
-              : ({ '--lb2-join-viewport-center-y': `${Math.round(joinPopupViewportCenterY)}px` } as CSSProperties)
+              : ({ '--lb2-join-trigger-center-y': `${Math.round(joinPopupTriggerCenterY)}px` } as CSSProperties)
           }
         >
           <section
-            className={`leaderboard2__joinPopup${joinPopupViewportCenterY === null ? '' : ' leaderboard2__joinPopup--viewportCentered'}`}
+            className={`leaderboard2__joinPopup${joinPopupTriggerCenterY === null ? '' : ' leaderboard2__joinPopup--triggerAnchored'}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="leaderboard2-join-title"

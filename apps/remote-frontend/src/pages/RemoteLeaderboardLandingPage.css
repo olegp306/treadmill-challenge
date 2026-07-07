@@ -1972,10 +1972,10 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   box-shadow: 0 42px 120px rgba(0, 0, 0, 0.55);
 }
 
-.leaderboard2__joinPopup--viewportCentered {
+.leaderboard2__joinPopup--triggerAnchored {
   position: absolute;
   left: 50%;
-  top: clamp(390px, var(--lb2-join-viewport-center-y, 50%), calc(100% - 390px));
+  top: clamp(390px, var(--lb2-join-trigger-center-y, 50%), calc(100% - 390px));
   transform: translate(-50%, -50%);
 }
 
