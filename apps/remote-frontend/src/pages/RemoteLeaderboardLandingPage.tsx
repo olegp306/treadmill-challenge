@@ -22,6 +22,25 @@ const LEADERBOARD2_PRELOAD_IMAGES = [
   '/assets/leaderboard2/prize-rings-figma.svg',
 ];
 
+function getDesktopIframeViewportCenterY(): number | null {
+  if (typeof window === 'undefined' || window.innerWidth <= LEADERBOARD2_MOBILE_LAYOUT_WIDTH || window.parent === window) {
+    return null;
+  }
+
+  try {
+    const frameElement = window.frameElement;
+    if (!frameElement || typeof frameElement.getBoundingClientRect !== 'function') return null;
+
+    const frameRect = frameElement.getBoundingClientRect();
+    const parentViewportHeight = window.parent.innerHeight;
+    const centerY = parentViewportHeight / 2 - frameRect.top;
+
+    return Number.isFinite(centerY) ? centerY : null;
+  } catch {
+    return null;
+  }
+}
+
 type CountdownState = {
   days: number;
   hours: number;
@@ -238,7 +257,7 @@ export default function RemoteLeaderboardLandingPage() {
   const [countdown, setCountdown] = useState<CountdownState>(() => getCountdownState());
   const [participantCount, setParticipantCount] = useState(0);
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
-  const [joinPopupAnchorY, setJoinPopupAnchorY] = useState<number | null>(null);
+  const [joinPopupViewportCenterY, setJoinPopupViewportCenterY] = useState<number | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [historyGender, setHistoryGender] = useState<HistoryGender>('male');
   const [historyMonth, setHistoryMonth] = useState<HistoryMonth>('june-2026');
@@ -251,25 +270,12 @@ export default function RemoteLeaderboardLandingPage() {
   }, []);
   const handleJoinPopupClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    const shouldAnchorToTrigger =
-      typeof window !== 'undefined' &&
-      typeof document !== 'undefined' &&
-      window.innerWidth > LEADERBOARD2_MOBILE_LAYOUT_WIDTH &&
-      window.innerHeight > LEADERBOARD2_DESKTOP_WIDTH &&
-      isRunningChallengeAmazingRedEmbed(document.referrer);
-
-    if (shouldAnchorToTrigger) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      setJoinPopupAnchorY(window.scrollY + rect.top + rect.height / 2);
-    } else {
-      setJoinPopupAnchorY(null);
-    }
-
+    setJoinPopupViewportCenterY(getDesktopIframeViewportCenterY());
     setIsJoinPopupOpen(true);
   }, []);
   const closeJoinPopup = useCallback(() => {
     setIsJoinPopupOpen(false);
-    setJoinPopupAnchorY(null);
+    setJoinPopupViewportCenterY(null);
   }, []);
   const handleDisciplineChange = useCallback((direction: -1 | 1) => {
     setDisciplineDirection(direction < 0 ? 'prev' : 'next');
@@ -402,14 +408,31 @@ export default function RemoteLeaderboardLandingPage() {
   useEffect(() => {
     if (!isJoinPopupOpen) return undefined;
     const previousOverflow = document.body.style.overflow;
+    const shouldLockDesktopPointerScroll =
+      typeof window !== 'undefined' &&
+      window.innerWidth > LEADERBOARD2_MOBILE_LAYOUT_WIDTH;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsJoinPopupOpen(false);
     };
+    const preventDesktopPointerScroll = (event: WheelEvent | TouchEvent) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', handleKeyDown);
+    if (shouldLockDesktopPointerScroll) {
+      window.addEventListener('wheel', preventDesktopPointerScroll, { capture: true, passive: false });
+      window.addEventListener('touchmove', preventDesktopPointerScroll, { capture: true, passive: false });
+    }
+
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      if (shouldLockDesktopPointerScroll) {
+        window.removeEventListener('wheel', preventDesktopPointerScroll, { capture: true });
+        window.removeEventListener('touchmove', preventDesktopPointerScroll, { capture: true });
+      }
     };
   }, [isJoinPopupOpen]);
 
@@ -810,13 +833,13 @@ export default function RemoteLeaderboardLandingPage() {
             if (event.target === event.currentTarget) closeJoinPopup();
           }}
           style={
-            joinPopupAnchorY === null
+            joinPopupViewportCenterY === null
               ? undefined
-              : ({ '--lb2-join-anchor-y': `${Math.round(joinPopupAnchorY)}px` } as CSSProperties)
+              : ({ '--lb2-join-viewport-center-y': `${Math.round(joinPopupViewportCenterY)}px` } as CSSProperties)
           }
         >
           <section
-            className={`leaderboard2__joinPopup${joinPopupAnchorY === null ? '' : ' leaderboard2__joinPopup--anchored'}`}
+            className={`leaderboard2__joinPopup${joinPopupViewportCenterY === null ? '' : ' leaderboard2__joinPopup--viewportCentered'}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="leaderboard2-join-title"

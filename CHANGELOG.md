@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.133] - 2026-07-07
+
+### Remote system
+
+- **Remote Leaderboard join popup:** centered the desktop popup in the visible iframe viewport instead of anchoring it to the clicked CTA, and tightened desktop scroll locking while the popup is open.
+- **Remote Leaderboard join popup:** verified normal page scrolling is restored after closing the popup on desktop, while mobile popup positioning remains unchanged.
+- **Remote versions:** `remote-frontend` raised to `0.1.126`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright checks verified desktop top/bottom CTA popup centering, locked background scroll while open, restored desktop scrolling after close, and unchanged mobile top-aligned popup behavior.
+
 ## [0.5.132] - 2026-07-07
 
 ### Remote system
