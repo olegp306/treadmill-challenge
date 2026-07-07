@@ -1972,6 +1972,13 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   box-shadow: 0 42px 120px rgba(0, 0, 0, 0.55);
 }
 
+.leaderboard2__joinPopup--anchored {
+  position: absolute;
+  left: 50%;
+  top: clamp(390px, var(--lb2-join-anchor-y, 50%), calc(100% - 390px));
+  transform: translate(-50%, -50%);
+}
+
 .leaderboard2__joinClose {
   position: absolute;
   top: 25px;

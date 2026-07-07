@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { Fragment, useCallback, useEffect, useState, type CSSProperties, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { RemoteLeaderboardView } from './RemoteLeaderboardPage';
 import { installRunningChallengeResizeMessenger, isRunningChallengeAmazingRedEmbed } from './iframeResizeMessenger';
@@ -238,6 +238,7 @@ export default function RemoteLeaderboardLandingPage() {
   const [countdown, setCountdown] = useState<CountdownState>(() => getCountdownState());
   const [participantCount, setParticipantCount] = useState(0);
   const [isJoinPopupOpen, setIsJoinPopupOpen] = useState(false);
+  const [joinPopupAnchorY, setJoinPopupAnchorY] = useState<number | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [historyGender, setHistoryGender] = useState<HistoryGender>('male');
   const [historyMonth, setHistoryMonth] = useState<HistoryMonth>('june-2026');
@@ -248,9 +249,27 @@ export default function RemoteLeaderboardLandingPage() {
   const handleEntryCountChange = useCallback((count: number) => {
     setParticipantCount(count);
   }, []);
-  const handleJoinPopupClick = useCallback((event: { preventDefault: () => void }) => {
+  const handleJoinPopupClick = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
+    const shouldAnchorToTrigger =
+      typeof window !== 'undefined' &&
+      typeof document !== 'undefined' &&
+      window.innerWidth > LEADERBOARD2_MOBILE_LAYOUT_WIDTH &&
+      window.innerHeight > LEADERBOARD2_DESKTOP_WIDTH &&
+      isRunningChallengeAmazingRedEmbed(document.referrer);
+
+    if (shouldAnchorToTrigger) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      setJoinPopupAnchorY(window.scrollY + rect.top + rect.height / 2);
+    } else {
+      setJoinPopupAnchorY(null);
+    }
+
     setIsJoinPopupOpen(true);
+  }, []);
+  const closeJoinPopup = useCallback(() => {
+    setIsJoinPopupOpen(false);
+    setJoinPopupAnchorY(null);
   }, []);
   const handleDisciplineChange = useCallback((direction: -1 | 1) => {
     setDisciplineDirection(direction < 0 ? 'prev' : 'next');
@@ -788,11 +807,16 @@ export default function RemoteLeaderboardLandingPage() {
           className="leaderboard2__joinOverlay"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setIsJoinPopupOpen(false);
+            if (event.target === event.currentTarget) closeJoinPopup();
           }}
+          style={
+            joinPopupAnchorY === null
+              ? undefined
+              : ({ '--lb2-join-anchor-y': `${Math.round(joinPopupAnchorY)}px` } as CSSProperties)
+          }
         >
           <section
-            className="leaderboard2__joinPopup"
+            className={`leaderboard2__joinPopup${joinPopupAnchorY === null ? '' : ' leaderboard2__joinPopup--anchored'}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="leaderboard2-join-title"
@@ -801,7 +825,7 @@ export default function RemoteLeaderboardLandingPage() {
               className="leaderboard2__joinClose"
               type="button"
               aria-label="Закрыть"
-              onClick={() => setIsJoinPopupOpen(false)}
+              onClick={closeJoinPopup}
             >
               <span aria-hidden />
             </button>

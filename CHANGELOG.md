@@ -7,6 +7,17 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.132] - 2026-07-07
+
+### Remote system
+
+- **Remote Leaderboard join popup:** fixed desktop Amazing Red full-height iframe positioning so lower CTA clicks open the popup around the clicked viewport area instead of the top/header area; mobile behavior is unchanged.
+- **Remote versions:** `remote-frontend` raised to `0.1.125`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+
 ## [0.5.131] - 2026-07-07
 
 ### Remote system
