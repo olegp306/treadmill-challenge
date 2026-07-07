@@ -1936,10 +1936,11 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   z-index: 1000;
   box-sizing: border-box;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 24px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: rgba(0, 0, 0, 0.54);
 }
 
@@ -2140,16 +2141,16 @@ body.leaderboard2-route--desktop-scaled .leaderboard2 {
   }
 
   .leaderboard2__joinOverlay {
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 48px 16px max(72px, calc(env(safe-area-inset-bottom) + 48px));
+    padding: 12px 16px max(72px, calc(env(safe-area-inset-bottom) + 48px));
     overflow-y: auto;
     background: rgba(0, 0, 0, 0.45);
   }
 
   .leaderboard2__joinPopup {
     width: min(343px, 100%);
-    max-height: calc(100dvh - 96px);
+    max-height: calc(100dvh - 84px);
     min-height: 0;
     padding: 16px 16px 30px;
     border-radius: 20px;

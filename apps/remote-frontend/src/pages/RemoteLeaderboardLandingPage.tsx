@@ -260,6 +260,48 @@ export default function RemoteLeaderboardLandingPage() {
   useEffect(() => installRunningChallengeResizeMessenger(), []);
 
   useEffect(() => {
+    if (!isJoinPopupOpen) return undefined;
+
+    const { body, documentElement } = document;
+    const scrollY = window.scrollY;
+    const previousBodyStyles = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      scrollBehavior: body.style.scrollBehavior,
+    };
+    const previousHtmlOverflow = documentElement.style.overflow;
+    const previousHtmlScrollBehavior = documentElement.style.scrollBehavior;
+
+    documentElement.classList.add('leaderboard2-route--popup-open');
+    body.classList.add('leaderboard2-route--popup-open');
+    documentElement.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+
+    return () => {
+      documentElement.classList.remove('leaderboard2-route--popup-open');
+      body.classList.remove('leaderboard2-route--popup-open');
+      documentElement.style.overflow = previousHtmlOverflow;
+      documentElement.style.scrollBehavior = 'auto';
+      body.style.overflow = previousBodyStyles.overflow;
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.width = previousBodyStyles.width;
+      body.style.scrollBehavior = 'auto';
+      window.scrollTo({ left: 0, top: scrollY, behavior: 'auto' });
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ left: 0, top: scrollY, behavior: 'auto' });
+        documentElement.style.scrollBehavior = previousHtmlScrollBehavior;
+        body.style.scrollBehavior = previousBodyStyles.scrollBehavior;
+      });
+    };
+  }, [isJoinPopupOpen]);
+
+  useEffect(() => {
     document.body.classList.add('leaderboard2-route');
     const isAmazingRedEmbed = isRunningChallengeAmazingRedEmbed(document.referrer);
     document.documentElement.classList.toggle('leaderboard2-route--amazingred-embed', isAmazingRedEmbed);

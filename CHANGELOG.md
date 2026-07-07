@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.128] - 2026-07-07
+
+### Remote system
+
+- **Remote Leaderboard join popup:** changed the popup overlay to open near the top of the current viewport/iframe instead of centering across the full landing scroll.
+- **Remote Leaderboard join popup:** locks background page scrolling while the popup is open and restores the exact previous scroll position when it closes.
+- **Remote versions:** `remote-frontend` raised to `0.1.121`.
+
+### Verification
+
+- `pnpm run build:remote-frontend`
+- Playwright checks verified top-aligned popup placement from bottom CTAs on desktop/mobile, background scroll lock, and exact scroll restoration after close.
+
 ## [0.5.127] - 2026-07-07
 
 ### Remote system
