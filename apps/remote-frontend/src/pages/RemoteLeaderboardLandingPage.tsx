@@ -404,9 +404,14 @@ export default function RemoteLeaderboardLandingPage() {
   useEffect(() => {
     if (!isJoinPopupOpen) return undefined;
     const previousOverflow = document.body.style.overflow;
-    const shouldLockDesktopPointerScroll =
+    const isDesktopLayout =
       typeof window !== 'undefined' &&
       window.innerWidth > LEADERBOARD2_MOBILE_LAYOUT_WIDTH;
+    const shouldKeepAmazingRedParentScroll =
+      isDesktopLayout &&
+      window.parent !== window &&
+      isRunningChallengeAmazingRedEmbed(document.referrer);
+    const shouldLockDesktopPointerScroll = isDesktopLayout && !shouldKeepAmazingRedParentScroll;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsJoinPopupOpen(false);
     };
@@ -415,7 +420,9 @@ export default function RemoteLeaderboardLandingPage() {
       event.stopImmediatePropagation();
     };
 
-    document.body.style.overflow = 'hidden';
+    if (!shouldKeepAmazingRedParentScroll) {
+      document.body.style.overflow = 'hidden';
+    }
     window.addEventListener('keydown', handleKeyDown);
     if (shouldLockDesktopPointerScroll) {
       window.addEventListener('wheel', preventDesktopPointerScroll, { capture: true, passive: false });
@@ -423,7 +430,9 @@ export default function RemoteLeaderboardLandingPage() {
     }
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      if (!shouldKeepAmazingRedParentScroll) {
+        document.body.style.overflow = previousOverflow;
+      }
       window.removeEventListener('keydown', handleKeyDown);
       if (shouldLockDesktopPointerScroll) {
         window.removeEventListener('wheel', preventDesktopPointerScroll, { capture: true });

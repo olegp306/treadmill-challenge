@@ -7,6 +7,19 @@ Format: `[MAJOR.MINOR.PATCH]` — SemVer-ish (see `docs/VERSIONING.md`).
 
 ---
 
+## [0.5.135] - 2026-07-07
+
+### Remote system
+
+- **Remote Leaderboard join popup:** kept desktop Amazing Red iframe scrolling active while the popup is open, so users can move the page to reach the popup controls when it opens around a lower CTA.
+- **Remote versions:** `remote-frontend` raised to `0.1.128`.
+
+### Verification
+
+- `pnpm run build:shared`
+- `pnpm run build:remote-backend`
+- `pnpm run build:remote-frontend`
+
 ## [0.5.134] - 2026-07-07
 
 ### Remote system
